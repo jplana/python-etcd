@@ -1,0 +1,9 @@
+News
+====
+
+0.1
+---
+
+*Release date: 18-Sep-2013*
+
+* Initial release
