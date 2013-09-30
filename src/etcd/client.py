@@ -322,7 +322,7 @@ class Client(object):
             res = json.loads(response)
             if isinstance(res, list):
                 return [etcd.EtcdResult(**v) for v in res]
-            return etcd.EtcdResult(**json.loads(response))
+            return etcd.EtcdResult(**res)
         except:
             raise etcd.EtcdException('Unable to decode server response')
 
