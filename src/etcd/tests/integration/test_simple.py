@@ -98,6 +98,14 @@ class TestSimple(EtcdIntegrationTest):
         except KeyError, e:
             pass
 
+    def test_retrieve_subkeys(self):
+        """ INTEGRATION: retrieve multiple subkeys """
+        set_result = self.client.set('/subtree/test_set', 'test-key1')
+        set_result = self.client.set('/subtree/test_set1', 'test-key2')
+        set_result = self.client.set('/subtree/test_set2', 'test-key3')
+        get_result = self.client.get('/subtree')
+        result = [subkey.value for subkey in get_result]
+        self.assertEquals(['test-key1', 'test-key2', 'test-key3'], result)
 
 class TestErrors(EtcdIntegrationTest):
 
