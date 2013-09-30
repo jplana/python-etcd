@@ -271,7 +271,7 @@ class Client(object):
             key (str):  Key.
 
         Returns:
-            client.EtcdResult
+            client.EtcdResult (or an array of client.EtcdResult if a subtree is queried)
 
         Raises:
             KeyValue:  If the key doesn't exists.
@@ -319,6 +319,9 @@ class Client(object):
     def _result_from_response(self, response):
         """ Creates an EtcdResult from json dictionary """
         try:
+            res = json.loads(response)
+            if isinstance(res, list):
+                return [etcd.EtcdResult(**v) for v in res]
             return etcd.EtcdResult(**json.loads(response))
         except:
             raise etcd.EtcdException('Unable to decode server response')
