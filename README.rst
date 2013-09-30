@@ -47,7 +47,7 @@ Get a key
 
 .. code:: python
 
-    client.get('/nodes/n2')['value']
+    client.get('/nodes/n2').value
 
 Delete a key
 ~~~~~~~~~~~~
@@ -75,7 +75,11 @@ List sub keys
 
 .. code:: python
 
+    # List nodes in the cluster
     client.get('/nodes')
+
+    # List keys under /subtree
+    client.get('/subtree')
 
 Get machines in the cluster
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~

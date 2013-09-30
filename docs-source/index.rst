@@ -53,7 +53,7 @@ Get a key
 
 .. code:: python
 
-    client.get('/nodes/n2')['value']
+    client.get('/nodes/n2').value
 
 
 Delete a key
@@ -85,7 +85,11 @@ List sub keys
 
 .. code:: python
 
+    # List nodes in the cluster
     client.get('/nodes')
+
+    # List keys under /subtree
+    client.get('/subtree')
 
 
 Get machines in the cluster
@@ -143,6 +147,8 @@ To make a release,
   4) Upload to PyPI: 'python setup.py sdist register upload'
   5) Increase version in setup.py (for next release)
 
+
+List of contributors at https://github.com/jplana/python-etcd/graphs/contributors
 
 Code documentation
 ------------------

@@ -7,3 +7,11 @@ News
 *Release date: 18-Sep-2013*
 
 * Initial release
+
+
+0.2.0
+-----
+
+*Release data: 30-Sep-2013*
+
+* Allow fetching of multiple keys (sub-nodes)
