@@ -22,7 +22,9 @@ class Client(object):
             port=4001,
             read_timeout=60,
             allow_redirect=True,
-            protocol='http'):
+            protocol='http',
+            cert = None
+    ):
         """
         Initialize the client.
 
@@ -36,6 +38,8 @@ class Client(object):
             allow_redirect (bool): allow the client to connect to other nodes.
 
             protocol (str):  Protocol used to connect to etcd.
+
+            cert (mixed):   If a string, the whole ssl client certificate; if a tuple, the cert and key file names.
 
         """
         self._host = host
@@ -70,7 +74,18 @@ class Client(object):
             500: etcd.EtcdException,
             999: etcd.EtcdException}
 
-        self.http = urllib3.PoolManager(10)
+        # SSL Client certificate support
+        kw = {}
+        if cert and protocol == 'https':
+            if isinstance(cert, tuple):
+                # Key and cert are separate
+                kw['cert_file'] = cert[0]
+                kw['key_file'] = cert[1]
+            else:
+                #combined certificate
+                kw['cert_file'] = cert
+
+        self.http = urllib3.PoolManager(num_pools=10, **kw)
 
     @property
     def base_uri(self):
@@ -316,6 +331,7 @@ class Client(object):
             params=params)
         return self._result_from_response(response)
 
+
     def _result_from_response(self, response):
         """ Creates an EtcdResult from json dictionary """
         try:
@@ -328,17 +344,19 @@ class Client(object):
 
     def api_execute(self, path, method, params=None):
         """ Executes the query. """
+        url = self._base_uri + path
+
         if (method == self._MGET) or (method == self._MDELETE):
             response = self.http.request(
                 method,
-                self._base_uri + path,
+                url,
                 fields=params,
                 redirect=self.allow_redirect)
 
         elif method == self._MPOST:
             response = self.http.request_encode_body(
                 method,
-                self._base_uri+path,
+                url,
                 fields=params,
                 encode_multipart=False,
                 redirect=self.allow_redirect)
@@ -352,6 +370,6 @@ class Client(object):
                 error_code = error['errorCode']
                 error_exception = self.error_codes[error_code]
             except:
-                message = "Unable to decode server response"
+                message = "Unable to decode server response: %s" % response.data
                 error_exception = etcd.EtcdException
             raise error_exception(message)
