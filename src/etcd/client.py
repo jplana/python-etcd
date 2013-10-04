@@ -370,6 +370,6 @@ class Client(object):
                 error_code = error['errorCode']
                 error_exception = self.error_codes[error_code]
             except:
-                message = "Unable to decode server response: %s" % response.data
+                message = "Unable to decode server response"
                 error_exception = etcd.EtcdException
             raise error_exception(message)
