@@ -3,6 +3,9 @@ python-etcd documentation
 
 A python client for Etcd https://github.com/coreos/etcd
 
+This client actually works with etcd API version 1. Version 2 API support is planned.
+
+
 Official documentation: http://python-etcd.readthedocs.org/
 
 .. image:: https://travis-ci.org/jplana/python-etcd.png?branch=master
@@ -37,6 +40,10 @@ Create a client object
     client = etcd.Client(port=4002)
     client = etcd.Client(host='127.0.0.1', port=4003)
     client = etcd.Client(host='127.0.0.1', port=4003, allow_redirect=False) # wont let you run sensitive commands on non-leader machines, default is true
+    client = etcd.Client(allow_reconnect=True) # will attempt to connect to another host in the cluster upon failure. Defaults to False
+    client = etcd.Client(protocol = 'https', cert = ('cert.crt', 'cert.key')) # Connect using https and client certificate authentication
+    client = etcd.Client(protocol = 'https', cert = 'cert.pem') # Connect using https and client certificate authentication, with a combined certificate
+
 
 Set a key
 ~~~~~~~~~
