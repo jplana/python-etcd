@@ -63,7 +63,7 @@ class TestSimple(EtcdIntegrationTest):
 
     def test_machines(self):
         """ INTEGRATION: retrieve machines """
-        self.assertEquals(self.client.machines, ['http://127.0.0.1:6001'])
+        self.assertEquals(self.client.machines[0], 'http://127.0.0.1:6001')
 
     def test_leader(self):
         """ INTEGRATION: retrieve leader """
@@ -147,6 +147,35 @@ class TestErrors(EtcdIntegrationTest):
             assert False
         except ValueError, e:
             pass
+
+class TestClusterFunctions(EtcdIntegrationTest):
+    @classmethod
+    def setUpClass(cls):
+        program = cls._get_exe()
+        cls.directory = tempfile.mkdtemp(prefix='python-etcd')
+
+        cls.processHelper = helpers.EtcdProcessHelper(
+            cls.directory,
+            proc_name=program,
+            port_range_start=6001,
+            internal_port_range_start=8001,
+            cluster = True)
+        cls.processHelper.run(number=3)
+#        cls.client = etcd.Client(port=6001, allow_reconnect = True)
+
+    def test_reconnect(self):
+        """ INTEGRATION: retreive a key after the server we're connected to dies. """
+        self.client = etcd.Client(port=6001, allow_reconnect = True)
+        set_result = self.client.set('/test_set', 'test-key1')
+        self.processHelper.kill_one()
+        get_result = self.client.get('/test_set')
+        self.assertEquals('test-key1', get_result.value)
+
+    def test_reconnect_not_allowed(self):
+        """ INTEGRATION: fail on server kill if not allow_reconnect """
+        self.client = etcd.Client(port=6001, allow_reconnect = False)
+        self.processHelper.kill_one()
+        self.assertRaises(urllib3.exceptions.MaxRetryError, self.client.get,'/test_set')
 
 
 class TestWatch(EtcdIntegrationTest):

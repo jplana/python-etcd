@@ -16,12 +16,14 @@ class EtcdProcessHelper(object):
             proc_name='etcd',
             port_range_start=4001,
             internal_port_range_start=7001,
-    ):
+            cluster = False):
+
         self.base_directory = base_directory
         self.proc_name = proc_name
         self.port_range_start = port_range_start
         self.internal_port_range_start = internal_port_range_start
         self.processes = []
+        self.cluster = cluster
 
     def run(self, number=1, proc_args=None):
         log = logging.getLogger()
@@ -37,8 +39,16 @@ class EtcdProcessHelper(object):
                 '-s', '127.0.0.1:%d' % (self.internal_port_range_start + i),
                 '-c', '127.0.0.1:%d' % (self.port_range_start + i),
             ]
+
             if proc_args:
                 daemon_args.extend(proc_args)
+
+            if i and self.cluster:
+                daemon_args.append('-C')
+                daemon_args.append(
+                    '127.0.0.1:%d' % self.internal_port_range_start)
+            daemon_args
+
             daemon = subprocess.Popen(daemon_args)
             log.debug('Started %d' % daemon.pid)
             time.sleep(2)
@@ -52,6 +62,15 @@ class EtcdProcessHelper(object):
             log.debug('Killed etcd pid:%d' % process.pid)
             shutil.rmtree(directory)
             log.debug('Removed directory %s' % directory)
+
+    def kill_one(self):
+        log = logging.getLogger()
+        dir, process = self.processes.pop(0)
+        process.kill()
+        time.sleep(2)
+        log.debug('Killed etcd pid:%d', process.pid)
+        shutil.rmtree(dir)
+        log.debug('Removed directory %s' % dir)
 
 
 class TestingCA(object):
