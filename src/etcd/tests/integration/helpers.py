@@ -149,3 +149,13 @@ class TestingCA(object):
 
         with file(key_path, 'w') as f:
             f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k))
+
+def kill_one(self):
+        log = logging.getLogger()
+        dir, process = self.processes.pop(0)
+        process.kill()
+        time.sleep(2)
+        log.debug('Killed etcd pid:%d', process.pid)
+        shutil.rmtree(dir)
+        log.debug('Removed directory %s' % dir)
+
