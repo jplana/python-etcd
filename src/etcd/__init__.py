@@ -12,7 +12,9 @@ class EtcdResult(collections.namedtuple(
         'value',
         'expiration',
         'ttl',
-        'newKey'])):
+        'newKey',
+        'dir'
+    ])):
 
     def __new__(
             cls,
@@ -23,7 +25,9 @@ class EtcdResult(collections.namedtuple(
             value=None,
             expiration=None,
             ttl=None,
-            newKey=None):
+            newKey=None,
+            dir=False
+    ):
         return super(EtcdResult, cls).__new__(
             cls,
             action,
@@ -33,7 +37,9 @@ class EtcdResult(collections.namedtuple(
             value,
             expiration,
             ttl,
-            newKey)
+            newKey,
+            dir
+        )
 
 
 class EtcdException(Exception):
