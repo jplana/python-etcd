@@ -8,7 +8,10 @@ NEWS = open(os.path.join(here, 'NEWS.txt')).read()
 
 version = '0.2.0'
 
-install_requires = ['urllib3==1.7']
+install_requires = [
+    'urllib3==1.7',
+    'pyOpenSSL==0.13.1'
+]
 
 
 setup(name='python-etcd',
