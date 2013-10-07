@@ -24,7 +24,8 @@ class Client(object):
             read_timeout=60,
             allow_redirect=True,
             protocol='http',
-            cert = None
+            cert = None,
+            ca_cert = None,
     ):
         """
         Initialize the client.
@@ -40,7 +41,10 @@ class Client(object):
 
             protocol (str):  Protocol used to connect to etcd.
 
-            cert (mixed):   If a string, the whole ssl client certificate; if a tuple, the cert and key file names.
+            cert (mixed):   If a string, the whole ssl client certificate;
+                            if a tuple, the cert and key file names.
+
+            ca_cert (str): The ca certificate. If pressent it will enable validation.
 
         """
         self._host = host
@@ -85,7 +89,15 @@ class Client(object):
             else:
                 #combined certificate
                 kw['cert_file'] = cert
+
             kw['ssl_version'] = ssl.PROTOCOL_TLSv1
+
+
+        if ca_cert:
+            kw['ca_certs'] = ca_cert
+            kw['cert_reqs'] = ssl.CERT_REQUIRED
+            kw['ssl_version'] = ssl.PROTOCOL_SSLv3
+
         self.http = urllib3.PoolManager(num_pools=10, **kw)
 
     @property
