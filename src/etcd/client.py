@@ -8,6 +8,7 @@
 """
 import urllib3
 import json
+import ssl
 
 import etcd
 
@@ -84,7 +85,7 @@ class Client(object):
             else:
                 #combined certificate
                 kw['cert_file'] = cert
-
+            kw['ssl_version'] = ssl.PROTOCOL_TLSv1
         self.http = urllib3.PoolManager(num_pools=10, **kw)
 
     @property
