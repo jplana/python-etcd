@@ -80,23 +80,25 @@ class Client(object):
             999: etcd.EtcdException}
 
         # SSL Client certificate support
-        kw = {}
-        if cert and protocol == 'https':
-            if isinstance(cert, tuple):
-                # Key and cert are separate
-                kw['cert_file'] = cert[0]
-                kw['key_file'] = cert[1]
-            else:
-                #combined certificate
-                kw['cert_file'] = cert
 
+        kw = {}
+
+        if protocol == 'https':
             kw['ssl_version'] = ssl.PROTOCOL_TLSv1
 
+            if cert:
+                if isinstance(cert, tuple):
+                    # Key and cert are separate
+                    kw['cert_file'] = cert[0]
+                    kw['key_file'] = cert[1]
+                else:
+                    #combined certificate
+                    kw['cert_file'] = cert
 
-        if ca_cert:
-            kw['ca_certs'] = ca_cert
-            kw['cert_reqs'] = ssl.CERT_REQUIRED
-            kw['ssl_version'] = ssl.PROTOCOL_SSLv3
+            if ca_cert:
+                kw['ca_certs'] = ca_cert
+                kw['cert_reqs'] = ssl.CERT_REQUIRED
+                kw['ssl_version'] = ssl.PROTOCOL_SSLv3
 
         self.http = urllib3.PoolManager(num_pools=10, **kw)
 
