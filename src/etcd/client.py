@@ -98,7 +98,6 @@ class Client(object):
             if ca_cert:
                 kw['ca_certs'] = ca_cert
                 kw['cert_reqs'] = ssl.CERT_REQUIRED
-                kw['ssl_version'] = ssl.PROTOCOL_SSLv3
 
         self.http = urllib3.PoolManager(num_pools=10, **kw)
 
