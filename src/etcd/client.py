@@ -84,6 +84,8 @@ class Client(object):
         kw = {}
 
         if protocol == 'https':
+            # If we don't allow TLSv1, clients using older version of OpenSSL
+            # (<1.0) won't be able to connect.
             kw['ssl_version'] = ssl.PROTOCOL_TLSv1
 
             if cert:
