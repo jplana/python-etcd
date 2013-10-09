@@ -440,6 +440,7 @@ class TestClientAuthenticatedAccess(EtcdIntegrationTest):
                               proc_args=[
                                   '-clientCert=%s' % server_cert_path,
                                   '-clientKey=%s' % server_key_path,
+                                  '-clientCAFile=%s' % cls.ca_cert_path
                               ])
 
     def test_get_set_unauthenticated(self):
@@ -467,7 +468,9 @@ class TestClientAuthenticatedAccess(EtcdIntegrationTest):
         client = etcd.Client(
             port=6001,
             protocol='https',
-            cert=self.client_all_cert)
+            cert=self.client_all_cert,
+            ca_cert=self.ca_cert_path
+        )
 
         set_result = client.set('/test_set', 'test-key')
         self.assertEquals('SET', set_result.action)
