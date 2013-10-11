@@ -24,8 +24,8 @@ class Client(object):
             read_timeout=60,
             allow_redirect=True,
             protocol='http',
-            cert = None,
-            ca_cert = None,
+            cert=None,
+            ca_cert=None,
     ):
         """
         Initialize the client.
@@ -44,7 +44,8 @@ class Client(object):
             cert (mixed):   If a string, the whole ssl client certificate;
                             if a tuple, the cert and key file names.
 
-            ca_cert (str): The ca certificate. If pressent it will enable validation.
+            ca_cert (str): The ca certificate. If pressent it will enable
+                           validation.
 
         """
         self._host = host
@@ -302,7 +303,8 @@ class Client(object):
             key (str):  Key.
 
         Returns:
-            client.EtcdResult (or an array of client.EtcdResult if a subtree is queried)
+            client.EtcdResult (or an array of client.EtcdResult if a
+            subtree is queried)
 
         Raises:
             KeyValue:  If the key doesn't exists.
@@ -346,7 +348,6 @@ class Client(object):
             method,
             params=params)
         return self._result_from_response(response)
-
 
     def _result_from_response(self, response):
         """ Creates an EtcdResult from json dictionary """

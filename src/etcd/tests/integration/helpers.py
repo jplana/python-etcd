@@ -8,6 +8,7 @@ import uuid
 
 from OpenSSL import crypto
 
+
 class EtcdProcessHelper(object):
     def __init__(
             self,
@@ -90,8 +91,8 @@ class TestingCA(object):
 
         cert.add_extensions([
             crypto.X509Extension(
-                "authorityKeyIdentifier",False,
-                "keyid:always",issuer=cert)
+                "authorityKeyIdentifier", False,
+                "keyid:always", issuer=cert)
         ])
 
         cert.sign(k, 'sha1')
@@ -118,7 +119,6 @@ class TestingCA(object):
             serial = int(md5_hash.hexdigest(), 36)
             cert.get_subject().CN = cn
 
-
         cert.get_subject().C = "ES"
         cert.get_subject().ST = "State"
         cert.get_subject().L = "City"
@@ -126,12 +126,15 @@ class TestingCA(object):
         cert.get_subject().OU = "Organizational Unit"
 
         cert.add_extensions([
-            crypto.X509Extension("keyUsage", False,
-                                 "nonRepudiation,digitalSignature,keyEncipherment"),
-            crypto.X509Extension("extendedKeyUsage", False,
-                                 "clientAuth,serverAuth"),
+            crypto.X509Extension(
+                "keyUsage",
+                False,
+                "nonRepudiation,digitalSignature,keyEncipherment"),
+            crypto.X509Extension(
+                "extendedKeyUsage",
+                False,
+                "clientAuth,serverAuth"),
         ])
-
 
         cert.gmtime_adj_notBefore(0)
         cert.gmtime_adj_notAfter(315360000)

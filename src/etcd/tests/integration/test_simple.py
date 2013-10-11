@@ -36,7 +36,6 @@ class EtcdIntegrationTest(unittest.TestCase):
         cls.processHelper.stop()
         shutil.rmtree(cls.directory)
 
-
     @classmethod
     def _is_exe(cls, fpath):
         return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
@@ -114,6 +113,7 @@ class TestSimple(EtcdIntegrationTest):
         get_result = self.client.get('/subtree')
         result = [subkey.value for subkey in get_result]
         self.assertEquals(['test-key1', 'test-key2', 'test-key3'], result)
+
 
 class TestErrors(EtcdIntegrationTest):
 
@@ -301,7 +301,6 @@ class TestWatch(EtcdIntegrationTest):
         proc.join(timeout=5)
 
 
-
 class TestAuthenticatedAccess(EtcdIntegrationTest):
 
     @classmethod
@@ -359,18 +358,17 @@ class TestAuthenticatedAccess(EtcdIntegrationTest):
             self.assertEquals(e.message, "Unable to decode server response")
 
     def test_get_set_unauthenticated_missing_ca(self):
-        """ INTEGRATION: set/get a new value unauthenticated without validation (https->https) """
+        """ INTEGRATION: try unauthenticated w/out validation (https->https)"""
 
         client = etcd.Client(protocol='https', port=6001)
         set_result = client.set('/test_set', 'test-key')
         get_result = client.get('/test_set')
 
-
     def test_get_set_unauthenticated_with_ca(self):
-        """ INTEGRATION: set/get a new value unauthenticated without validation (https->https) """
+        """ INTEGRATION: try unauthenticated w/out validation (https->https)"""
 
         client = etcd.Client(
-            protocol='https', port=6001, ca_cert = self.ca2_cert_path)
+            protocol='https', port=6001, ca_cert=self.ca2_cert_path)
 
         try:
             set_result = client.set('/test_set', 'test-key')
@@ -383,16 +381,14 @@ class TestAuthenticatedAccess(EtcdIntegrationTest):
         except urllib3.exceptions.SSLError, e:
             assert True
 
-
     def test_get_set_authenticated(self):
         """ INTEGRATION: set/get a new value authenticated """
 
         client = etcd.Client(
-            port=6001, protocol='https', ca_cert = self.ca_cert_path)
+            port=6001, protocol='https', ca_cert=self.ca_cert_path)
 
         set_result = client.set('/test_set', 'test-key')
         get_result = client.get('/test_set')
-
 
 
 class TestClientAuthenticatedAccess(EtcdIntegrationTest):
@@ -435,7 +431,6 @@ class TestClientAuthenticatedAccess(EtcdIntegrationTest):
             f.write(file(cls.client_key_path).read())
             f.write(file(cls.client_cert_path).read())
 
-
         cls.processHelper.run(number=3,
                               proc_args=[
                                   '-clientCert=%s' % server_cert_path,
@@ -463,7 +458,7 @@ class TestClientAuthenticatedAccess(EtcdIntegrationTest):
             self.assertEquals(e.message, "Unable to decode server response")
 
     def test_get_set_authenticated(self):
-        """ INTEGRATION: set/get a new value with client&server authenticated """
+        """ INTEGRATION: connecting to server with mutual auth """
 
         client = etcd.Client(
             port=6001,
