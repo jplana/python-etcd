@@ -4,17 +4,16 @@ from client import Client
 
 class EtcdResult(collections.namedtuple(
     'EtcdResult',
-    [
-        'action',
-        'index',
-        'key',
-        'prevValue',
-        'value',
-        'expiration',
-        'ttl',
-        'newKey',
-        'dir'
-    ])):
+        ['action',
+         'index',
+         'key',
+         'prevValue',
+         'value',
+         'expiration',
+         'ttl',
+         'newKey',
+         'dir',
+         ])):
 
     def __new__(
             cls,

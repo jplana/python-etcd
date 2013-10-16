@@ -162,12 +162,11 @@ class TestClientRequest(unittest.TestCase):
                    u'value': u'test2'})
         ], result)
 
-
     def test_get_subdirs(self):
         """ Can understand dirs in results """
         client = etcd.Client()
         client.api_execute = mock.Mock(
-            return_value =
+            return_value=
             '[{"action":"GET",'
             '"key":"/testdir/key1",'
             '"value":"test1",'
@@ -180,17 +179,16 @@ class TestClientRequest(unittest.TestCase):
         result = client.get('/testdir')
         self.assertEquals([
             etcd.EtcdResult(
-            **{u'action': u'GET',
-               u'index': 190,
-               u'key': u'/testdir/key1',
-               u'value': u'test1'}),
+                **{u'action': u'GET',
+                   u'index': 190,
+                   u'key': u'/testdir/key1',
+                   u'value': u'test1'}),
             etcd.EtcdResult(
-            **{u'action': u'GET',
-               u'index': 191,
-               u'key': u'/testdir/key2',
-               u'dir': True})
+                **{u'action': u'GET',
+                   u'index': 191,
+                   u'key': u'/testdir/key2',
+                   u'dir': True})
         ], result)
-
 
     def test_not_in(self):
         """ Can check if key is not in client """
