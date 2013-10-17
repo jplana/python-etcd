@@ -33,7 +33,9 @@ class Client(object):
         Initialize the client.
 
         Args:
-            host (str):  IP to connect to.
+            host (mixed):
+                           If a string, IP to connect to.
+                           If a tuple ((host, port), (host, port), ...)
 
             port (int):  Port used to connect to etcd.
 
@@ -54,17 +56,28 @@ class Client(object):
                                     default one does not respond.
 
         """
-        self._host = host
-        self._port = port
+        self._machines_cache = []
+
         self._protocol = protocol
-        self._base_uri = "%s://%s:%d" % (protocol, host, port)
+
+        def uri(protocol, host, port):
+            return '%s://%s:%d' % (protocol, host, port)
+
+        if not isinstance(host, tuple):
+            self._host = host
+            self._port = port
+        else:
+            self._host, self._port = host[0]
+            self._machines_cache.extend(
+                [uri(self._protocol, *conn) for conn in host])
+
+        self._base_uri = uri(self._protocol, self._host, self._port)
+
         self.version_prefix = '/v1'
 
         self._read_timeout = read_timeout
         self._allow_redirect = allow_redirect
         self._allow_reconnect = allow_reconnect
-
-        self._machines_cache = []
 
         self._MGET = 'GET'
         self._MPOST = 'POST'

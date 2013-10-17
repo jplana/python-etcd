@@ -177,6 +177,25 @@ class TestClusterFunctions(EtcdIntegrationTest):
         get_result = self.client.get('/test_set')
         self.assertEquals('test-key1', get_result.value)
 
+    def test_reconnect_with_several_hosts_passed(self):
+        """ INTEGRATION: receive several hosts at connection setup. """
+        self.processHelper.stop()
+        self.processHelper.run(number=3)
+        self.client = etcd.Client(
+            host=(
+                ('127.0.0.1', 6004),
+                ('127.0.0.1', 6001)),
+            allow_reconnect=True)
+        set_result = self.client.set('/test_set', 'test-key1')
+        get_result = self.client.get('/test_set')
+
+        self.assertEquals('test-key1', get_result.value)
+
+        self.processHelper.kill_one(0)
+
+        get_result = self.client.get('/test_set')
+        self.assertEquals('test-key1', get_result.value)
+
     def test_reconnect_not_allowed(self):
         """ INTEGRATION: fail on server kill if not allow_reconnect """
         self.processHelper.stop()
