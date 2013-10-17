@@ -148,6 +148,7 @@ class TestErrors(EtcdIntegrationTest):
         except ValueError, e:
             pass
 
+
 class TestClusterFunctions(EtcdIntegrationTest):
     @classmethod
     def setUpClass(cls):
@@ -159,23 +160,82 @@ class TestClusterFunctions(EtcdIntegrationTest):
             proc_name=program,
             port_range_start=6001,
             internal_port_range_start=8001,
-            cluster = True)
-        cls.processHelper.run(number=3)
-#        cls.client = etcd.Client(port=6001, allow_reconnect = True)
+            cluster=True)
 
     def test_reconnect(self):
-        """ INTEGRATION: retreive a key after the server we're connected to dies. """
-        self.client = etcd.Client(port=6001, allow_reconnect = True)
+        """ INTEGRATION: get key after the server we're connected fails. """
+        self.processHelper.stop()
+        self.processHelper.run(number=3)
+        self.client = etcd.Client(port=6001, allow_reconnect=True)
         set_result = self.client.set('/test_set', 'test-key1')
-        self.processHelper.kill_one()
+        get_result = self.client.get('/test_set')
+
+        self.assertEquals('test-key1', get_result.value)
+
+        self.processHelper.kill_one(0)
+
         get_result = self.client.get('/test_set')
         self.assertEquals('test-key1', get_result.value)
 
     def test_reconnect_not_allowed(self):
         """ INTEGRATION: fail on server kill if not allow_reconnect """
-        self.client = etcd.Client(port=6001, allow_reconnect = False)
-        self.processHelper.kill_one()
-        self.assertRaises(urllib3.exceptions.MaxRetryError, self.client.get,'/test_set')
+        self.processHelper.stop()
+        self.processHelper.run(number=3)
+        self.client = etcd.Client(port=6001, allow_reconnect=False)
+        self.processHelper.kill_one(0)
+        self.assertRaises(etcd.EtcdException, self.client.get, '/test_set')
+
+    def test_reconnet_fails(self):
+        """ INTEGRATION: fails to reconnect if no available machines """
+        self.processHelper.stop()
+        # Start with three instances (0, 1, 2)
+        self.processHelper.run(number=3)
+        # Connect to instance 0
+        self.client = etcd.Client(port=6001, allow_reconnect=True)
+        set_result = self.client.set('/test_set', 'test-key1')
+
+        get_result = self.client.get('/test_set')
+        self.assertEquals('test-key1', get_result.value)
+        self.processHelper.kill_one(2)
+        self.processHelper.kill_one(1)
+        self.processHelper.kill_one(0)
+        self.assertRaises(etcd.EtcdException, self.client.get, '/test_set')
+
+    def test_reconnect_to_failed_node(self):
+        """ INTEGRATION: after a server failed and recovered we can connect."""
+
+        self.processHelper.stop()
+        # Start with three instances (0, 1, 2)
+        self.processHelper.run(number=3)
+
+        # Connect to instance 0
+        self.client = etcd.Client(port=6001, allow_reconnect=True)
+        set_result = self.client.set('/test_set', 'test-key1')
+
+        get_result = self.client.get('/test_set')
+        self.assertEquals('test-key1', get_result.value)
+
+        # kill 1 -> instances = (0, 2)
+        self.processHelper.kill_one(1)
+
+        get_result = self.client.get('/test_set')
+        self.assertEquals('test-key1', get_result.value)
+
+        # kill 0 -> Instances (2)
+        self.processHelper.kill_one(0)
+
+        get_result = self.client.get('/test_set')
+        self.assertEquals('test-key1', get_result.value)
+
+        # Add 0 (failed server) -> Instances (0,2)
+        self.processHelper.add_one(0)
+        # Instances (0, 2)
+
+        # kill 2 -> Instances (0) (previously failed)
+        self.processHelper.kill_one(2)
+
+        get_result = self.client.get('/test_set')
+        self.assertEquals('test-key1', get_result.value)
 
 
 class TestWatch(EtcdIntegrationTest):

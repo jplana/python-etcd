@@ -64,6 +64,8 @@ class Client(object):
         self._allow_redirect = allow_redirect
         self._allow_reconnect = allow_reconnect
 
+        self._machines_cache = []
+
         self._MGET = 'GET'
         self._MPOST = 'POST'
         self._MDELETE = 'DELETE'
@@ -111,12 +113,13 @@ class Client(object):
 
         self.http = urllib3.PoolManager(num_pools=10, **kw)
 
-        self._machines = []
-        self._failed_servers = []
         if self._allow_reconnect:
             # we need the set of servers in the cluster in order to try
             # reconnecting upon error.
-            self.machines
+            self._machines_cache = self.machines
+            self._machines_cache.remove(self._base_uri)
+        else:
+            self._machines_cache = []
 
     @property
     def base_uri(self):
@@ -159,12 +162,11 @@ class Client(object):
         >>> print client.machines
         ['http://127.0.0.1:4001', 'http://127.0.0.1:4002']
         """
-        self._machines = [
+        return [
             node.strip() for node in self.api_execute(
                 self.version_prefix + '/machines',
                 self._MGET).split(',')
         ]
-        return self._machines
 
     @property
     def leader(self):
@@ -376,50 +378,47 @@ class Client(object):
 
     def _next_server(self):
         """ Selects the next server in the list, refreshes the server list. """
-        if self._base_uri in self._machines:
-            self._failed_servers.append(self._base_uri)
-
-        for server in self._machines:
-            if server in self._failed_servers:
-                continue
-            self._base_uri = server
-            # Note that this will force the client to test the
-            # servers' connection.
-            self.machines
-            # TODO: check if we might want to wipe the failed servers array.
-            break
+        try:
+            return self._machines_cache.pop()
+        except IndexError:
+            raise etcd.EtcdException('No more machines in the cluster')
 
     def api_execute(self, path, method, params=None):
         """ Executes the query. """
-        try:
-            return self.perform_request(path, method, params)
-        except urllib3.exceptions.MaxRetryError:
-            if not self._allow_reconnect:
-                raise
-            self._next_server()
-            return self.perform_request(path, method, params)
 
-    def perform_request(self, path, method, params):
-        """ Performs the request to the server """
-        url = self._base_uri + path
+        some_request_failed = False
+        response = False
 
-        if (method == self._MGET) or (method == self._MDELETE):
-            response = self.http.request(
-                method,
-                url,
-                fields=params,
-                redirect=self.allow_redirect)
+        while not response:
+            try:
+                url = self._base_uri + path
 
-        elif method == self._MPOST:
-            response = self.http.request_encode_body(
-                method,
-                url,
-                fields=params,
-                encode_multipart=False,
-                redirect=self.allow_redirect)
+                if (method == self._MGET) or (method == self._MDELETE):
+                    response = self.http.request(
+                        method,
+                        url,
+                        fields=params,
+                        redirect=self.allow_redirect)
+
+                elif method == self._MPOST:
+                    response = self.http.request_encode_body(
+                        method,
+                        url,
+                        fields=params,
+                        encode_multipart=False,
+                        redirect=self.allow_redirect)
+
+            except urllib3.exceptions.MaxRetryError:
+                self._base_uri = self._next_server()
+                some_request_failed = True
+
+        if some_request_failed:
+            self._machines_cache = self.machines
+            self._machines_cache.remove(self._base_uri)
 
         if response.status == 200:
             return response.data
+
         else:
             try:
                 error = json.loads(response.data)
