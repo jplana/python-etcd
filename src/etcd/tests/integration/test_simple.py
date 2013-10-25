@@ -85,7 +85,7 @@ class TestSimple(EtcdIntegrationTest):
         self.assertEquals(True, set_result.newKey)
         self.assertEquals('test-key', set_result.value)
 
-        self.assertIn('/test_set', self.client)
+        self.assertTrue('/test_set' in self.client)
 
         get_result = self.client.get('/test_set')
         self.assertEquals('GET', get_result.action)
@@ -97,7 +97,7 @@ class TestSimple(EtcdIntegrationTest):
         self.assertEquals('/test_set', delete_result.key)
         self.assertEquals('test-key', delete_result.prevValue)
 
-        self.assertNotIn('/test_set', self.client)
+        self.assertFalse('/test_set' in self.client)
 
         try:
             get_result = self.client.get('/test_set')
