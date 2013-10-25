@@ -77,7 +77,7 @@ class TestSimple(EtcdIntegrationTest):
         except KeyError, e:
             pass
 
-        self.assertNotIn('/test_set', self.client)
+        self.assertFalse('/test_set' in self.client)
 
         set_result = self.client.set('/test_set', 'test-key')
         self.assertEquals('SET', set_result.action)
@@ -85,7 +85,7 @@ class TestSimple(EtcdIntegrationTest):
         self.assertEquals(True, set_result.newKey)
         self.assertEquals('test-key', set_result.value)
 
-        self.assertIn('/test_set', self.client)
+        self.assertTrue('/test_set' in self.client)
 
         get_result = self.client.get('/test_set')
         self.assertEquals('GET', get_result.action)
@@ -97,7 +97,7 @@ class TestSimple(EtcdIntegrationTest):
         self.assertEquals('/test_set', delete_result.key)
         self.assertEquals('test-key', delete_result.prevValue)
 
-        self.assertNotIn('/test_set', self.client)
+        self.assertFalse('/test_set' in self.client)
 
         try:
             get_result = self.client.get('/test_set')
@@ -256,7 +256,7 @@ class TestWatch(EtcdIntegrationTest):
         for i in range(0, 1):
             value = queue.get()
             log.debug("index: %d: %s" % (i, value))
-            self.assertIn(value, values)
+            self.assertTrue(value in values)
 
         watcher.join(timeout=5)
         changer.join(timeout=5)

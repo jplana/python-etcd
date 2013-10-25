@@ -3,6 +3,9 @@ python:
   - "2.6"
   - "2.7"
 
+before_install:
+  - ./build_etcd.sh
+
 # command to install dependencies
 install: 
   - python bootstrap.py -v 2.1.1
@@ -10,10 +13,15 @@ install:
 
 # command to run tests
 script:
-  bin/test etcd.tests.unit
+  PATH=$PATH:./etcd bin/test
+
+# Add env var to detect it during build
+env: TRAVIS=True
 
 # Only test main development branch and releases
 branches:
   only:
     - master
     - /^release_.*$/
+    - /^travis_.*$/
+
