@@ -256,7 +256,7 @@ class TestWatch(EtcdIntegrationTest):
         for i in range(0, 1):
             value = queue.get()
             log.debug("index: %d: %s" % (i, value))
-            self.assertIn(value, values)
+            self.assertTrue(value in values)
 
         watcher.join(timeout=5)
         changer.join(timeout=5)
