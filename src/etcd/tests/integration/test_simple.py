@@ -77,7 +77,7 @@ class TestSimple(EtcdIntegrationTest):
         except KeyError, e:
             pass
 
-        self.assertNotIn('/test_set', self.client)
+        self.assertFalse('/test_set' in self.client)
 
         set_result = self.client.set('/test_set', 'test-key')
         self.assertEquals('SET', set_result.action)
