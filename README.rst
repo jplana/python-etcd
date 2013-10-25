@@ -5,7 +5,7 @@ A python client for Etcd https://github.com/coreos/etcd
 
 Official documentation: http://python-etcd.readthedocs.org/
 
-.. image:: https://api.travis-ci.org/jplana/python-etcd.png
+.. image:: https://travis-ci.org/jplana/python-etcd.png?branch=master
    :target: https://travis-ci.org/jplana/python-etcd
 
 Installation
