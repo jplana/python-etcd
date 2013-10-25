@@ -15,6 +15,9 @@ install:
 script:
   PATH=$PATH:./etcd bin/test
 
+# Add env var to detect it during build
+env: TRAVIS=True
+
 # Only test main development branch and releases
 branches:
   only:
