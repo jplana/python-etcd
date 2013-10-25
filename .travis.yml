@@ -17,3 +17,5 @@ branches:
   only:
     - master
     - /^release_.*$/
+    - /^travis_.*$/
+
