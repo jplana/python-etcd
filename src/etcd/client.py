@@ -17,6 +17,7 @@ class Client(object):
     """
     Client for etcd, the distributed log service using raft.
     """
+
     def __init__(
             self,
             host='127.0.0.1',
@@ -26,6 +27,7 @@ class Client(object):
             protocol='http',
             cert=None,
             ca_cert=None,
+            allow_reconnect = False
     ):
         """
         Initialize the client.
@@ -47,6 +49,8 @@ class Client(object):
             ca_cert (str): The ca certificate. If pressent it will enable
                            validation.
 
+            allow_reconnect (bool): allow the client to reconnect to another etcd server in the cluster in the case the default one does not respond.
+
         """
         self._host = host
         self._port = port
@@ -56,6 +60,7 @@ class Client(object):
 
         self._read_timeout = read_timeout
         self._allow_redirect = allow_redirect
+        self._allow_reconnect = allow_reconnect
 
         self._MGET = 'GET'
         self._MPOST = 'POST'
@@ -104,6 +109,12 @@ class Client(object):
 
         self.http = urllib3.PoolManager(num_pools=10, **kw)
 
+        self._machines = []
+        self._failed_servers = []
+        if self._allow_reconnect:
+            # we need the set of servers in the cluster in order to try reconnecting upon error.
+            self.machines
+
     @property
     def base_uri(self):
         """URI used by the client to connect to etcd."""
@@ -145,11 +156,12 @@ class Client(object):
         >>> print client.machines
         ['http://127.0.0.1:4001', 'http://127.0.0.1:4002']
         """
-        return [
+        self._machines = [
             node.strip() for node in self.api_execute(
                 self.version_prefix + '/machines',
                 self._MGET).split(',')
         ]
+        return self._machines
 
     @property
     def leader(self):
@@ -359,8 +371,32 @@ class Client(object):
         except:
             raise etcd.EtcdException('Unable to decode server response')
 
+    def _next_server(self):
+        """ Selects the next server in the list of servers, refreshes the server list. """
+        if self._base_uri in self._machines:
+            self._failed_servers.append(self._base_uri)
+
+        for server in self._machines:
+            if server in self._failed_servers:
+                continue
+            self._base_uri = server
+            # Note that this will force the client to test the servers' connection.
+            self.machines
+            #TODO: check if we might want to wipe the failed servers array.
+            break
+
     def api_execute(self, path, method, params=None):
         """ Executes the query. """
+        try:
+            return self.perform_request(path, method, params)
+        except urllib3.exceptions.MaxRetryError:
+            if not self._allow_reconnect:
+                raise
+            self._next_server()
+            return self.perform_request(path, method, params)
+
+    def perform_request(self, path, method, params):
+        """ Performs the request to the server """
         url = self._base_uri + path
 
         if (method == self._MGET) or (method == self._MDELETE):
