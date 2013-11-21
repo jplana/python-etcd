@@ -1,43 +1,49 @@
 import collections
 from client import Client
 
-
 class EtcdResult(collections.namedtuple(
-    'EtcdResult',
-        ['action',
-         'index',
-         'key',
-         'prevValue',
-         'value',
-         'expiration',
-         'ttl',
-         'newKey',
-         'dir',
-         ])):
-
+        'EtcdResult',
+        [
+            'action',
+            'key',
+            'value',
+            'expiration',
+            'ttl',
+            'modifiedIndex',
+            'prevValue',
+            'dir',
+            'kvs'
+        ]
+)):
     def __new__(
             cls,
             action=None,
-            index=None,
             key=None,
-            prevValue=None,
             value=None,
             expiration=None,
             ttl=None,
-            newKey=None,
-            dir=False
+            modifiedIndex=None,
+            prevValue=None,
+            dir=False,
+            kvs=None
     ):
+        if dir and kvs:
+            keys = []
+            for result in kvs:
+                keys.append(EtcdResult(**result))
+            kvs = keys
+
         return super(EtcdResult, cls).__new__(
             cls,
             action,
-            index,
             key,
-            prevValue,
             value,
             expiration,
             ttl,
-            newKey,
-            dir
+            modifiedIndex,
+            prevValue,
+            dir,
+            kvs
         )
 
 
@@ -47,6 +53,41 @@ class EtcdException(Exception):
     """
 
     pass
+
+
+class EtcdError(object):
+    # See https://github.com/coreos/etcd/blob/master/Documentation/errorcode.md
+    error_exceptions = {
+        100: KeyError,
+        101: ValueError,
+        102: KeyError,
+        103: Exception,
+        104: KeyError,
+        105: KeyError,
+        106: KeyError,
+        200: ValueError,
+        201: ValueError,
+        202: ValueError,
+        203: ValueError,
+        300: Exception,
+        301: Exception,
+        400: Exception,
+        401: EtcdException,
+        500: EtcdException
+    }
+
+    @classmethod
+    def handle(errorCode=None, message=None, cause=None, **kwdargs):
+        """ Decodes the error and throws the appropriate error message"""
+        try:
+            msg = "{} : {}".format(message, cause)
+            exc = EtcdError.error_exceptions[errorCode]
+        except:
+            msg = "Unable to decode server response"
+            exc = EtcdException
+        raise exc(msg)
+
+
 
 # Attempt to enable urllib3's SNI support, if possible
 # Blatantly copied from requests.
