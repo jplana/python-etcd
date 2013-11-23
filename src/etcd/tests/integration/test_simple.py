@@ -80,20 +80,19 @@ class TestSimple(EtcdIntegrationTest):
         self.assertFalse('/test_set' in self.client)
 
         set_result = self.client.set('/test_set', 'test-key')
-        self.assertEquals('SET', set_result.action)
+        self.assertEquals('set', set_result.action.lower())
         self.assertEquals('/test_set', set_result.key)
-        self.assertEquals(True, set_result.newKey)
         self.assertEquals('test-key', set_result.value)
 
         self.assertTrue('/test_set' in self.client)
 
         get_result = self.client.get('/test_set')
-        self.assertEquals('GET', get_result.action)
+        self.assertEquals('get', get_result.action.lower())
         self.assertEquals('/test_set', get_result.key)
         self.assertEquals('test-key', get_result.value)
 
         delete_result = self.client.delete('/test_set')
-        self.assertEquals('DELETE', delete_result.action)
+        self.assertEquals('delete', delete_result.action.lower())
         self.assertEquals('/test_set', delete_result.key)
         self.assertEquals('test-key', delete_result.prevValue)
 
@@ -110,8 +109,8 @@ class TestSimple(EtcdIntegrationTest):
         set_result = self.client.set('/subtree/test_set', 'test-key1')
         set_result = self.client.set('/subtree/test_set1', 'test-key2')
         set_result = self.client.set('/subtree/test_set2', 'test-key3')
-        get_result = self.client.get('/subtree')
-        result = [subkey.value for subkey in get_result]
+        get_result = self.client.read('/subtree', recursive=True)
+        result = [subkey.value for subkey in get_result.kvs]
         self.assertEquals(['test-key1', 'test-key2', 'test-key3'], result)
 
 
@@ -296,7 +295,7 @@ class TestWatch(EtcdIntegrationTest):
 
         set_result = self.client.set('/test-key', 'test-value')
         set_result = self.client.set('/test-key', 'test-value0')
-        original_index = int(set_result.index)
+        original_index = int(set_result.modifiedIndex)
         set_result = self.client.set('/test-key', 'test-value1')
         set_result = self.client.set('/test-key', 'test-value2')
 
@@ -374,7 +373,7 @@ class TestWatch(EtcdIntegrationTest):
 
         set_result = self.client.set('/test-key', 'test-value')
         set_result = self.client.set('/test-key', 'test-value0')
-        original_index = int(set_result.index)
+        original_index = int(set_result.modifiedIndex)
         set_result = self.client.set('/test-key', 'test-value1')
         set_result = self.client.set('/test-key', 'test-value2')
 
@@ -576,12 +575,11 @@ class TestClientAuthenticatedAccess(EtcdIntegrationTest):
         )
 
         set_result = client.set('/test_set', 'test-key')
-        self.assertEquals('SET', set_result.action)
+        self.assertEquals('set', set_result.action.lower())
         self.assertEquals('/test_set', set_result.key)
-        self.assertEquals(True, set_result.newKey)
         self.assertEquals('test-key', set_result.value)
 
         get_result = client.get('/test_set')
-        self.assertEquals('GET', get_result.action)
+        self.assertEquals('get', get_result.action.lower())
         self.assertEquals('/test_set', get_result.key)
         self.assertEquals('test-key', get_result.value)

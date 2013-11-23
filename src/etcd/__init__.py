@@ -77,11 +77,11 @@ class EtcdError(object):
     }
 
     @classmethod
-    def handle(errorCode=None, message=None, cause=None, **kwdargs):
+    def handle(cls, errorCode=None, message=None, cause=None, **kwdargs):
         """ Decodes the error and throws the appropriate error message"""
         try:
             msg = "{} : {}".format(message, cause)
-            exc = EtcdError.error_exceptions[errorCode]
+            exc = cls.error_exceptions[errorCode]
         except:
             msg = "Unable to decode server response"
             exc = EtcdException

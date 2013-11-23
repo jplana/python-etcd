@@ -22,7 +22,7 @@ class Client(object):
     _MPUT = 'PUT'
     _MDELETE = 'DELETE'
     _comparison_conditions = ['prevValue', 'prevIndex', 'prevExists']
-
+    _read_options = ['recursive', 'wait', 'waitIndex']
 
     def __init__(
             self,
@@ -201,7 +201,7 @@ class Client(object):
 
 
 
-    def write(self, key, value, ttl=None, **kwdargs)
+    def write(self, key, value, ttl=None, **kwdargs):
         """
         Writes the value for a key, possibly doing atomit Compare-and-Swap
 
@@ -233,10 +233,12 @@ class Client(object):
         if ttl:
             params['ttl'] = ttl
 
-        for condition in self._comparison_conditions:
-            if condition in kwdargs:
-                params[condition] = kwdargs[condition]
-                #TODO: also validate input?
+        for (k,v) in kwdargs.iteritems():
+            if k in self._comparison_conditions:
+                if type(v) == bool:
+                    params[k] = v and "true" or "false"
+                else:
+                    params[k] = v
 
         path = self.key_endpoint + key
         response = self.api_execute(path, self._MPUT, params)
@@ -269,8 +271,15 @@ class Client(object):
         'value'
 
         """
-        #Here we do not check the keyword args for performance.
-        response = self.api_execute(self.key_endpoint + key, self._MGET, kwdargs)
+        params = {}
+        for (k,v) in kwdargs.iteritems():
+            if k in self._read_options:
+                if type(v) == bool:
+                    params[k] = v and "true" or "false"
+                else:
+                    params[k] = v
+
+        response = self.api_execute(self.key_endpoint + key, self._MGET, params)
         return self._result_from_response(response)
 
     def delete(self, key):
@@ -367,18 +376,10 @@ class Client(object):
         'value'
 
         """
-
-        params = None
-        method = self._MGET
         if index:
-            params = {'index': index}
-            method = self._MPOST
-
-        response = self.api_execute(
-            self.watch_endpoint + key,
-            method,
-            params=params)
-        return self._result_from_response(response)
+            return self.read(key, wait = True, waitIndex = index)
+        else:
+            return self.read(key, wait = True)
 
 
     def ethernal_watch(self, key, index=None):
@@ -402,7 +403,7 @@ class Client(object):
         """
         local_index = index
         while True:
-            response = self.watch(key, local_index)
+            response = self.watch(key, index = local_index)
             if local_index is not None:
                 local_index += 1
             yield response
@@ -415,7 +416,7 @@ class Client(object):
             if isinstance(res, list):
                 return [etcd.EtcdResult(**v) for v in res]
             return etcd.EtcdResult(**res)
-        except:
+        except Exception, e:
             raise etcd.EtcdException('Unable to decode server response')
 
     def _next_server(self):
@@ -442,7 +443,7 @@ class Client(object):
                         fields=params,
                         redirect=self.allow_redirect)
 
-                elif method == self._MPOST:
+                elif method == self._MPUT:
                     response = self.http.request_encode_body(
                         method,
                         url,
@@ -458,9 +459,9 @@ class Client(object):
             self._machines_cache = self.machines
             self._machines_cache.remove(self._base_uri)
 
-        if response.status == 200:
+        if response.status in [200,201] :
             return response.data
 
         else:
             #throw the appropriate exception
-            EtcdError.handle(**json.loads(response.data))
+            etcd.EtcdError.handle(**json.loads(response.data))
