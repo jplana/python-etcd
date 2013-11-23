@@ -11,6 +11,7 @@ class EtcdResult(collections.namedtuple(
             'ttl',
             'modifiedIndex',
             'prevValue',
+            'newKey',
             'dir',
             'kvs'
         ]
@@ -24,6 +25,7 @@ class EtcdResult(collections.namedtuple(
             ttl=None,
             modifiedIndex=None,
             prevValue=None,
+            newKey=False,
             dir=False,
             kvs=None
     ):
@@ -42,6 +44,7 @@ class EtcdResult(collections.namedtuple(
             ttl,
             modifiedIndex,
             prevValue,
+            newKey,
             dir,
             kvs
         )

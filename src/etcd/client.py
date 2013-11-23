@@ -417,7 +417,7 @@ class Client(object):
                 return [etcd.EtcdResult(**v) for v in res]
             return etcd.EtcdResult(**res)
         except Exception, e:
-            raise etcd.EtcdException('Unable to decode server response')
+            raise etcd.EtcdException('Unable to decode server response: %s', e)
 
     def _next_server(self):
         """ Selects the next server in the list, refreshes the server list. """
@@ -459,7 +459,11 @@ class Client(object):
             self._machines_cache = self.machines
             self._machines_cache.remove(self._base_uri)
 
-        if response.status in [200,201] :
+        if response.status == 200:
+            return response.data
+        elif response.status == 201:
+            #we still need to know this from the response, I guess
+            response.data['newKey'] = True
             return response.data
 
         else:
