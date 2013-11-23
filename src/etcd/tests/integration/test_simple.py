@@ -455,14 +455,14 @@ class TestAuthenticatedAccess(EtcdIntegrationTest):
             self.fail()
 
         except etcd.EtcdException, e:
-            self.assertEquals(e.message, "Unable to decode server response")
+            self.assertTrue(e.message.startswith("Unable to decode server response"))
 
         try:
             get_result = client.get('/test_set')
             self.fail()
 
         except etcd.EtcdException, e:
-            self.assertEquals(e.message, "Unable to decode server response")
+            self.assertTrue(e.message.startswith("Unable to decode server response"))
 
     def test_get_set_unauthenticated_missing_ca(self):
         """ INTEGRATION: try unauthenticated w/out validation (https->https)"""
@@ -555,14 +555,14 @@ class TestClientAuthenticatedAccess(EtcdIntegrationTest):
             self.fail()
 
         except etcd.EtcdException, e:
-            self.assertEquals(e.message, "Unable to decode server response")
+            self.assertTrue(e.message.startswith("Unable to decode server response"))
 
         try:
             get_result = client.get('/test_set')
             self.fail()
 
         except etcd.EtcdException, e:
-            self.assertEquals(e.message, "Unable to decode server response")
+            self.assertTrue(e.message.startswith("Unable to decode server response"))
 
     def test_get_set_authenticated(self):
         """ INTEGRATION: connecting to server with mutual auth """
