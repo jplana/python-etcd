@@ -6,7 +6,11 @@ import urllib3
 
 from etcd import EtcdException
 
-class TestClientV2ApiInterface(mox.MoxTestBase):
+
+
+
+
+class TestClientApiInterface(mox.MoxTestBase):
 
     def setUp(self):
         mox.MoxTestBase.setUp(self)
@@ -195,7 +199,51 @@ class TestClientV2ApiInterface(mox.MoxTestBase):
         self.assertEquals(res, etcd.EtcdResult(**d))
 
 
-class TestClientV2Request(TestClientV2ApiInterface):
+    def test_not_in(self):
+        """ Can check if key is not in client """
+        self._mock_exception(KeyError, 'Key not Found : /testKey')
+        self.mox.ReplayAll()
+        self.assertTrue('/testey' not in self.client)
+
+    def test_in(self):
+        """ Can check if key is not in client """
+        d = {
+            u'action': u'get',
+            u'modifiedIndex': 190,
+            u'key': u'/testkey',
+            u'value': u'test'
+        }
+        self._mock_get(200, d)
+        self.mox.ReplayAll()
+        self.assertTrue('/testey' in self.client)
+
+    def test_watch(self):
+        d = {
+            u'action': u'get',
+            u'modifiedIndex': 190,
+            u'key': u'/testkey',
+            u'value': u'test'
+        }
+        self._mock_get(200, d)
+        self.mox.ReplayAll()
+        res = self.client.read('/testkey', wait=True)
+        self.assertEquals(res, etcd.EtcdResult(**d))
+
+    def test_watch_index(self):
+        d = {
+            u'action': u'get',
+            u'modifiedIndex': 170,
+            u'key': u'/testkey',
+            u'value': u'testold'
+        }
+        self._mock_get(200, d)
+        self.mox.ReplayAll()
+        res = self.client.read('/testkey', wait=True, waitIndex=True)
+        self.assertEquals(res, etcd.EtcdResult(**d))
+
+
+
+class TestClientRequest(TestClientApiInterface):
 
     def setUp(self):
         mox.MoxTestBase.setUp(self)
@@ -263,3 +311,6 @@ class TestClientV2Request(TestClientV2ApiInterface):
             'test',
             prevValue='oldbog'
         )
+
+    def test_not_in(self):
+        pass
