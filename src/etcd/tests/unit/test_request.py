@@ -7,9 +7,6 @@ import urllib3
 from etcd import EtcdException
 
 
-
-
-
 class TestClientApiInterface(mox.MoxTestBase):
 
     def setUp(self):
@@ -52,7 +49,8 @@ class TestClientApiInterface(mox.MoxTestBase):
         resp = self._prepare_response(status, d)
         self.client.api_execute(
             mox.IsA(str),
-            self.client._MDELETE
+            self.client._MDELETE,
+            mox.IsA(dict)
         ).AndReturn(resp)
 
 
@@ -313,4 +311,7 @@ class TestClientRequest(TestClientApiInterface):
         )
 
     def test_not_in(self):
+        pass
+
+    def test_in(self):
         pass
