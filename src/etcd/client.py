@@ -283,12 +283,13 @@ class Client(object):
         response = self.api_execute(self.key_endpoint + key, self._MGET, params)
         return self._result_from_response(response)
 
-    def delete(self, key):
+    def delete(self, key, recursive = None):
         """
         Removed a key from etcd.
 
         Args:
             key (str):  Key.
+            recursive (bool): if we want to delete a directory, set it to true
 
         Returns:
             client.EtcdResult
@@ -300,7 +301,10 @@ class Client(object):
         '/key'
 
         """
-        response = self.api_execute(self.key_endpoint + key, self._MDELETE)
+        kwds = {}
+        if recursive is not None:
+            kwds['recursive'] = recursive and "true" or "false"
+        response = self.api_execute(self.key_endpoint + key,self._MDELETE,kwds)
         return self._result_from_response(response)
 
 
