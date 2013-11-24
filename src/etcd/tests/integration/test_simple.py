@@ -9,7 +9,7 @@ import tempfile
 import urllib3
 
 import etcd
-import helpers
+from . import helpers
 
 from nose.tools import nottest
 
@@ -74,7 +74,7 @@ class TestSimple(EtcdIntegrationTest):
         try:
             get_result = self.client.get('/test_set')
             assert False
-        except KeyError, e:
+        except KeyError as e:
             pass
 
         self.assertFalse('/test_set' in self.client)
@@ -101,7 +101,7 @@ class TestSimple(EtcdIntegrationTest):
         try:
             get_result = self.client.get('/test_set')
             assert False
-        except KeyError, e:
+        except KeyError as e:
             pass
 
     def test_retrieve_subkeys(self):
@@ -124,7 +124,7 @@ class TestErrors(EtcdIntegrationTest):
         try:
             get_result = self.client.set('/directory', 'test-value')
             assert False
-        except KeyError, e:
+        except KeyError as e:
             pass
 
     def test_test_and_set(self):
@@ -144,7 +144,7 @@ class TestErrors(EtcdIntegrationTest):
                 'old-test-value')
 
             assert False
-        except ValueError, e:
+        except ValueError as e:
             pass
 
 
@@ -454,14 +454,14 @@ class TestAuthenticatedAccess(EtcdIntegrationTest):
             set_result = client.set('/test_set', 'test-key')
             self.fail()
 
-        except etcd.EtcdException, e:
+        except etcd.EtcdException as e:
             self.assertTrue(e.message.startswith("Unable to decode server response"))
 
         try:
             get_result = client.get('/test_set')
             self.fail()
 
-        except etcd.EtcdException, e:
+        except etcd.EtcdException as e:
             self.assertTrue(e.message.startswith("Unable to decode server response"))
 
     def test_get_set_unauthenticated_missing_ca(self):
@@ -480,12 +480,12 @@ class TestAuthenticatedAccess(EtcdIntegrationTest):
         try:
             set_result = client.set('/test_set', 'test-key')
             assert False
-        except urllib3.exceptions.SSLError, e:
+        except urllib3.exceptions.SSLError as e:
             assert True
 
         try:
             get_result = client.get('/test_set')
-        except urllib3.exceptions.SSLError, e:
+        except urllib3.exceptions.SSLError as e:
             assert True
 
     def test_get_set_authenticated(self):
@@ -554,14 +554,14 @@ class TestClientAuthenticatedAccess(EtcdIntegrationTest):
             set_result = client.set('/test_set', 'test-key')
             self.fail()
 
-        except etcd.EtcdException, e:
+        except etcd.EtcdException as e:
             self.assertTrue(e.message.startswith("Unable to decode server response"))
 
         try:
             get_result = client.get('/test_set')
             self.fail()
 
-        except etcd.EtcdException, e:
+        except etcd.EtcdException as e:
             self.assertTrue(e.message.startswith("Unable to decode server response"))
 
     def test_get_set_authenticated(self):

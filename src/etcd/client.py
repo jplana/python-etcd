@@ -234,7 +234,7 @@ class Client(object):
         if ttl:
             params['ttl'] = ttl
 
-        for (k,v) in kwdargs.iteritems():
+        for (k,v) in kwdargs.items():
             if k in self._comparison_conditions:
                 if type(v) == bool:
                     params[k] = v and "true" or "false"
@@ -273,7 +273,7 @@ class Client(object):
 
         """
         params = {}
-        for (k,v) in kwdargs.iteritems():
+        for (k,v) in kwdargs.items():
             if k in self._read_options:
                 if type(v) == bool:
                     params[k] = v and "true" or "false"
@@ -421,7 +421,7 @@ class Client(object):
             if response.status == 201:
                 res['newKey'] = True
             return etcd.EtcdResult(**res)
-        except Exception, e:
+        except Exception as e:
             raise etcd.EtcdException('Unable to decode server response: %s' % e)
 
     def _next_server(self):

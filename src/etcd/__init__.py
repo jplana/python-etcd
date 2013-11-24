@@ -1,5 +1,5 @@
 import collections
-from client import Client
+from .client import Client
 
 class EtcdResult(collections.namedtuple(
         'EtcdResult',
