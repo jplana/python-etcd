@@ -38,21 +38,22 @@ Create a client object
     client = etcd.Client(host='127.0.0.1', port=4003)
     client = etcd.Client(host='127.0.0.1', port=4003, allow_redirect=False) # wont let you run sensitive commands on non-leader machines, default is true
 
-Set a key
+Write a key
 ~~~~~~~~~
 
 .. code:: python
 
-    client.set('/nodes/n1', 1)
+    client.write('/nodes/n1', 1)
     # with ttl
-    client.set('/nodes/n2', 2, ttl=4)  # sets the ttl to 4 seconds
+    client.write('/nodes/n2', 2, ttl=4)  # sets the ttl to 4 seconds
 
-Get a key
+Read a key
 ~~~~~~~~~
 
 .. code:: python
 
-    client.get('/nodes/n2').value
+    client.read('/nodes/n2').value
+    client.read('/nodes', recursive = True) #get all the values of a directory, recursively.
 
 Delete a key
 ~~~~~~~~~~~~
@@ -61,19 +62,23 @@ Delete a key
 
     client.delete('/nodes/n1')
 
-Test and set
+Atomic Compare and Swap
 ~~~~~~~~~~~~
 
 .. code:: python
 
-    client.test_and_set('/nodes/n2', 2, 4) # will set /nodes/n2 's value to 2 only if its previous value was 4
+    client.write('/nodes/n2', 2, prevValue = 4) # will set /nodes/n2 's value to 2 only if its previous value was 4 and
+    client.write('/nodes/n2', 2, prevExists = False) # will set /nodes/n2 's value to 2 only if the key did not exist before
+    client.write('/nodes/n2', 2, prevIndex = 30) # will set /nodes/n2 's value to 2 only if the key was last modified at index 30
+
 
 Watch a key
 ~~~~~~~~~~~
 
 .. code:: python
 
-    client.watch('/nodes/n1') # will wait till the key is changed, and return once its changed
+    client.read('/nodes/n1', watch = True) # will wait till the key is changed, and return once its changed
+    client.read('/nodes/n1', watch = True, watchIndex = 10) # get all changes on this key starting from index 10
 
 List sub keys
 ~~~~~~~~~~~~~
