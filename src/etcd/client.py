@@ -17,6 +17,7 @@ class Client(object):
     """
     Client for etcd, the distributed log service using raft.
     """
+
     def __init__(
             self,
             host='127.0.0.1',
@@ -26,12 +27,15 @@ class Client(object):
             protocol='http',
             cert=None,
             ca_cert=None,
+            allow_reconnect=False,
     ):
         """
         Initialize the client.
 
         Args:
-            host (str):  IP to connect to.
+            host (mixed):
+                           If a string, IP to connect to.
+                           If a tuple ((host, port), (host, port), ...)
 
             port (int):  Port used to connect to etcd.
 
@@ -47,15 +51,33 @@ class Client(object):
             ca_cert (str): The ca certificate. If pressent it will enable
                            validation.
 
+            allow_reconnect (bool): allow the client to reconnect to another
+                                    etcd server in the cluster in the case the
+                                    default one does not respond.
+
         """
-        self._host = host
-        self._port = port
+        self._machines_cache = []
+
         self._protocol = protocol
-        self._base_uri = "%s://%s:%d" % (protocol, host, port)
+
+        def uri(protocol, host, port):
+            return '%s://%s:%d' % (protocol, host, port)
+
+        if not isinstance(host, tuple):
+            self._host = host
+            self._port = port
+        else:
+            self._host, self._port = host[0]
+            self._machines_cache.extend(
+                [uri(self._protocol, *conn) for conn in host])
+
+        self._base_uri = uri(self._protocol, self._host, self._port)
+
         self.version_prefix = '/v1'
 
         self._read_timeout = read_timeout
         self._allow_redirect = allow_redirect
+        self._allow_reconnect = allow_reconnect
 
         self._MGET = 'GET'
         self._MPOST = 'POST'
@@ -103,6 +125,14 @@ class Client(object):
                 kw['cert_reqs'] = ssl.CERT_REQUIRED
 
         self.http = urllib3.PoolManager(num_pools=10, **kw)
+
+        if self._allow_reconnect:
+            # we need the set of servers in the cluster in order to try
+            # reconnecting upon error.
+            self._machines_cache = self.machines
+            self._machines_cache.remove(self._base_uri)
+        else:
+            self._machines_cache = []
 
     @property
     def base_uri(self):
@@ -359,27 +389,49 @@ class Client(object):
         except:
             raise etcd.EtcdException('Unable to decode server response')
 
+    def _next_server(self):
+        """ Selects the next server in the list, refreshes the server list. """
+        try:
+            return self._machines_cache.pop()
+        except IndexError:
+            raise etcd.EtcdException('No more machines in the cluster')
+
     def api_execute(self, path, method, params=None):
         """ Executes the query. """
-        url = self._base_uri + path
 
-        if (method == self._MGET) or (method == self._MDELETE):
-            response = self.http.request(
-                method,
-                url,
-                fields=params,
-                redirect=self.allow_redirect)
+        some_request_failed = False
+        response = False
 
-        elif method == self._MPOST:
-            response = self.http.request_encode_body(
-                method,
-                url,
-                fields=params,
-                encode_multipart=False,
-                redirect=self.allow_redirect)
+        while not response:
+            try:
+                url = self._base_uri + path
+
+                if (method == self._MGET) or (method == self._MDELETE):
+                    response = self.http.request(
+                        method,
+                        url,
+                        fields=params,
+                        redirect=self.allow_redirect)
+
+                elif method == self._MPOST:
+                    response = self.http.request_encode_body(
+                        method,
+                        url,
+                        fields=params,
+                        encode_multipart=False,
+                        redirect=self.allow_redirect)
+
+            except urllib3.exceptions.MaxRetryError:
+                self._base_uri = self._next_server()
+                some_request_failed = True
+
+        if some_request_failed:
+            self._machines_cache = self.machines
+            self._machines_cache.remove(self._base_uri)
 
         if response.status == 200:
             return response.data
+
         else:
             try:
                 error = json.loads(response.data)
