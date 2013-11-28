@@ -15,6 +15,7 @@ import logging
 
 
 class Client(object):
+
     """
     Client for etcd, the distributed log service using raft.
     """
@@ -101,7 +102,7 @@ class Client(object):
                     kw['cert_file'] = cert[0]
                     kw['key_file'] = cert[1]
                 else:
-                    #combined certificate
+                    # combined certificate
                     kw['cert_file'] = cert
 
             if ca_cert:
@@ -185,7 +186,6 @@ class Client(object):
         """
         return self.version_prefix + '/keys'
 
-
     def __contains__(self, key):
         """
         Check if a key is available in the cluster.
@@ -198,9 +198,6 @@ class Client(object):
             return True
         except KeyError:
             return False
-
-
-
 
     def write(self, key, value, ttl=None, **kwdargs):
         """
@@ -234,7 +231,7 @@ class Client(object):
         if ttl:
             params['ttl'] = ttl
 
-        for (k,v) in kwdargs.items():
+        for (k, v) in kwdargs.items():
             if k in self._comparison_conditions:
                 if type(v) == bool:
                     params[k] = v and "true" or "false"
@@ -244,7 +241,6 @@ class Client(object):
         path = self.key_endpoint + key
         response = self.api_execute(path, self._MPUT, params)
         return self._result_from_response(response)
-
 
     def read(self, key, **kwdargs):
         """
@@ -273,17 +269,18 @@ class Client(object):
 
         """
         params = {}
-        for (k,v) in kwdargs.items():
+        for (k, v) in kwdargs.items():
             if k in self._read_options:
                 if type(v) == bool:
                     params[k] = v and "true" or "false"
                 else:
                     params[k] = v
 
-        response = self.api_execute(self.key_endpoint + key, self._MGET, params)
+        response = self.api_execute(
+            self.key_endpoint + key, self._MGET, params)
         return self._result_from_response(response)
 
-    def delete(self, key, recursive = None):
+    def delete(self, key, recursive=None):
         """
         Removed a key from etcd.
 
@@ -304,12 +301,11 @@ class Client(object):
         kwds = {}
         if recursive is not None:
             kwds['recursive'] = recursive and "true" or "false"
-        response = self.api_execute(self.key_endpoint + key,self._MDELETE,kwds)
+        response = self.api_execute(
+            self.key_endpoint + key, self._MDELETE, kwds)
         return self._result_from_response(response)
 
-
     # Higher-level methods on top of the basic primitives
-
     def test_and_set(self, key, value, prev_value, ttl=None):
         """
         Atomic test & set operation.
@@ -333,11 +329,10 @@ class Client(object):
         'new'
 
         """
-        return self.write(key, value, prevValue = prev_value, ttl = ttl)
+        return self.write(key, value, prevValue=prev_value, ttl=ttl)
 
     def set(self, key, value, ttl=None):
-        return self.write(key, value, ttl = ttl)
-
+        return self.write(key, value, ttl=ttl)
 
     def get(self, key):
         """
@@ -358,7 +353,7 @@ class Client(object):
 
         """
         response = self.api_execute(self.key_endpoint + key,
-                                        self._MGET, {'recursive': "true"})
+                                    self._MGET, {'recursive': "true"})
 
         return self._result_from_response(response)
 
@@ -382,10 +377,9 @@ class Client(object):
 
         """
         if index:
-            return self.read(key, wait = True, waitIndex = index)
+            return self.read(key, wait=True, waitIndex=index)
         else:
-            return self.read(key, wait = True)
-
+            return self.read(key, wait=True)
 
     def ethernal_watch(self, key, index=None):
         """
@@ -408,11 +402,10 @@ class Client(object):
         """
         local_index = index
         while True:
-            response = self.watch(key, index = local_index)
+            response = self.watch(key, index=local_index)
             if local_index is not None:
                 local_index += 1
             yield response
-
 
     def _result_from_response(self, response):
         """ Creates an EtcdResult from json dictionary """
@@ -422,7 +415,8 @@ class Client(object):
                 res['newKey'] = True
             return etcd.EtcdResult(**res)
         except Exception as e:
-            raise etcd.EtcdException('Unable to decode server response: %s' % e)
+            raise etcd.EtcdException(
+                'Unable to decode server response: %s' % e)
 
     def _next_server(self):
         """ Selects the next server in the list, refreshes the server list. """
@@ -464,9 +458,9 @@ class Client(object):
             self._machines_cache = self.machines
             self._machines_cache.remove(self._base_uri)
 
-        if response.status in [200,201]:
+        if response.status in [200, 201]:
             return response
 
         else:
-            #throw the appropriate exception
+            # throw the appropriate exception
             etcd.EtcdError.handle(**json.loads(response.data.decode('utf-8')))

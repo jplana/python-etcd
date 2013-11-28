@@ -7,7 +7,9 @@ except ImportError:
 
 from etcd import EtcdException
 
+
 class FakeHTTPResponse(object):
+
     def __init__(self, status, data=''):
         self.status = status
         self.data = data.encode('utf-8')
@@ -19,11 +21,11 @@ class TestClientRequest(unittest.TestCase):
         """ Can request machines """
         client = etcd.Client()
         client.api_execute = mock.Mock(
-            return_value= FakeHTTPResponse(200, data =
-            "http://127.0.0.1:4002,"
-            " http://127.0.0.1:4001,"
-            " http://127.0.0.1:4003,"
-            " http://127.0.0.1:4001")
+            return_value=FakeHTTPResponse(200, data=
+                                          "http://127.0.0.1:4002,"
+                                          " http://127.0.0.1:4001,"
+                                          " http://127.0.0.1:4003,"
+                                          " http://127.0.0.1:4001")
         )
 
         assert client.machines == [
@@ -36,7 +38,8 @@ class TestClientRequest(unittest.TestCase):
     def test_leader(self):
         """ Can request the leader """
         client = etcd.Client()
-        client.api_execute = mock.Mock(return_value=FakeHTTPResponse(200,"http://127.0.0.1:7002"))
+        client.api_execute = mock.Mock(
+            return_value=FakeHTTPResponse(200, "http://127.0.0.1:7002"))
         result = client.leader
         self.assertEquals('http://127.0.0.1:7002', result)
 
@@ -45,13 +48,13 @@ class TestClientRequest(unittest.TestCase):
         client = etcd.Client()
         client.api_execute = mock.Mock(
             return_value=FakeHTTPResponse(201,
-            '{"action":"SET",'
-            '"key":"/testkey",'
-            '"value":"test",'
-            '"newKey":true,'
-            '"expiration":"2013-09-14T00:56:59.316195568+02:00",'
-            '"ttl":19,"modifiedIndex":183}')
-            )
+                                          '{"action":"SET",'
+                                          '"key":"/testkey",'
+                                          '"value":"test",'
+                                          '"newKey":true,'
+                                          '"expiration":"2013-09-14T00:56:59.316195568+02:00",'
+                                          '"ttl":19,"modifiedIndex":183}')
+        )
 
         result = client.set('/testkey', 'test', ttl=19)
 
@@ -70,12 +73,12 @@ class TestClientRequest(unittest.TestCase):
         client = etcd.Client()
         client.api_execute = mock.Mock(
             return_value=FakeHTTPResponse(200,
-            '{"action":"SET",'
-            '"key":"/testkey",'
-            '"prevValue":"test",'
-            '"value":"newvalue",'
-            '"expiration":"2013-09-14T02:09:44.24390976+02:00",'
-            '"ttl":49,"modifiedIndex":203}')
+                                          '{"action":"SET",'
+                                          '"key":"/testkey",'
+                                          '"prevValue":"test",'
+                                          '"value":"newvalue",'
+                                          '"expiration":"2013-09-14T02:09:44.24390976+02:00",'
+                                          '"ttl":49,"modifiedIndex":203}')
         )
         result = client.test_and_set('/testkey', 'newvalue', 'test', ttl=19)
         self.assertEquals(
@@ -111,12 +114,12 @@ class TestClientRequest(unittest.TestCase):
         """ Can delete a value """
         client = etcd.Client()
         client.api_execute = mock.Mock(
-            return_value= FakeHTTPResponse(200,
-            '{"action":"DELETE",'
-            '"key":"/testkey",'
-            '"prevValue":"test",'
-            '"expiration":"2013-09-14T01:06:35.5242587+02:00",'
-            '"modifiedIndex":189}')
+            return_value=FakeHTTPResponse(200,
+                                          '{"action":"DELETE",'
+                                          '"key":"/testkey",'
+                                          '"prevValue":"test",'
+                                          '"expiration":"2013-09-14T01:06:35.5242587+02:00",'
+                                          '"modifiedIndex":189}')
         )
         result = client.delete('/testkey')
         self.assertEquals(etcd.EtcdResult(
@@ -130,12 +133,12 @@ class TestClientRequest(unittest.TestCase):
         """ Can get a value """
         client = etcd.Client()
         client.api_execute = mock.Mock(
-            return_value= FakeHTTPResponse(200,
-            '{"action":"GET",'
-            '"key":"/testkey",'
-            '"value":"test",'
-            '"modifiedIndex":190}')
-            )
+            return_value=FakeHTTPResponse(200,
+                                          '{"action":"GET",'
+                                          '"key":"/testkey",'
+                                          '"value":"test",'
+                                          '"modifiedIndex":190}')
+        )
 
         result = client.get('/testkey')
         self.assertEquals(etcd.EtcdResult(
@@ -164,11 +167,11 @@ class TestClientRequest(unittest.TestCase):
         client = etcd.Client()
         client.api_execute = mock.Mock(
             return_value=FakeHTTPResponse(200,
-            '{"action":"GET",'
-            '"key":"/testkey",'
-            '"value":"test",'
-            '"modifiedIndex":190}')
-            )
+                                          '{"action":"GET",'
+                                          '"key":"/testkey",'
+                                          '"value":"test",'
+                                          '"modifiedIndex":190}')
+        )
         result = '/testkey' in client
 
         self.assertEquals(True, result)
@@ -178,14 +181,14 @@ class TestClientRequest(unittest.TestCase):
         client = etcd.Client()
         client.api_execute = mock.Mock(
             return_value=FakeHTTPResponse(200,
-            '{"action":"SET",'
-            '"key":"/testkey",'
-            '"value":"test",'
-            '"newKey":true,'
-            '"expiration":"2013-09-14T01:35:07.623681365+02:00",'
-            '"ttl":19,'
-            '"modifiedIndex":192}')
-            )
+                                          '{"action":"SET",'
+                                          '"key":"/testkey",'
+                                          '"value":"test",'
+                                          '"newKey":true,'
+                                          '"expiration":"2013-09-14T01:35:07.623681365+02:00",'
+                                          '"ttl":19,'
+                                          '"modifiedIndex":192}')
+        )
         result = client.watch('/testkey')
         self.assertEquals(
             etcd.EtcdResult(
@@ -202,14 +205,14 @@ class TestClientRequest(unittest.TestCase):
         client = etcd.Client()
         client.api_execute = mock.Mock(
             return_value=FakeHTTPResponse(200,
-            '{"action":"SET",'
-            '"key":"/testkey",'
-            '"value":"test",'
-            '"newKey":true,'
-            '"expiration":"2013-09-14T01:35:07.623681365+02:00",'
-            '"ttl":19,'
-            '"modifiedIndex":180}')
-            )
+                                          '{"action":"SET",'
+                                          '"key":"/testkey",'
+                                          '"value":"test",'
+                                          '"newKey":true,'
+                                          '"expiration":"2013-09-14T01:35:07.623681365+02:00",'
+                                          '"ttl":19,'
+                                          '"modifiedIndex":180}')
+        )
         result = client.watch('/testkey', index=180)
         self.assertEquals(
             etcd.EtcdResult(
@@ -223,6 +226,7 @@ class TestClientRequest(unittest.TestCase):
 
 
 class TestEventGenerator(object):
+
     def check_watch(self, result):
         assert etcd.EtcdResult(
             **{u'action': u'SET',
@@ -238,14 +242,14 @@ class TestEventGenerator(object):
         client = etcd.Client()
         client.api_execute = mock.Mock(
             return_value=FakeHTTPResponse(200,
-            '{"action":"SET",'
-            '"key":"/testkey",'
-            '"value":"test",'
-            '"newKey":true,'
-            '"expiration":"2013-09-14T01:35:07.623681365+02:00",'
-            '"ttl":19,'
-            '"modifiedIndex":180}')
-            )
+                                          '{"action":"SET",'
+                                          '"key":"/testkey",'
+                                          '"value":"test",'
+                                          '"newKey":true,'
+                                          '"expiration":"2013-09-14T01:35:07.623681365+02:00",'
+                                          '"ttl":19,'
+                                          '"modifiedIndex":180}')
+        )
         for result in range(1, 5):
             result = next(client.ethernal_watch('/testkey', index=180))
             yield self.check_watch, result
@@ -345,7 +349,8 @@ class TestClientApiExecutor(unittest.TestCase):
             client.api_execute('v1/keys/testkey', client._MGET)
             self.fail()
         except etcd.EtcdException as e:
-            self.assertTrue(str(e).startswith("Unable to decode server response"))
+            self.assertTrue(
+                str(e).startswith("Unable to decode server response"))
 
     def test_get_error_request_invalid(self):
         """ http get error request invalid """
@@ -353,7 +358,7 @@ class TestClientApiExecutor(unittest.TestCase):
         response = FakeHTTPResponse(status=200,
                                     data='{){){)*garbage*')
         client.http.request = mock.Mock(return_value=response)
-        self.assertRaises(etcd.EtcdException, client.get,'/testkey')
+        self.assertRaises(etcd.EtcdException, client.get, '/testkey')
 
     def test_get_error_invalid(self):
         """ http get error request invalid """
@@ -361,4 +366,5 @@ class TestClientApiExecutor(unittest.TestCase):
         response = FakeHTTPResponse(status=400,
                                     data='{){){)*garbage*')
         client.http.request = mock.Mock(return_value=response)
-        self.assertRaises(ValueError, client.api_execute, '/v2/keys/testkey', client._MGET)
+        self.assertRaises(ValueError, client.api_execute,
+                          '/v2/keys/testkey', client._MGET)

@@ -149,6 +149,7 @@ class TestErrors(EtcdIntegrationTest):
 
 
 class TestClusterFunctions(EtcdIntegrationTest):
+
     @classmethod
     def setUpClass(cls):
         program = cls._get_exe()
@@ -309,7 +310,7 @@ class TestWatch(EtcdIntegrationTest):
         def watch_value(key, index, queue):
             c = etcd.Client(port=6001)
             for i in range(0, 3):
-                queue.put(c.watch(key, index=index+i).value)
+                queue.put(c.watch(key, index=index + i).value)
 
         proc = multiprocessing.Process(
             target=change_value, args=('/test-key', 'test-value3',))
@@ -450,25 +451,13 @@ class TestAuthenticatedAccess(EtcdIntegrationTest):
 
         client = etcd.Client(port=6001)
 
-        try:
-            set_result = client.set('/test_set', 'test-key')
-            self.fail()
+        # Since python 3 raises a MaxRetryError here, this gets caught in
+        # different code blocks in python 2 and python 3, thus messages are
+        # different. Python 3 does the right thing(TM), for the record
+        self.assertRaises(
+            etcd.EtcdException, client.set, '/test_set', 'test-key')
 
-        except etcd.EtcdException as e:
-            self.assertTrue(str(e).startswith("Unable to decode server response"))
-        except urllib3.exceptions.MaxRetryError:
-            #Python 3 raises an urllib3 exception. This makes sense in fact
-            assert True
-
-        try:
-            get_result = client.get('/test_set')
-            self.fail()
-
-        except etcd.EtcdException as e:
-            self.assertTrue(str(e).startswith("Unable to decode server response"))
-        except urllib3.exceptions.MaxRetryError:
-            #Python 3 raises an urllib3 exception. This makes sense in fact
-            assert True
+        self.assertRaises(etcd.EtcdException, client.get, '/test_set')
 
     def test_get_set_unauthenticated_missing_ca(self):
         """ INTEGRATION: try unauthenticated w/out validation (https->https)"""
@@ -546,7 +535,6 @@ class TestClientAuthenticatedAccess(EtcdIntegrationTest):
             with open(cls.client_cert_path, 'r') as g:
                 f.write(g.read())
 
-
         cls.processHelper.run(number=3,
                               proc_args=[
                                   '-clientCert=%s' % server_cert_path,
@@ -559,23 +547,10 @@ class TestClientAuthenticatedAccess(EtcdIntegrationTest):
 
         client = etcd.Client(port=6001)
 
-        try:
-            set_result = client.set('/test_set', 'test-key')
-            self.fail()
-
-        except etcd.EtcdException as e:
-            self.assertTrue(e.message.startswith("Unable to decode server response"))
-        except urllib3.exceptions.MaxRetryError:
-            assert True
-
-        try:
-            get_result = client.get('/test_set')
-            self.fail()
-
-        except etcd.EtcdException as e:
-            self.assertTrue(e.message.startswith("Unable to decode server response"))
-        except urllib3.exceptions.MaxRetryError:
-            assert True
+        # See above for the reason of this change
+        self.assertRaises(
+            etcd.EtcdException, client.set, '/test_set', 'test-key')
+        self.assertRaises(etcd.EtcdException, client.get, '/test_set')
 
     def test_get_set_authenticated(self):
         """ INTEGRATION: connecting to server with mutual auth """

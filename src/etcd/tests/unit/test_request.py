@@ -16,8 +16,6 @@ class TestClientApiInterface(unittest.TestCase):
     def setUp(self):
         self.client = etcd.Client()
 
-
-
     def _prepare_response(self, s, d):
         if isinstance(d, dict):
             data = json.dumps(d).encode('utf-8')
@@ -29,19 +27,18 @@ class TestClientApiInterface(unittest.TestCase):
         r.data = data
         return r
 
-
     def _mock_api(self, status, d):
         resp = self._prepare_response(status, d)
         self.client.api_execute = mock.create_autospec(
-            self.client.api_execute, return_value = resp)
-
+            self.client.api_execute, return_value=resp)
 
     def _mock_exception(self, exc, msg):
         self.client.api_execute = mock.Mock(side_effect=exc(msg))
 
     def test_machines(self):
         """ Can request machines """
-        data = ['http://127.0.0.1:4001','http://127.0.0.1:4002','http://127.0.0.1:4003']
+        data = ['http://127.0.0.1:4001',
+                'http://127.0.0.1:4002', 'http://127.0.0.1:4003']
         d = ','.join(data)
         self._mock_api(200, d)
         self.assertEquals(data, self.client.machines)
@@ -89,13 +86,13 @@ class TestClientApiInterface(unittest.TestCase):
              u'ttl': 19,
              u'value': u'test'}
 
-        self._mock_api(200,d)
-        res = self.client.write('/testkey', 'test', prevValue = 'test_old')
+        self._mock_api(200, d)
+        res = self.client.write('/testkey', 'test', prevValue='test_old')
         self.assertEquals(res, etcd.EtcdResult(**d))
 
     def test_compare_and_swap_failure(self):
         """ Exception will be raised if prevValue != value in test_set """
-        self._mock_exception(ValueError,'Test Failed : [ 1!=3 ]')
+        self._mock_exception(ValueError, 'Test Failed : [ 1!=3 ]')
         self.assertRaises(
             ValueError,
             self.client.write,
@@ -122,7 +119,7 @@ class TestClientApiInterface(unittest.TestCase):
             u'key': u'/testkey',
             u'value': u'test'
         }
-        self._mock_api(200,d)
+        self._mock_api(200, d)
         res = self.client.read('/testKey')
         self.assertEquals(res, etcd.EtcdResult(**d))
 
@@ -146,10 +143,9 @@ class TestClientApiInterface(unittest.TestCase):
                 }
             ]
         }
-        self._mock_api(200,d)
-        res = self.client.read('/testDir', recursive = True)
+        self._mock_api(200, d)
+        res = self.client.read('/testDir', recursive=True)
         self.assertEquals(res, etcd.EtcdResult(**d))
-
 
     def test_not_in(self):
         """ Can check if key is not in client """
@@ -191,38 +187,37 @@ class TestClientApiInterface(unittest.TestCase):
         res = self.client.read('/testkey', wait=True, waitIndex=True)
         self.assertEquals(res, etcd.EtcdResult(**d))
 
+
 class TestClientRequest(TestClientApiInterface):
 
     def setUp(self):
         self.client = etcd.Client()
 
-
     def _mock_api(self, status, d):
         resp = self._prepare_response(status, d)
         self.client.http.request_encode_body = mock.create_autospec(
-            self.client.http.request_encode_body, return_value = resp
+            self.client.http.request_encode_body, return_value=resp
         )
         self.client.http.request = mock.create_autospec(
-            self.client.http.request, return_value = resp
+            self.client.http.request, return_value=resp
         )
 
     def _mock_error(self, error_code, msg, cause, method='PUT', fields=None):
         resp = self._prepare_response(
             500,
-            {'errorCode': error_code,'message': msg, 'cause': cause}
+            {'errorCode': error_code, 'message': msg, 'cause': cause}
         )
         self.client.http.request_encode_body = mock.create_autospec(
-            self.client.http.request_encode_body, return_value = resp
+            self.client.http.request_encode_body, return_value=resp
         )
         self.client.http.request = mock.create_autospec(
-            self.client.http.request, return_value = resp
+            self.client.http.request, return_value=resp
         )
-
-
 
     def test_compare_and_swap_failure(self):
         """ Exception will be raised if prevValue != value in test_set """
-        self._mock_error(200, 'Test Failed', '[ 1!=3 ]', fields={'prevValue': 'oldbog'})
+        self._mock_error(200, 'Test Failed',
+                         '[ 1!=3 ]', fields={'prevValue': 'oldbog'})
         self.assertRaises(
             ValueError,
             self.client.write,

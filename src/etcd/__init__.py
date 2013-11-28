@@ -1,6 +1,7 @@
 import collections
 from .client import Client
 
+
 class EtcdResult(collections.namedtuple(
         'EtcdResult',
         [
@@ -16,6 +17,7 @@ class EtcdResult(collections.namedtuple(
             'kvs'
         ]
 )):
+
     def __new__(
             cls,
             action=None,
@@ -51,6 +53,7 @@ class EtcdResult(collections.namedtuple(
 
 
 class EtcdException(Exception):
+
     """
     Generic Etcd Exception.
     """
@@ -89,7 +92,6 @@ class EtcdError(object):
             msg = "Unable to decode server response"
             exc = EtcdException
         raise exc(msg)
-
 
 
 # Attempt to enable urllib3's SNI support, if possible
