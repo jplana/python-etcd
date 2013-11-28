@@ -455,7 +455,7 @@ class TestAuthenticatedAccess(EtcdIntegrationTest):
             self.fail()
 
         except etcd.EtcdException as e:
-            self.assertTrue(e.message.startswith("Unable to decode server response"))
+            self.assertTrue(str(e).startswith("Unable to decode server response"))
         except urllib3.exceptions.MaxRetryError:
             #Python 3 raises an urllib3 exception. This makes sense in fact
             assert True
@@ -465,7 +465,7 @@ class TestAuthenticatedAccess(EtcdIntegrationTest):
             self.fail()
 
         except etcd.EtcdException as e:
-            self.assertTrue(e.message.startswith("Unable to decode server response"))
+            self.assertTrue(str(e).startswith("Unable to decode server response"))
         except urllib3.exceptions.MaxRetryError:
             #Python 3 raises an urllib3 exception. This makes sense in fact
             assert True
