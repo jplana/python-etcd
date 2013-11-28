@@ -85,7 +85,7 @@ class TestingCA(object):
             serial = uuid.uuid4().int
         else:
             md5_hash = hashlib.md5()
-            md5_hash.update(cn)
+            md5_hash.update(cn.encode('utf-8'))
             serial = int(md5_hash.hexdigest(), 36)
             cert.get_subject().CN = cn
 
@@ -100,27 +100,28 @@ class TestingCA(object):
         cert.set_issuer(cert.get_subject())
         cert.set_pubkey(k)
         cert.add_extensions([
-            crypto.X509Extension("basicConstraints", False,
-                                 "CA:TRUE"),
-            crypto.X509Extension("keyUsage", False,
-                                 "keyCertSign, cRLSign"),
-            crypto.X509Extension("subjectKeyIdentifier", False, "hash",
+            crypto.X509Extension("basicConstraints".encode('ascii'), False,
+                                 "CA:TRUE".encode('ascii')),
+            crypto.X509Extension("keyUsage".encode('ascii'), False,
+                                 "keyCertSign, cRLSign".encode('ascii')),
+            crypto.X509Extension("subjectKeyIdentifier".encode('ascii'), False,
+                                 "hash".encode('ascii'),
                                  subject=cert),
         ])
 
         cert.add_extensions([
             crypto.X509Extension(
-                "authorityKeyIdentifier", False,
-                "keyid:always", issuer=cert)
+                "authorityKeyIdentifier".encode('ascii'), False,
+                "keyid:always".encode('ascii'), issuer=cert)
         ])
 
         cert.sign(k, 'sha1')
 
-        with file(cert_path, 'w') as f:
-            f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
+        with open(cert_path, 'w') as f:
+            f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode('utf-8'))
 
-        with file(key_path, 'w') as f:
-            f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k))
+        with open(key_path, 'w') as f:
+            f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k).decode('utf-8'))
 
         return cert, k
 
@@ -134,7 +135,7 @@ class TestingCA(object):
             serial = uuid.uuid4().int
         else:
             md5_hash = hashlib.md5()
-            md5_hash.update(cn)
+            md5_hash.update(cn.encode('utf-8'))
             serial = int(md5_hash.hexdigest(), 36)
             cert.get_subject().CN = cn
 
@@ -146,13 +147,13 @@ class TestingCA(object):
 
         cert.add_extensions([
             crypto.X509Extension(
-                "keyUsage",
+                "keyUsage".encode('ascii'),
                 False,
-                "nonRepudiation,digitalSignature,keyEncipherment"),
+                "nonRepudiation,digitalSignature,keyEncipherment".encode('ascii')),
             crypto.X509Extension(
-                "extendedKeyUsage",
+                "extendedKeyUsage".encode('ascii'),
                 False,
-                "clientAuth,serverAuth"),
+                "clientAuth,serverAuth".encode('ascii')),
         ])
 
         cert.gmtime_adj_notBefore(0)
@@ -163,8 +164,8 @@ class TestingCA(object):
 
         cert.sign(ca_key, 'sha1')
 
-        with file(cert_path, 'w') as f:
-            f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert))
+        with open(cert_path, 'w') as f:
+            f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode('utf-8'))
 
-        with file(key_path, 'w') as f:
-            f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k))
+        with open(key_path, 'w') as f:
+            f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k).decode('utf-8'))

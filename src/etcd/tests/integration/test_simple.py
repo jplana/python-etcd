@@ -347,7 +347,7 @@ class TestWatch(EtcdIntegrationTest):
         def watch_value(key, queue):
             c = etcd.Client(port=6001)
             for i in range(0, 3):
-                event = c.ethernal_watch(key).next().value
+                event = next(c.ethernal_watch(key)).value
                 queue.put(event)
 
         changer = multiprocessing.Process(
@@ -387,7 +387,7 @@ class TestWatch(EtcdIntegrationTest):
             c = etcd.Client(port=6001)
             iterevents = c.ethernal_watch(key, index=index)
             for i in range(0, 3):
-                queue.put(iterevents.next().value)
+                queue.put(next(iterevents).value)
 
         proc = multiprocessing.Process(
             target=change_value, args=('/test-key', 'test-value3',))
@@ -456,6 +456,9 @@ class TestAuthenticatedAccess(EtcdIntegrationTest):
 
         except etcd.EtcdException as e:
             self.assertTrue(e.message.startswith("Unable to decode server response"))
+        except urllib3.exceptions.MaxRetryError:
+            #Python 3 raises an urllib3 exception. This makes sense in fact
+            assert True
 
         try:
             get_result = client.get('/test_set')
@@ -463,6 +466,9 @@ class TestAuthenticatedAccess(EtcdIntegrationTest):
 
         except etcd.EtcdException as e:
             self.assertTrue(e.message.startswith("Unable to decode server response"))
+        except urllib3.exceptions.MaxRetryError:
+            #Python 3 raises an urllib3 exception. This makes sense in fact
+            assert True
 
     def test_get_set_unauthenticated_missing_ca(self):
         """ INTEGRATION: try unauthenticated w/out validation (https->https)"""
@@ -534,9 +540,12 @@ class TestClientAuthenticatedAccess(EtcdIntegrationTest):
             port_range_start=6001,
             internal_port_range_start=8001)
 
-        with file(cls.client_all_cert, 'w') as f:
-            f.write(file(cls.client_key_path).read())
-            f.write(file(cls.client_cert_path).read())
+        with open(cls.client_all_cert, 'w') as f:
+            with open(cls.client_key_path, 'r') as g:
+                f.write(g.read())
+            with open(cls.client_cert_path, 'r') as g:
+                f.write(g.read())
+
 
         cls.processHelper.run(number=3,
                               proc_args=[
@@ -556,6 +565,8 @@ class TestClientAuthenticatedAccess(EtcdIntegrationTest):
 
         except etcd.EtcdException as e:
             self.assertTrue(e.message.startswith("Unable to decode server response"))
+        except urllib3.exceptions.MaxRetryError:
+            assert True
 
         try:
             get_result = client.get('/test_set')
@@ -563,6 +574,8 @@ class TestClientAuthenticatedAccess(EtcdIntegrationTest):
 
         except etcd.EtcdException as e:
             self.assertTrue(e.message.startswith("Unable to decode server response"))
+        except urllib3.exceptions.MaxRetryError:
+            assert True
 
     def test_get_set_authenticated(self):
         """ INTEGRATION: connecting to server with mutual auth """

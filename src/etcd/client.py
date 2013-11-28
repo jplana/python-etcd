@@ -162,7 +162,7 @@ class Client(object):
         return [
             node.strip() for node in self.api_execute(
                 self.version_prefix + '/machines',
-                self._MGET).data.split(',')
+                self._MGET).data.decode('utf-8').split(',')
         ]
 
     @property
@@ -176,7 +176,7 @@ class Client(object):
         """
         return self.api_execute(
             self.version_prefix + '/leader',
-            self._MGET).data
+            self._MGET).data.decode('ascii')
 
     @property
     def key_endpoint(self):
@@ -417,7 +417,7 @@ class Client(object):
     def _result_from_response(self, response):
         """ Creates an EtcdResult from json dictionary """
         try:
-            res = json.loads(response.data)
+            res = json.loads(response.data.decode('utf-8'))
             if response.status == 201:
                 res['newKey'] = True
             return etcd.EtcdResult(**res)
@@ -469,4 +469,4 @@ class Client(object):
 
         else:
             #throw the appropriate exception
-            etcd.EtcdError.handle(**json.loads(response.data))
+            etcd.EtcdError.handle(**json.loads(response.data.decode('utf-8')))
