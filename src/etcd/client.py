@@ -11,7 +11,7 @@ import json
 import ssl
 
 import etcd
-import logging
+
 
 
 class Client(object):
@@ -332,6 +332,21 @@ class Client(object):
         return self.write(key, value, prevValue=prev_value, ttl=ttl)
 
     def set(self, key, value, ttl=None):
+        """
+        Compatibility: sets the value of the key 'key' to the value 'value'
+
+        Args:
+            key (str):  Key.
+            value (object):  value to set
+            ttl (int):  Time in seconds of expiration (optional).
+
+        Returns:
+            client.EtcdResult
+
+        Raises:
+           etcd.EtcdException: when something weird goes wrong.
+
+        """
         return self.write(key, value, ttl=ttl)
 
     def get(self, key):
@@ -342,20 +357,16 @@ class Client(object):
             key (str):  Key.
 
         Returns:
-            client.EtcdResult (or an array of client.EtcdResult if a
-            subtree is queried)
+            client.EtcdResult
 
         Raises:
-            KeyValue:  If the key doesn't exists.
+            KeyError:  If the key doesn't exists.
 
         >>> print client.get('/key').value
         'value'
 
         """
-        response = self.api_execute(self.key_endpoint + key,
-                                    self._MGET, {'recursive': "true"})
-
-        return self._result_from_response(response)
+        return self.read(key)
 
     def watch(self, key, index=None):
         """
