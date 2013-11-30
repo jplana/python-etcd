@@ -82,6 +82,7 @@ class Client(object):
         self._MGET = 'GET'
         self._MPOST = 'POST'
         self._MDELETE = 'DELETE'
+        self._MPUT = 'PUT'
 
         # Dictionary of exceptions given an etcd return code.
         # 100: Key not found.
@@ -275,7 +276,7 @@ class Client(object):
         payload = {'value': value, 'prevValue': prev_value}
         if ttl:
             payload['ttl'] = ttl
-        response = self.api_execute(path, self._MPOST, payload)
+        response = self.api_execute(path, self._MPUT, payload)
         return self._result_from_response(response)
 
     def set(self, key, value, ttl=None):
@@ -301,7 +302,7 @@ class Client(object):
         payload = {'value': value}
         if ttl:
             payload['ttl'] = ttl
-        response = self.api_execute(path, self._MPOST, payload)
+        response = self.api_execute(path, self._MPUT, payload)
         return self._result_from_response(response)
 
     def delete(self, key):
@@ -371,7 +372,7 @@ class Client(object):
         method = self._MGET
         if index:
             params = {'index': index}
-            method = self._MPOST
+            method = self._MPUT
 
         response = self.api_execute(
             self.watch_endpoint + key,
@@ -413,7 +414,7 @@ class Client(object):
                         fields=params,
                         redirect=self.allow_redirect)
 
-                elif method == self._MPOST:
+                elif (method == self._MPOST) or (method == self._MPUT):
                     response = self.http.request_encode_body(
                         method,
                         url,
