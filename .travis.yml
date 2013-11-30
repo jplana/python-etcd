@@ -8,7 +8,7 @@ before_install:
 
 # command to install dependencies
 install: 
-  - python bootstrap.py -v 2.1.1
+  - python bootstrap.py
   - bin/buildout
 
 # command to run tests
@@ -17,11 +17,3 @@ script:
 
 # Add env var to detect it during build
 env: TRAVIS=True
-
-# Only test main development branch and releases
-branches:
-  only:
-    - master
-    - /^release_.*$/
-    - /^travis_.*$/
-
