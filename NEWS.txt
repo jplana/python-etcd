@@ -1,12 +1,16 @@
 News
 ====
 
-0.1
----
 
-*Release date: 18-Sep-2013*
+0.2.1
+-----
 
-* Initial release
+*Release data: 30-Nov-2013*
+
+* SSL support
+* Added support for subdirectories in results.
+* Improve test
+* Added support for reconnections, allowing death node tolerance.
 
 
 0.2.0
@@ -15,3 +19,11 @@ News
 *Release data: 30-Sep-2013*
 
 * Allow fetching of multiple keys (sub-nodes)
+
+
+0.1
+---
+
+*Release date: 18-Sep-2013*
+
+* Initial release
