@@ -23,7 +23,7 @@ class Client(object):
     _MGET = 'GET'
     _MPUT = 'PUT'
     _MDELETE = 'DELETE'
-    _comparison_conditions = ['prevValue', 'prevIndex', 'prevExists']
+    _comparison_conditions = ['prevValue', 'prevIndex', 'prevExist']
     _read_options = ['recursive', 'wait', 'waitIndex']
 
     def __init__(
@@ -215,12 +215,12 @@ class Client(object):
             prevValue (str): compare key to this value, and swap only if corresponding (optional).
 
             prevIndex (int): modify key only if actual modifiedIndex matches the provided one (optional).
-            prevExists (bool): If false, only create key; if true, only update key.
+            prevExist (bool): If false, only create key; if true, only update key.
 
         Returns:
             client.EtcdResult
 
-        >>> print client.write('/key', 'newValue', ttl=60, prevExists=False).value
+        >>> print client.write('/key', 'newValue', ttl=60, prevExist=False).value
         'newValue'
 
         """
