@@ -4,7 +4,7 @@ python:
   - "2.7"
 
 before_install:
-  - ./build_etcd.sh
+  - ./build_etcd.sh v0.1.2
 
 # command to install dependencies
 install: 
