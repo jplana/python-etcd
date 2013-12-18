@@ -9,7 +9,7 @@ import tempfile
 import urllib3
 
 import etcd
-import helpers
+from . import helpers
 
 from nose.tools import nottest
 
@@ -74,26 +74,25 @@ class TestSimple(EtcdIntegrationTest):
         try:
             get_result = self.client.get('/test_set')
             assert False
-        except KeyError, e:
+        except KeyError as e:
             pass
 
         self.assertFalse('/test_set' in self.client)
 
         set_result = self.client.set('/test_set', 'test-key')
-        self.assertEquals('SET', set_result.action)
+        self.assertEquals('set', set_result.action.lower())
         self.assertEquals('/test_set', set_result.key)
-        self.assertEquals(True, set_result.newKey)
         self.assertEquals('test-key', set_result.value)
 
         self.assertTrue('/test_set' in self.client)
 
         get_result = self.client.get('/test_set')
-        self.assertEquals('GET', get_result.action)
+        self.assertEquals('get', get_result.action.lower())
         self.assertEquals('/test_set', get_result.key)
         self.assertEquals('test-key', get_result.value)
 
         delete_result = self.client.delete('/test_set')
-        self.assertEquals('DELETE', delete_result.action)
+        self.assertEquals('delete', delete_result.action.lower())
         self.assertEquals('/test_set', delete_result.key)
         self.assertEquals('test-key', delete_result.prevValue)
 
@@ -102,7 +101,7 @@ class TestSimple(EtcdIntegrationTest):
         try:
             get_result = self.client.get('/test_set')
             assert False
-        except KeyError, e:
+        except KeyError as e:
             pass
 
     def test_retrieve_subkeys(self):
@@ -110,8 +109,8 @@ class TestSimple(EtcdIntegrationTest):
         set_result = self.client.set('/subtree/test_set', 'test-key1')
         set_result = self.client.set('/subtree/test_set1', 'test-key2')
         set_result = self.client.set('/subtree/test_set2', 'test-key3')
-        get_result = self.client.get('/subtree')
-        result = [subkey.value for subkey in get_result]
+        get_result = self.client.read('/subtree', recursive=True)
+        result = [subkey.value for subkey in get_result.kvs]
         self.assertEquals(['test-key1', 'test-key2', 'test-key3'], result)
 
 
@@ -125,7 +124,7 @@ class TestErrors(EtcdIntegrationTest):
         try:
             get_result = self.client.set('/directory', 'test-value')
             assert False
-        except KeyError, e:
+        except KeyError as e:
             pass
 
     def test_test_and_set(self):
@@ -145,11 +144,12 @@ class TestErrors(EtcdIntegrationTest):
                 'old-test-value')
 
             assert False
-        except ValueError, e:
+        except ValueError as e:
             pass
 
 
 class TestClusterFunctions(EtcdIntegrationTest):
+
     @classmethod
     def setUpClass(cls):
         program = cls._get_exe()
@@ -296,7 +296,7 @@ class TestWatch(EtcdIntegrationTest):
 
         set_result = self.client.set('/test-key', 'test-value')
         set_result = self.client.set('/test-key', 'test-value0')
-        original_index = int(set_result.index)
+        original_index = int(set_result.modifiedIndex)
         set_result = self.client.set('/test-key', 'test-value1')
         set_result = self.client.set('/test-key', 'test-value2')
 
@@ -310,7 +310,7 @@ class TestWatch(EtcdIntegrationTest):
         def watch_value(key, index, queue):
             c = etcd.Client(port=6001)
             for i in range(0, 3):
-                queue.put(c.watch(key, index=index+i).value)
+                queue.put(c.watch(key, index=index + i).value)
 
         proc = multiprocessing.Process(
             target=change_value, args=('/test-key', 'test-value3',))
@@ -348,7 +348,7 @@ class TestWatch(EtcdIntegrationTest):
         def watch_value(key, queue):
             c = etcd.Client(port=6001)
             for i in range(0, 3):
-                event = c.ethernal_watch(key).next().value
+                event = next(c.ethernal_watch(key)).value
                 queue.put(event)
 
         changer = multiprocessing.Process(
@@ -374,7 +374,7 @@ class TestWatch(EtcdIntegrationTest):
 
         set_result = self.client.set('/test-key', 'test-value')
         set_result = self.client.set('/test-key', 'test-value0')
-        original_index = int(set_result.index)
+        original_index = int(set_result.modifiedIndex)
         set_result = self.client.set('/test-key', 'test-value1')
         set_result = self.client.set('/test-key', 'test-value2')
 
@@ -388,7 +388,7 @@ class TestWatch(EtcdIntegrationTest):
             c = etcd.Client(port=6001)
             iterevents = c.ethernal_watch(key, index=index)
             for i in range(0, 3):
-                queue.put(iterevents.next().value)
+                queue.put(next(iterevents).value)
 
         proc = multiprocessing.Process(
             target=change_value, args=('/test-key', 'test-value3',))
@@ -451,19 +451,13 @@ class TestAuthenticatedAccess(EtcdIntegrationTest):
 
         client = etcd.Client(port=6001)
 
-        try:
-            set_result = client.set('/test_set', 'test-key')
-            self.fail()
+        # Since python 3 raises a MaxRetryError here, this gets caught in
+        # different code blocks in python 2 and python 3, thus messages are
+        # different. Python 3 does the right thing(TM), for the record
+        self.assertRaises(
+            etcd.EtcdException, client.set, '/test_set', 'test-key')
 
-        except etcd.EtcdException, e:
-            self.assertEquals(e.message, "Unable to decode server response")
-
-        try:
-            get_result = client.get('/test_set')
-            self.fail()
-
-        except etcd.EtcdException, e:
-            self.assertEquals(e.message, "Unable to decode server response")
+        self.assertRaises(etcd.EtcdException, client.get, '/test_set')
 
     def test_get_set_unauthenticated_missing_ca(self):
         """ INTEGRATION: try unauthenticated w/out validation (https->https)"""
@@ -481,12 +475,12 @@ class TestAuthenticatedAccess(EtcdIntegrationTest):
         try:
             set_result = client.set('/test_set', 'test-key')
             assert False
-        except urllib3.exceptions.SSLError, e:
+        except urllib3.exceptions.SSLError as e:
             assert True
 
         try:
             get_result = client.get('/test_set')
-        except urllib3.exceptions.SSLError, e:
+        except urllib3.exceptions.SSLError as e:
             assert True
 
     def test_get_set_authenticated(self):
@@ -535,9 +529,11 @@ class TestClientAuthenticatedAccess(EtcdIntegrationTest):
             port_range_start=6001,
             internal_port_range_start=8001)
 
-        with file(cls.client_all_cert, 'w') as f:
-            f.write(file(cls.client_key_path).read())
-            f.write(file(cls.client_cert_path).read())
+        with open(cls.client_all_cert, 'w') as f:
+            with open(cls.client_key_path, 'r') as g:
+                f.write(g.read())
+            with open(cls.client_cert_path, 'r') as g:
+                f.write(g.read())
 
         cls.processHelper.run(number=3,
                               proc_args=[
@@ -551,19 +547,10 @@ class TestClientAuthenticatedAccess(EtcdIntegrationTest):
 
         client = etcd.Client(port=6001)
 
-        try:
-            set_result = client.set('/test_set', 'test-key')
-            self.fail()
-
-        except etcd.EtcdException, e:
-            self.assertEquals(e.message, "Unable to decode server response")
-
-        try:
-            get_result = client.get('/test_set')
-            self.fail()
-
-        except etcd.EtcdException, e:
-            self.assertEquals(e.message, "Unable to decode server response")
+        # See above for the reason of this change
+        self.assertRaises(
+            etcd.EtcdException, client.set, '/test_set', 'test-key')
+        self.assertRaises(etcd.EtcdException, client.get, '/test_set')
 
     def test_get_set_authenticated(self):
         """ INTEGRATION: connecting to server with mutual auth """
@@ -576,12 +563,11 @@ class TestClientAuthenticatedAccess(EtcdIntegrationTest):
         )
 
         set_result = client.set('/test_set', 'test-key')
-        self.assertEquals('SET', set_result.action)
+        self.assertEquals('set', set_result.action.lower())
         self.assertEquals('/test_set', set_result.key)
-        self.assertEquals(True, set_result.newKey)
         self.assertEquals('test-key', set_result.value)
 
         get_result = client.get('/test_set')
-        self.assertEquals('GET', get_result.action)
+        self.assertEquals('get', get_result.action.lower())
         self.assertEquals('/test_set', get_result.key)
         self.assertEquals('test-key', get_result.value)

@@ -1,2 +1,2 @@
-import test_client
-import test_request
+from . import test_client
+from . import test_request

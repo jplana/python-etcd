@@ -1,6 +1,14 @@
 News
 ====
 
+0.3.0
+-----
+
+*Release date: ???*
+
+* API v2 support
+* Python 3.3 compatibility
+
 
 0.2.1
 -----
@@ -16,7 +24,7 @@ News
 0.2.0
 -----
 
-*Release data: 30-Sep-2013*
+*Release date: 30-Sep-2013*
 
 * Allow fetching of multiple keys (sub-nodes)
 
@@ -27,3 +35,4 @@ News
 *Release date: 18-Sep-2013*
 
 * Initial release
+

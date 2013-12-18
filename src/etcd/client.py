@@ -13,10 +13,18 @@ import ssl
 import etcd
 
 
+
 class Client(object):
+
     """
     Client for etcd, the distributed log service using raft.
     """
+
+    _MGET = 'GET'
+    _MPUT = 'PUT'
+    _MDELETE = 'DELETE'
+    _comparison_conditions = ['prevValue', 'prevIndex', 'prevExist']
+    _read_options = ['recursive', 'wait', 'waitIndex']
 
     def __init__(
             self,
@@ -73,34 +81,11 @@ class Client(object):
 
         self._base_uri = uri(self._protocol, self._host, self._port)
 
-        self.version_prefix = '/v1'
+        self.version_prefix = '/v2'
 
         self._read_timeout = read_timeout
         self._allow_redirect = allow_redirect
         self._allow_reconnect = allow_reconnect
-
-        self._MGET = 'GET'
-        self._MPOST = 'POST'
-        self._MDELETE = 'DELETE'
-
-        # Dictionary of exceptions given an etcd return code.
-        # 100: Key not found.
-        # 101: The given PrevValue is not equal to the value of the key
-        # 102: Not a file  if the /foo = Node(bar) exists,
-        #      setting /foo/foo = Node(barbar)
-        # 103: Reached the max number of machines in the cluster
-        # 300: Raft Internal Error
-        # 301: During Leader Election
-        # 500: Watcher is cleared due to etcd recovery
-        self.error_codes = {
-            100: KeyError,
-            101: ValueError,
-            102: KeyError,
-            103: Exception,
-            300: Exception,
-            301: Exception,
-            500: etcd.EtcdException,
-            999: etcd.EtcdException}
 
         # SSL Client certificate support
 
@@ -117,7 +102,7 @@ class Client(object):
                     kw['cert_file'] = cert[0]
                     kw['key_file'] = cert[1]
                 else:
-                    #combined certificate
+                    # combined certificate
                     kw['cert_file'] = cert
 
             if ca_cert:
@@ -178,7 +163,7 @@ class Client(object):
         return [
             node.strip() for node in self.api_execute(
                 self.version_prefix + '/machines',
-                self._MGET).split(',')
+                self._MGET).data.decode('utf-8').split(',')
         ]
 
     @property
@@ -192,7 +177,7 @@ class Client(object):
         """
         return self.api_execute(
             self.version_prefix + '/leader',
-            self._MGET)
+            self._MGET).data.decode('ascii')
 
     @property
     def key_endpoint(self):
@@ -200,14 +185,6 @@ class Client(object):
         REST key endpoint.
         """
         return self.version_prefix + '/keys'
-
-    @property
-    def watch_endpoint(self):
-        """
-        REST watch endpoint.
-        """
-
-        return self.version_prefix + '/watch'
 
     def __contains__(self, key):
         """
@@ -222,32 +199,113 @@ class Client(object):
         except KeyError:
             return False
 
-    def ethernal_watch(self, key, index=None):
+    def write(self, key, value, ttl=None, **kwdargs):
         """
-        Generator that will yield changes from a key.
-        Note that this method will block forever until an event is generated.
+        Writes the value for a key, possibly doing atomit Compare-and-Swap
 
         Args:
-            key (str):  Key to subcribe to.
-            index (int):  Index from where the changes will be received.
+            key (str):  Key.
 
-        Yields:
+            value (object):  value to set
+
+            ttl (int):  Time in seconds of expiration (optional).
+
+            Other parameters modifying the write method are accepted:
+
+            prevValue (str): compare key to this value, and swap only if corresponding (optional).
+
+            prevIndex (int): modify key only if actual modifiedIndex matches the provided one (optional).
+            prevExist (bool): If false, only create key; if true, only update key.
+
+        Returns:
             client.EtcdResult
 
-        >>> for event in client.ethernal_watch('/subcription_key'):
-        ...     print event.value
-        ...
-        value1
-        value2
+        >>> print client.write('/key', 'newValue', ttl=60, prevExist=False).value
+        'newValue'
 
         """
-        local_index = index
-        while True:
-            response = self.watch(key, local_index)
-            if local_index is not None:
-                local_index += 1
-            yield response
+        params = {
+            'value': value
+        }
 
+        if ttl:
+            params['ttl'] = ttl
+
+        for (k, v) in kwdargs.items():
+            if k in self._comparison_conditions:
+                if type(v) == bool:
+                    params[k] = v and "true" or "false"
+                else:
+                    params[k] = v
+
+        path = self.key_endpoint + key
+        response = self.api_execute(path, self._MPUT, params)
+        return self._result_from_response(response)
+
+    def read(self, key, **kwdargs):
+        """
+        Returns the value of the key 'key'.
+
+        Args:
+            key (str):  Key.
+
+            Recognized kwd args
+
+            recursive (bool): If you should fetch recursively a dir
+
+            wait (bool): If we should wait and return next time the key is changed
+
+            waitIndex (int): The index to fetch results from.
+
+        Returns:
+            client.EtcdResult (or an array of client.EtcdResult if a
+            subtree is queried)
+
+        Raises:
+            KeyValue:  If the key doesn't exists.
+
+        >>> print client.get('/key').value
+        'value'
+
+        """
+        params = {}
+        for (k, v) in kwdargs.items():
+            if k in self._read_options:
+                if type(v) == bool:
+                    params[k] = v and "true" or "false"
+                else:
+                    params[k] = v
+
+        response = self.api_execute(
+            self.key_endpoint + key, self._MGET, params)
+        return self._result_from_response(response)
+
+    def delete(self, key, recursive=None):
+        """
+        Removed a key from etcd.
+
+        Args:
+            key (str):  Key.
+            recursive (bool): if we want to delete a directory, set it to true
+
+        Returns:
+            client.EtcdResult
+
+        Raises:
+            KeyValue:  If the key doesn't exists.
+
+        >>> print client.delete('/key').key
+        '/key'
+
+        """
+        kwds = {}
+        if recursive is not None:
+            kwds['recursive'] = recursive and "true" or "false"
+        response = self.api_execute(
+            self.key_endpoint + key, self._MDELETE, kwds)
+        return self._result_from_response(response)
+
+    # Higher-level methods on top of the basic primitives
     def test_and_set(self, key, value, prev_value, ttl=None):
         """
         Atomic test & set operation.
@@ -271,59 +329,25 @@ class Client(object):
         'new'
 
         """
-        path = self.key_endpoint + key
-        payload = {'value': value, 'prevValue': prev_value}
-        if ttl:
-            payload['ttl'] = ttl
-        response = self.api_execute(path, self._MPOST, payload)
-        return self._result_from_response(response)
+        return self.write(key, value, prevValue=prev_value, ttl=ttl)
 
     def set(self, key, value, ttl=None):
         """
-        Set value for a key.
+        Compatibility: sets the value of the key 'key' to the value 'value'
 
         Args:
             key (str):  Key.
-
             value (object):  value to set
-
             ttl (int):  Time in seconds of expiration (optional).
 
         Returns:
             client.EtcdResult
 
-        >>> print client.set('/key', 'newValue', ttl=60).value
-        'newValue'
-
-        """
-
-        path = self.key_endpoint + key
-        payload = {'value': value}
-        if ttl:
-            payload['ttl'] = ttl
-        response = self.api_execute(path, self._MPOST, payload)
-        return self._result_from_response(response)
-
-    def delete(self, key):
-        """
-        Removed a key from etcd.
-
-        Args:
-            key (str):  Key.
-
-        Returns:
-            client.EtcdResult
-
         Raises:
-            KeyValue:  If the key doesn't exists.
-
-        >>> print client.delete('/key').key
-        '/key'
+           etcd.EtcdException: when something weird goes wrong.
 
         """
-
-        response = self.api_execute(self.key_endpoint + key, self._MDELETE)
-        return self._result_from_response(response)
+        return self.write(key, value, ttl=ttl)
 
     def get(self, key):
         """
@@ -333,19 +357,16 @@ class Client(object):
             key (str):  Key.
 
         Returns:
-            client.EtcdResult (or an array of client.EtcdResult if a
-            subtree is queried)
+            client.EtcdResult
 
         Raises:
-            KeyValue:  If the key doesn't exists.
+            KeyError:  If the key doesn't exists.
 
         >>> print client.get('/key').value
         'value'
 
         """
-
-        response = self.api_execute(self.key_endpoint + key, self._MGET)
-        return self._result_from_response(response)
+        return self.read(key)
 
     def watch(self, key, index=None):
         """
@@ -366,28 +387,47 @@ class Client(object):
         'value'
 
         """
-
-        params = None
-        method = self._MGET
         if index:
-            params = {'index': index}
-            method = self._MPOST
+            return self.read(key, wait=True, waitIndex=index)
+        else:
+            return self.read(key, wait=True)
 
-        response = self.api_execute(
-            self.watch_endpoint + key,
-            method,
-            params=params)
-        return self._result_from_response(response)
+    def ethernal_watch(self, key, index=None):
+        """
+        Generator that will yield changes from a key.
+        Note that this method will block forever until an event is generated.
+
+        Args:
+            key (str):  Key to subcribe to.
+            index (int):  Index from where the changes will be received.
+
+        Yields:
+            client.EtcdResult
+
+        >>> for event in client.ethernal_watch('/subcription_key'):
+        ...     print event.value
+        ...
+        value1
+        value2
+
+        """
+        local_index = index
+        while True:
+            response = self.watch(key, index=local_index)
+            if local_index is not None:
+                local_index += 1
+            yield response
 
     def _result_from_response(self, response):
         """ Creates an EtcdResult from json dictionary """
         try:
-            res = json.loads(response)
-            if isinstance(res, list):
-                return [etcd.EtcdResult(**v) for v in res]
+            res = json.loads(response.data.decode('utf-8'))
+            if response.status == 201:
+                res['newKey'] = True
             return etcd.EtcdResult(**res)
-        except:
-            raise etcd.EtcdException('Unable to decode server response')
+        except Exception as e:
+            raise etcd.EtcdException(
+                'Unable to decode server response: %s' % e)
 
     def _next_server(self):
         """ Selects the next server in the list, refreshes the server list. """
@@ -413,7 +453,7 @@ class Client(object):
                         fields=params,
                         redirect=self.allow_redirect)
 
-                elif method == self._MPOST:
+                elif method == self._MPUT:
                     response = self.http.request_encode_body(
                         method,
                         url,
@@ -429,16 +469,9 @@ class Client(object):
             self._machines_cache = self.machines
             self._machines_cache.remove(self._base_uri)
 
-        if response.status == 200:
-            return response.data
+        if response.status in [200, 201]:
+            return response
 
         else:
-            try:
-                error = json.loads(response.data)
-                message = "%s : %s" % (error['message'], error['cause'])
-                error_code = error['errorCode']
-                error_exception = self.error_codes[error_code]
-            except:
-                message = "Unable to decode server response"
-                error_exception = etcd.EtcdException
-            raise error_exception(message)
+            # throw the appropriate exception
+            etcd.EtcdError.handle(**json.loads(response.data.decode('utf-8')))
