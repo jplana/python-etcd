@@ -12,8 +12,6 @@ import ssl
 
 import etcd
 
-
-
 class Client(object):
 
     """
@@ -22,6 +20,7 @@ class Client(object):
 
     _MGET = 'GET'
     _MPUT = 'PUT'
+    _MPOST = 'POST'
     _MDELETE = 'DELETE'
     _comparison_conditions = ['prevValue', 'prevIndex', 'prevExist']
     _read_options = ['recursive', 'wait', 'waitIndex']
@@ -199,7 +198,7 @@ class Client(object):
         except KeyError:
             return False
 
-    def write(self, key, value, ttl=None, **kwdargs):
+    def write(self, key, value, ttl=None, dir=False, append = False, **kwdargs):
         """
         Writes the value for a key, possibly doing atomit Compare-and-Swap
 
@@ -210,7 +209,12 @@ class Client(object):
 
             ttl (int):  Time in seconds of expiration (optional).
 
+            dir (bool): Set to true if we are writing a directory; default is false.
+
+            append (bool): If true, it will post to append the new value to the dir, creating a sequential key. Defaults to false.
+
             Other parameters modifying the write method are accepted:
+
 
             prevValue (str): compare key to this value, and swap only if corresponding (optional).
 
@@ -231,6 +235,11 @@ class Client(object):
         if ttl:
             params['ttl'] = ttl
 
+        if dir:
+            if value:
+                raise EtcdException('Cannot create a directory with a value')
+            params['dir'] = "true"
+
         for (k, v) in kwdargs.items():
             if k in self._comparison_conditions:
                 if type(v) == bool:
@@ -238,8 +247,12 @@ class Client(object):
                 else:
                     params[k] = v
 
-        path = self.key_endpoint + key
-        response = self.api_execute(path, self._MPUT, params)
+        method = append and self._MPOST or self.MPUT
+        if '_endpoint' in kwdargs:
+            path = kwdargs['_endpoint'] + key
+        else:
+            path = self.key_endpoint + key)
+        response = self.api_execute(path, method, params)
         return self._result_from_response(response)
 
     def read(self, key, **kwdargs):
@@ -280,13 +293,14 @@ class Client(object):
             self.key_endpoint + key, self._MGET, params)
         return self._result_from_response(response)
 
-    def delete(self, key, recursive=None):
+    def delete(self, key, recursive=None, dir=None):
         """
         Removed a key from etcd.
 
         Args:
             key (str):  Key.
-            recursive (bool): if we want to delete a directory, set it to true
+            recursive (bool): if we want to recursively delete a directory, set it to true
+            dir (bool): if we want to delete a directory, set it to true
 
         Returns:
             client.EtcdResult
@@ -301,6 +315,9 @@ class Client(object):
         kwds = {}
         if recursive is not None:
             kwds['recursive'] = recursive and "true" or "false"
+        if dir is not None:
+            kwds['dir'] = dir and "true" on "false"
+
         response = self.api_execute(
             self.key_endpoint + key, self._MDELETE, kwds)
         return self._result_from_response(response)
@@ -420,6 +437,7 @@ class Client(object):
 
     def _result_from_response(self, response):
         """ Creates an EtcdResult from json dictionary """
+        #TODO: add headers we obtained from the http respose to the etcd result.
         try:
             res = json.loads(response.data.decode('utf-8'))
             if response.status == 201:
@@ -453,13 +471,15 @@ class Client(object):
                         fields=params,
                         redirect=self.allow_redirect)
 
-                elif method == self._MPUT:
+                elif (method == self._MPUT) or (method == self._MPOST):
                     response = self.http.request_encode_body(
                         method,
                         url,
                         fields=params,
                         encode_multipart=False,
                         redirect=self.allow_redirect)
+                else:
+                    raise EtcdException('HTTP method {} not supported'.format(method))
 
             except urllib3.exceptions.MaxRetryError:
                 self._base_uri = self._next_server()
