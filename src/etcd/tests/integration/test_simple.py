@@ -94,7 +94,6 @@ class TestSimple(EtcdIntegrationTest):
         delete_result = self.client.delete('/test_set')
         self.assertEquals('delete', delete_result.action.lower())
         self.assertEquals('/test_set', delete_result.key)
-        self.assertEquals('test-key', delete_result.prevValue)
 
         self.assertFalse('/test_set' in self.client)
 
@@ -106,11 +105,11 @@ class TestSimple(EtcdIntegrationTest):
 
     def test_retrieve_subkeys(self):
         """ INTEGRATION: retrieve multiple subkeys """
-        set_result = self.client.set('/subtree/test_set', 'test-key1')
-        set_result = self.client.set('/subtree/test_set1', 'test-key2')
-        set_result = self.client.set('/subtree/test_set2', 'test-key3')
+        set_result = self.client.write('/subtree/test_set', 'test-key1')
+        set_result = self.client.write('/subtree/test_set1', 'test-key2')
+        set_result = self.client.write('/subtree/test_set2', 'test-key3')
         get_result = self.client.read('/subtree', recursive=True)
-        result = [subkey.value for subkey in get_result.kvs]
+        result = [subkey.value for subkey in get_result.children]
         self.assertEquals(['test-key1', 'test-key2', 'test-key3'], result)
 
 
@@ -442,8 +441,8 @@ class TestAuthenticatedAccess(EtcdIntegrationTest):
 
         cls.processHelper.run(number=3,
                               proc_args=[
-                                  '-clientCert=%s' % server_cert_path,
-                                  '-clientKey=%s' % server_key_path
+                                  '-cert-file=%s' % server_cert_path,
+                                  '-key-file=%s' % server_key_path
                               ])
 
     def test_get_set_unauthenticated(self):
@@ -537,8 +536,8 @@ class TestClientAuthenticatedAccess(EtcdIntegrationTest):
 
         cls.processHelper.run(number=3,
                               proc_args=[
-                                  '-clientCert=%s' % server_cert_path,
-                                  '-clientKey=%s' % server_key_path,
+                                  '-cert-file=%s' % server_cert_path,
+                                  '-key-file=%s' % server_key_path,
                                   '-clientCAFile=%s' % cls.ca_cert_path
                               ])
 

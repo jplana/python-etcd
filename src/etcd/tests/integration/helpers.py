@@ -43,17 +43,17 @@ class EtcdProcessHelper(object):
         log.debug('Created directory %s' % directory)
         daemon_args = [
             self.proc_name,
-            '-d', directory,
-            '-n', 'test-node-%d' % slot,
-            '-s', '127.0.0.1:%d' % (self.internal_port_range_start + slot),
-            '-c', '127.0.0.1:%d' % (self.port_range_start + slot),
+            '-data-dir', directory,
+            '-name', 'test-node-%d' % slot,
+            '-peer-addr', '127.0.0.1:%d' % (self.internal_port_range_start + slot),
+            '-addr', '127.0.0.1:%d' % (self.port_range_start + slot),
         ]
 
         if proc_args:
             daemon_args.extend(proc_args)
 
         if slot > 0 and self.cluster:
-            daemon_args.append('-C')
+            daemon_args.append('-peers')
             daemon_args.append(
                 '127.0.0.1:%d' % self.internal_port_range_start)
 
