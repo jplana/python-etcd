@@ -247,11 +247,11 @@ class Client(object):
                 else:
                     params[k] = v
 
-        method = append and self._MPOST or self.MPUT
+        method = append and self._MPOST or self._MPUT
         if '_endpoint' in kwdargs:
             path = kwdargs['_endpoint'] + key
         else:
-            path = self.key_endpoint + key)
+            path = self.key_endpoint + key
         response = self.api_execute(path, method, params)
         return self._result_from_response(response)
 
@@ -316,7 +316,7 @@ class Client(object):
         if recursive is not None:
             kwds['recursive'] = recursive and "true" or "false"
         if dir is not None:
-            kwds['dir'] = dir and "true" on "false"
+            kwds['dir'] = dir and "true" or "false"
 
         response = self.api_execute(
             self.key_endpoint + key, self._MDELETE, kwds)
@@ -440,9 +440,10 @@ class Client(object):
         #TODO: add headers we obtained from the http respose to the etcd result.
         try:
             res = json.loads(response.data.decode('utf-8'))
+            r = etcd.EtcdResult(**res)
             if response.status == 201:
-                res['newKey'] = True
-            return etcd.EtcdResult(**res)
+                r.newKey = True
+            return r
         except Exception as e:
             raise etcd.EtcdException(
                 'Unable to decode server response: %s' % e)

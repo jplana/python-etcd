@@ -47,6 +47,21 @@ class EtcdResult(object):
                 yield child
         return
 
+    def __eq__(self, other):
+        if not (type(self) is type(other)):
+            return False
+        for k in self._node_props.keys():
+            try:
+                a = getattr(self, k)
+                b = getattr(other, k)
+                if a != b:
+                    return False
+            except:
+                return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
 
 class EtcdException(Exception):
