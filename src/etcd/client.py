@@ -12,6 +12,7 @@ import ssl
 
 import etcd
 
+
 class Client(object):
 
     """
@@ -198,7 +199,7 @@ class Client(object):
         except KeyError:
             return False
 
-    def write(self, key, value, ttl=None, dir=False, append = False, **kwdargs):
+    def write(self, key, value, ttl=None, dir=False, append=False, **kwdargs):
         """
         Writes the value for a key, possibly doing atomit Compare-and-Swap
 
@@ -238,7 +239,8 @@ class Client(object):
 
         if dir:
             if value:
-                raise etcd.EtcdException('Cannot create a directory with a value')
+                raise etcd.EtcdException(
+                    'Cannot create a directory with a value')
             params['dir'] = "true"
 
         for (k, v) in kwdargs.items():
@@ -438,7 +440,8 @@ class Client(object):
 
     def _result_from_response(self, response):
         """ Creates an EtcdResult from json dictionary """
-        #TODO: add headers we obtained from the http respose to the etcd result.
+        # TODO: add headers we obtained from the http respose to the etcd
+        # result.
         try:
             res = json.loads(response.data.decode('utf-8'))
             r = etcd.EtcdResult(**res)
@@ -484,7 +487,8 @@ class Client(object):
                         encode_multipart=False,
                         redirect=self.allow_redirect)
                 else:
-                    raise etcd.EtcdException('HTTP method {} not supported'.format(method))
+                    raise etcd.EtcdException(
+                        'HTTP method {} not supported'.format(method))
 
             except urllib3.exceptions.MaxRetryError:
                 self._base_uri = self._next_server()
@@ -495,7 +499,7 @@ class Client(object):
             self._machines_cache.remove(self._base_uri)
         return self._handle_server_response(response)
 
-    def _handle_server_response(self,response):
+    def _handle_server_response(self, response):
         """ Handles the server response """
         if response.status in [200, 201]:
             return response

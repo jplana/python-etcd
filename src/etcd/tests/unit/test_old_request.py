@@ -63,11 +63,11 @@ class TestClientRequest(unittest.TestCase):
             etcd.EtcdResult(
                 **{u'action': u'SET',
                    'node': {
-                   u'expiration': u'2013-09-14T00:56:59.316195568+02:00',
-                   u'modifiedIndex': 183,
-                   u'key': u'/testkey',
-                   u'newKey': True,
-                   u'ttl': 19,
+                       u'expiration': u'2013-09-14T00:56:59.316195568+02:00',
+                       u'modifiedIndex': 183,
+                       u'key': u'/testkey',
+                       u'newKey': True,
+                       u'ttl': 19,
                        u'value': u'test'}}), result)
 
     def test_test_and_set(self):
@@ -94,7 +94,7 @@ class TestClientRequest(unittest.TestCase):
                        u'prevValue': u'test',
                        u'ttl': 49,
                        u'value': u'newvalue'}
-               }), result)
+                   }), result)
 
     def test_test_and_test_failure(self):
         """ Exception will be raised if prevValue != value in test_set """
@@ -135,7 +135,7 @@ class TestClientRequest(unittest.TestCase):
                    u'modifiedIndex': 189,
                    u'key': u'/testkey',
                    u'prevValue': u'test'}
-           }), result)
+               }), result)
 
     def test_get(self):
         """ Can get a value """
@@ -156,7 +156,7 @@ class TestClientRequest(unittest.TestCase):
                    u'modifiedIndex': 190,
                    u'key': u'/testkey',
                    u'value': u'test'}
-           }), result)
+               }), result)
 
     def test_get_multi(self):
         """Can get multiple values"""
@@ -240,7 +240,7 @@ class TestClientRequest(unittest.TestCase):
                        u'newKey': True,
                        u'ttl': 19,
                        u'value': u'test'}
-               }), result)
+                   }), result)
 
 
 class TestEventGenerator(object):
@@ -255,7 +255,7 @@ class TestEventGenerator(object):
                    u'newKey': True,
                    u'ttl': 19,
                    u'value': u'test'}
-           }) == result
+               }) == result
 
     def test_ethernal_watch(self):
         """ Can watch values from generator """

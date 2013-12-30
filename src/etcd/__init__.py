@@ -4,17 +4,18 @@ from .client import Client
 
 class EtcdResult(object):
     _node_props = {
-        'key' : None,
-        'value' : None,
-        'expiration' : None,
-        'ttl' : None,
+        'key': None,
+        'value': None,
+        'expiration': None,
+        'ttl': None,
         'modifiedIndex': None,
         'createdIndex': None,
         'prevValue': None,
         'newKey': False,
         'dir': False,
     }
-    def __init__(self, action = None, node = None):
+
+    def __init__(self, action=None, node=None):
         """
         Creates an EtcdResult object.
 
@@ -25,7 +26,7 @@ class EtcdResult(object):
 
         """
         self.action = action
-        for (key,default) in self._node_props.items():
+        for (key, default) in self._node_props.items():
             if key in node:
                 setattr(self, key, node[key])
             else:
@@ -36,14 +37,13 @@ class EtcdResult(object):
             # We keep the data in raw format, converting them only when needed
             self._children = node['nodes']
 
-
     @property
     def children(self):
         if not self._children:
             yield self
             return
         for n in self._children:
-            for child in EtcdResult(None,n).children:
+            for child in EtcdResult(None, n).children:
                 yield child
         return
 
@@ -65,7 +65,6 @@ class EtcdResult(object):
 
     def __repr__(self):
         return "%s(%r)" % (self.__class__, self.__dict__)
-
 
 
 class EtcdException(Exception):
