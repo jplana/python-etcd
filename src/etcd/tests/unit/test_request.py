@@ -82,6 +82,12 @@ class TestClientApiInterface(unittest.TestCase):
         d['node']['newKey'] = True
         self.assertEquals(res, etcd.EtcdResult(**d))
 
+    def test_not_found_response(self):
+        """ Can handle server not found response """
+        self._mock_api(404,'Not found')
+        self.assertRaises(etcd.EtcdException, self.client.read, '/somebadkey')
+
+
     def test_compare_and_swap(self):
         """ Can set compare-and-swap a value """
         d = {u'action': u'compareAndSwap',
@@ -109,6 +115,26 @@ class TestClientApiInterface(unittest.TestCase):
             'test',
             prevValue='oldbog'
         )
+
+    def test_set_append(self):
+        """ Can append a new key """
+        d = {
+            u'action': u'create',
+            u'node': {
+                u'createdIndex': 190,
+                u'modifiedIndex': 190,
+                u'key': u'/testdir/190',
+                u'value': u'test'
+            }
+        }
+        self._mock_api(201,d)
+        res = self.client.write('/testdir', 'test')
+        self.assertEquals(res.createdIndex, 190)
+
+    def test_set_dir_with_value(self):
+        """ Creating a directory with a value raises an error. """
+        self.assertRaises(etcd.EtcdException, self.client.write, '/bar', 'testvalye', dir=True)
+
 
     def test_delete(self):
         """ Can delete a value """
@@ -248,6 +274,15 @@ class TestClientRequest(TestClientApiInterface):
             'test',
             prevValue='oldbog'
         )
+
+    def test_path_without_trailing_slash(self):
+        """ Exception will be raised if a path without a trailing slash is used """
+        self.assertRaises(ValueError, self.client.api_execute, 'testpath/bar', self.client._MPUT)
+
+    def test_api_method_not_supported(self):
+        """ Exception will be raised if an unsupported HTTP method is used """
+        self.assertRaises(etcd.EtcdException, self.client.api_execute, '/testpath/bar', 'TRACE')
+
 
     def test_not_in(self):
         pass

@@ -11,8 +11,8 @@ class EtcdResult(object):
         'modifiedIndex': None,
         'createdIndex': None,
         'prevValue': None,
-        'newKey': None,
-        'dir': None,
+        'newKey': False,
+        'dir': False,
     }
     def __init__(self, action = None, node = None):
         """
@@ -62,6 +62,10 @@ class EtcdResult(object):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+    def __repr__(self):
+        return "%s(%r)" % (self.__class__, self.__dict__)
+
 
 
 class EtcdException(Exception):

@@ -538,7 +538,7 @@ class TestClientAuthenticatedAccess(EtcdIntegrationTest):
                               proc_args=[
                                   '-cert-file=%s' % server_cert_path,
                                   '-key-file=%s' % server_key_path,
-                                  '-clientCAFile=%s' % cls.ca_cert_path
+                                  '-ca-file=%s' % cls.ca_cert_path
                               ])
 
     def test_get_set_unauthenticated(self):

@@ -219,6 +219,7 @@ class Client(object):
             prevValue (str): compare key to this value, and swap only if corresponding (optional).
 
             prevIndex (int): modify key only if actual modifiedIndex matches the provided one (optional).
+
             prevExist (bool): If false, only create key; if true, only update key.
 
         Returns:
@@ -237,7 +238,7 @@ class Client(object):
 
         if dir:
             if value:
-                raise EtcdException('Cannot create a directory with a value')
+                raise etcd.EtcdException('Cannot create a directory with a value')
             params['dir'] = "true"
 
         for (k, v) in kwdargs.items():
@@ -461,6 +462,9 @@ class Client(object):
         some_request_failed = False
         response = False
 
+        if not path.startswith('/'):
+            raise ValueError('Path does not start with /')
+
         while not response:
             try:
                 url = self._base_uri + path
@@ -480,7 +484,7 @@ class Client(object):
                         encode_multipart=False,
                         redirect=self.allow_redirect)
                 else:
-                    raise EtcdException('HTTP method {} not supported'.format(method))
+                    raise etcd.EtcdException('HTTP method {} not supported'.format(method))
 
             except urllib3.exceptions.MaxRetryError:
                 self._base_uri = self._next_server()
@@ -489,10 +493,20 @@ class Client(object):
         if some_request_failed:
             self._machines_cache = self.machines
             self._machines_cache.remove(self._base_uri)
+        return self._handle_server_response(response)
 
+    def _handle_server_response(self,response):
+        """ Handles the server response """
         if response.status in [200, 201]:
             return response
 
         else:
+            resp = response.data.decode('utf-8')
+
             # throw the appropriate exception
-            etcd.EtcdError.handle(**json.loads(response.data.decode('utf-8')))
+            try:
+                r = json.loads(resp)
+            except ValueError:
+                raise etcd.EtcdException(resp)
+
+            etcd.EtcdError.handle(**json.loads(resp))

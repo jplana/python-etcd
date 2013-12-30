@@ -303,7 +303,7 @@ class TestClientApiExecutor(unittest.TestCase):
                                     ' "errorCode": 100}')
         client.http.request = mock.Mock(return_value=response)
         try:
-            client.api_execute('v1/keys/testkey', client._MGET)
+            client.api_execute('/v2/keys/testkey', client._MGET)
             assert False
         except KeyError as e:
             self.assertEquals(str(e), "'message : cause'")
@@ -313,7 +313,7 @@ class TestClientApiExecutor(unittest.TestCase):
         client = etcd.Client()
         response = FakeHTTPResponse(status=200, data='arbitrary json data')
         client.http.request_encode_body = mock.Mock(return_value=response)
-        result = client.api_execute('v1/keys/testkey', client._MPUT)
+        result = client.api_execute('/v2/keys/testkey', client._MPUT)
         self.assertEquals('arbitrary json data'.encode('utf-8'), result.data)
 
     def test_test_and_set_error(self):
@@ -325,7 +325,7 @@ class TestClientApiExecutor(unittest.TestCase):
         client.http.request_encode_body = mock.Mock(return_value=response)
         payload = {'value': 'value', 'prevValue': 'oldValue', 'ttl': '60'}
         try:
-            client.api_execute('v1/keys/testkey', client._MPUT, payload)
+            client.api_execute('/v2/keys/testkey', client._MPUT, payload)
             self.fail()
         except ValueError as e:
             self.assertEquals('message : cause', str(e))
@@ -339,7 +339,7 @@ class TestClientApiExecutor(unittest.TestCase):
         client.http.request_encode_body = mock.Mock(return_value=response)
         payload = {'value': 'value', 'prevValue': 'oldValue', 'ttl': '60'}
         try:
-            client.api_execute('v1/keys/testkey', client._MPUT, payload)
+            client.api_execute('/v2/keys/testkey', client._MPUT, payload)
             self.fail()
         except KeyError as e:
             self.assertEquals('message : cause', str(e))
@@ -353,7 +353,7 @@ class TestClientApiExecutor(unittest.TestCase):
         client.http.request_encode_body = mock.Mock(return_value=response)
         payload = {'value': 'value', 'prevValue': 'oldValue', 'ttl': '60'}
         try:
-            client.api_execute('v1/keys/testkey', client._MPUT, payload)
+            client.api_execute('/v2/keys/testkey', client._MPUT, payload)
             self.fail()
         except KeyError as e:
             self.assertEquals("'message : cause'", str(e))
@@ -367,7 +367,7 @@ class TestClientApiExecutor(unittest.TestCase):
                                     ' "errorCode": 42}')
         client.http.request = mock.Mock(return_value=response)
         try:
-            client.api_execute('v1/keys/testkey', client._MGET)
+            client.api_execute('/v2/keys/testkey', client._MGET)
             self.fail()
         except etcd.EtcdException as e:
             self.assertTrue(
@@ -387,5 +387,5 @@ class TestClientApiExecutor(unittest.TestCase):
         response = FakeHTTPResponse(status=400,
                                     data='{){){)*garbage*')
         client.http.request = mock.Mock(return_value=response)
-        self.assertRaises(ValueError, client.api_execute,
+        self.assertRaises(etcd.EtcdException, client.api_execute,
                           '/v2/keys/testkey', client._MGET)
