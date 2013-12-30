@@ -2,54 +2,69 @@ import collections
 from .client import Client
 
 
-class EtcdResult(collections.namedtuple(
-        'EtcdResult',
-        [
-            'action',
-            'key',
-            'value',
-            'expiration',
-            'ttl',
-            'modifiedIndex',
-            'prevValue',
-            'newKey',
-            'dir',
-            'kvs'
-        ]
-)):
+class EtcdResult(object):
+    _node_props = {
+        'key': None,
+        'value': None,
+        'expiration': None,
+        'ttl': None,
+        'modifiedIndex': None,
+        'createdIndex': None,
+        'prevValue': None,
+        'newKey': False,
+        'dir': False,
+    }
 
-    def __new__(
-            cls,
-            action=None,
-            key=None,
-            value=None,
-            expiration=None,
-            ttl=None,
-            modifiedIndex=None,
-            prevValue=None,
-            newKey=False,
-            dir=False,
-            kvs=None
-    ):
-        if dir and kvs:
-            keys = []
-            for result in kvs:
-                keys.append(EtcdResult(**result))
-            kvs = keys
+    def __init__(self, action=None, node=None):
+        """
+        Creates an EtcdResult object.
 
-        return super(EtcdResult, cls).__new__(
-            cls,
-            action,
-            key,
-            value,
-            expiration,
-            ttl,
-            modifiedIndex,
-            prevValue,
-            newKey,
-            dir,
-            kvs
-        )
+        Args:
+            action (str): The action that resulted in key creation
+
+            node (dict): The dictionary containing all node information.
+
+        """
+        self.action = action
+        for (key, default) in self._node_props.items():
+            if key in node:
+                setattr(self, key, node[key])
+            else:
+                setattr(self, key, default)
+
+        self._children = []
+        if self.dir and 'nodes' in node:
+            # We keep the data in raw format, converting them only when needed
+            self._children = node['nodes']
+
+    @property
+    def children(self):
+        if not self._children:
+            yield self
+            return
+        for n in self._children:
+            for child in EtcdResult(None, n).children:
+                yield child
+        return
+
+    def __eq__(self, other):
+        if not (type(self) is type(other)):
+            return False
+        for k in self._node_props.keys():
+            try:
+                a = getattr(self, k)
+                b = getattr(other, k)
+                if a != b:
+                    return False
+            except:
+                return False
+        return True
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __repr__(self):
+        return "%s(%r)" % (self.__class__, self.__dict__)
 
 
 class EtcdException(Exception):

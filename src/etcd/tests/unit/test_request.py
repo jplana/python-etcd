@@ -52,11 +52,14 @@ class TestClientApiInterface(unittest.TestCase):
     def test_set_plain(self):
         """ Can set a value """
         d = {u'action': u'set',
-             u'expiration': u'2013-09-14T00:56:59.316195568+02:00',
-             u'modifiedIndex': 183,
-             u'key': u'/testkey',
-             u'ttl': 19,
-             u'value': u'test'}
+             u'node': {
+                 u'expiration': u'2013-09-14T00:56:59.316195568+02:00',
+                 u'modifiedIndex': 183,
+                 u'key': u'/testkey',
+                 u'ttl': 19,
+                 u'value': u'test'
+             }
+             }
 
         self._mock_api(200, d)
         res = self.client.write('/testkey', 'test')
@@ -64,27 +67,38 @@ class TestClientApiInterface(unittest.TestCase):
 
     def test_newkey(self):
         """ Can set a new value """
-        d = {u'action': u'set',
-             u'expiration': u'2013-09-14T00:56:59.316195568+02:00',
-             u'modifiedIndex': 183,
-             u'key': u'/testkey',
-             u'ttl': 19,
-             u'value': u'test'}
-
+        d = {
+            u'action': u'set',
+            u'node': {
+                u'expiration': u'2013-09-14T00:56:59.316195568+02:00',
+                u'modifiedIndex': 183,
+                u'key': u'/testkey',
+                u'ttl': 19,
+                u'value': u'test'
+            }
+        }
         self._mock_api(201, d)
-        d['newKey'] = True
         res = self.client.write('/testkey', 'test')
+        d['node']['newKey'] = True
         self.assertEquals(res, etcd.EtcdResult(**d))
+
+    def test_not_found_response(self):
+        """ Can handle server not found response """
+        self._mock_api(404, 'Not found')
+        self.assertRaises(etcd.EtcdException, self.client.read, '/somebadkey')
 
     def test_compare_and_swap(self):
         """ Can set compare-and-swap a value """
         d = {u'action': u'compareAndSwap',
-             u'expiration': u'2013-09-14T00:56:59.316195568+02:00',
-             u'modifiedIndex': 183,
-             u'key': u'/testkey',
-             'prevValue': 'test_old',
-             u'ttl': 19,
-             u'value': u'test'}
+             u'node': {
+                 u'expiration': u'2013-09-14T00:56:59.316195568+02:00',
+                 u'modifiedIndex': 183,
+                 u'key': u'/testkey',
+                 'prevValue': 'test_old',
+                 u'ttl': 19,
+                 u'value': u'test'
+             }
+             }
 
         self._mock_api(200, d)
         res = self.client.write('/testkey', 'test', prevValue='test_old')
@@ -101,11 +115,35 @@ class TestClientApiInterface(unittest.TestCase):
             prevValue='oldbog'
         )
 
+    def test_set_append(self):
+        """ Can append a new key """
+        d = {
+            u'action': u'create',
+            u'node': {
+                u'createdIndex': 190,
+                u'modifiedIndex': 190,
+                u'key': u'/testdir/190',
+                u'value': u'test'
+            }
+        }
+        self._mock_api(201, d)
+        res = self.client.write('/testdir', 'test')
+        self.assertEquals(res.createdIndex, 190)
+
+    def test_set_dir_with_value(self):
+        """ Creating a directory with a value raises an error. """
+        self.assertRaises(etcd.EtcdException, self.client.write,
+                          '/bar', 'testvalye', dir=True)
+
     def test_delete(self):
         """ Can delete a value """
         d = {
             u'action': u'delete',
-            u'key': u'/testkey',
+            u'node': {
+                u'key': u'/testkey',
+                "modifiedIndex": 3,
+                "createdIndex": 2
+            }
         }
         self._mock_api(200, d)
         res = self.client.delete('/testKey')
@@ -115,9 +153,11 @@ class TestClientApiInterface(unittest.TestCase):
         """ Can get a value """
         d = {
             u'action': u'get',
-            u'modifiedIndex': 190,
-            u'key': u'/testkey',
-            u'value': u'test'
+            u'node': {
+                u'modifiedIndex': 190,
+                u'key': u'/testkey',
+                u'value': u'test'
+            }
         }
         self._mock_api(200, d)
         res = self.client.read('/testKey')
@@ -127,21 +167,23 @@ class TestClientApiInterface(unittest.TestCase):
         """Can get values in dirs"""
         d = {
             u'action': u'get',
-            u'modifiedIndex': 190,
-            u'key': u'/testkey',
-            u'dir': True,
-            u'kvs': [
-                {
-                    u'key': u'/testDir/testKey',
-                    u'modifiedIndex': 150,
-                    u'value': 'test'
-                },
-                {
-                    u'key': u'/testDir/testKey2',
-                    u'modifiedIndex': 190,
-                    u'value': 'test2'
-                }
-            ]
+            u'node': {
+                u'modifiedIndex': 190,
+                u'key': u'/testkey',
+                u'dir': True,
+                u'nodes': [
+                    {
+                        u'key': u'/testDir/testKey',
+                        u'modifiedIndex': 150,
+                        u'value': 'test'
+                    },
+                    {
+                        u'key': u'/testDir/testKey2',
+                        u'modifiedIndex': 190,
+                        u'value': 'test2'
+                    }
+                ]
+            }
         }
         self._mock_api(200, d)
         res = self.client.read('/testDir', recursive=True)
@@ -156,9 +198,11 @@ class TestClientApiInterface(unittest.TestCase):
         """ Can check if key is not in client """
         d = {
             u'action': u'get',
-            u'modifiedIndex': 190,
-            u'key': u'/testkey',
-            u'value': u'test'
+            u'node': {
+                u'modifiedIndex': 190,
+                u'key': u'/testkey',
+                u'value': u'test'
+            }
         }
         self._mock_api(200, d)
         self.assertTrue('/testey' in self.client)
@@ -167,9 +211,11 @@ class TestClientApiInterface(unittest.TestCase):
         """ Can watch a key """
         d = {
             u'action': u'get',
-            u'modifiedIndex': 190,
-            u'key': u'/testkey',
-            u'value': u'test'
+            u'node': {
+                u'modifiedIndex': 190,
+                u'key': u'/testkey',
+                u'value': u'test'
+            }
         }
         self._mock_api(200, d)
         res = self.client.read('/testkey', wait=True)
@@ -179,9 +225,11 @@ class TestClientApiInterface(unittest.TestCase):
         """ Can watch a key starting from the given Index """
         d = {
             u'action': u'get',
-            u'modifiedIndex': 170,
-            u'key': u'/testkey',
-            u'value': u'testold'
+            u'node': {
+                u'modifiedIndex': 170,
+                u'key': u'/testkey',
+                u'value': u'testold'
+            }
         }
         self._mock_api(200, d)
         res = self.client.read('/testkey', wait=True, waitIndex=True)
@@ -225,6 +273,16 @@ class TestClientRequest(TestClientApiInterface):
             'test',
             prevValue='oldbog'
         )
+
+    def test_path_without_trailing_slash(self):
+        """ Exception will be raised if a path without a trailing slash is used """
+        self.assertRaises(ValueError, self.client.api_execute,
+                          'testpath/bar', self.client._MPUT)
+
+    def test_api_method_not_supported(self):
+        """ Exception will be raised if an unsupported HTTP method is used """
+        self.assertRaises(etcd.EtcdException,
+                          self.client.api_execute, '/testpath/bar', 'TRACE')
 
     def test_not_in(self):
         pass
