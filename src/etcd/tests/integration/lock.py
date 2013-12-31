@@ -24,13 +24,6 @@ class TestLocks(test_simple.EtcdIntegrationTest):
         lock = self.client.get_lock(key, ttl=ttl)
         self.assertRaises(etcd.EtcdException, lock.acquire)
 
-    #def test_acquire_lock_no_ttl(self):
-        #""" No TTL throws an error """
-        #key = '/testkey'
-        #expected_index = 'invalid'
-        #lock = self.client.get_lock(key)
-        #self.assertRaises(etcd.EtcdException, lock.acquire)
-
     def test_acquire_lock_with_context_manager(self):
         key = '/testkey'
         ttl = 1
