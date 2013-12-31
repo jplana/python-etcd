@@ -199,6 +199,12 @@ class Client(object):
         except KeyError:
             return False
 
+    def _sanitize_key(self,key):
+        if not key.startswith('/'):
+            key = "/{}".format(key)
+        return key
+
+
     def write(self, key, value, ttl=None, dir=False, append=False, **kwdargs):
         """
         Writes the value for a key, possibly doing atomit Compare-and-Swap
@@ -230,6 +236,7 @@ class Client(object):
         'newValue'
 
         """
+        key = self._sanitize_key(key)
         params = {
             'value': value
         }
@@ -284,6 +291,8 @@ class Client(object):
         'value'
 
         """
+        key = self._sanitize_key(key)
+
         params = {}
         for (k, v) in kwdargs.items():
             if k in self._read_options:
@@ -315,6 +324,8 @@ class Client(object):
         '/key'
 
         """
+        key = self._sanitize_key(key)
+
         kwds = {}
         if recursive is not None:
             kwds['recursive'] = recursive and "true" or "false"
