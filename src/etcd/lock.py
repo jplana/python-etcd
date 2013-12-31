@@ -49,8 +49,31 @@ class Lock(object):
             params[u'value'] = self.value
 
         res = self._api_execute(self._path, self.client._MPOST, params=params)
-        if res.status == 200:
-            self._index = res.data
+        self._index = res.data.decode('utf-8')
+        return self
+
+    def get(self):
+        """
+        Get Information on the lock.
+        This allows to operate on locks that have not been acquired directly.
+        """
+        res = self._api_execute(self._path, self.client._MGET)
+        if res.data:
+            self.value = res.data.decode('utf-8')
+        else:
+            raise etcd.EtcdException('Lock is non-existent (or expired)')
+        self._get_index()
+        return self
+
+    def _get_index(self):
+        res = self._api_execute(
+            self._path,
+            self.client._MGET,
+            {u'field': u'index'})
+        if not res.data:
+            raise etcd.EtcdException('Lock is non-existent (or expired)')
+        self._index = res.data.decode('utf-8')
+
 
     def is_locked(self):
         """Check if lock is currently locked."""

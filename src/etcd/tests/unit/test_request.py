@@ -11,7 +11,7 @@ except ImportError:
 from etcd import EtcdException
 
 
-class TestClientApiInterface(unittest.TestCase):
+class TestClientApiBase(unittest.TestCase):
 
     def setUp(self):
         self.client = etcd.Client()
@@ -34,6 +34,8 @@ class TestClientApiInterface(unittest.TestCase):
 
     def _mock_exception(self, exc, msg):
         self.client.api_execute = mock.Mock(side_effect=exc(msg))
+
+class TestClientApiInterface(TestClientApiBase):
 
     def test_machines(self):
         """ Can request machines """
@@ -236,9 +238,20 @@ class TestClientApiInterface(unittest.TestCase):
         self.assertEquals(res, etcd.EtcdResult(**d))
 
 
-class EtcdLockTestCase(TestClientApiInterface):
+class EtcdLockTestCase(TestClientApiBase):
     def setUp(self):
         self.client = etcd.Client()
+
+    def _mock_api(self, status, d):
+        #We want to test at a lower level here.
+        resp = self._prepare_response(status, d)
+        self.client.http.request_encode_body = mock.create_autospec(
+            self.client.http.request_encode_body, return_value=resp
+        )
+        self.client.http.request = mock.create_autospec(
+            self.client.http.request, return_value=resp
+        )
+
 
     def test_acquire_lock(self):
         """ Can get a lock. """
@@ -247,7 +260,7 @@ class EtcdLockTestCase(TestClientApiInterface):
         self._mock_api(200, '2')
         lock = self.client.get_lock(key, ttl=ttl)
         lock.acquire()
-        self.assertEquals(lock._index, b'2')
+        self.assertEquals(lock._index, '2')
 
     def test_acquire_lock_invalid_ttl(self):
         """ Invalid TTL throws an error """
@@ -278,6 +291,7 @@ class EtcdLockTestCase(TestClientApiInterface):
         lock.acquire()
         self.assertTrue(lock.is_locked())
 
+
     def test_renew(self):
         key = '/testkey'
         ttl = 1
@@ -289,6 +303,12 @@ class EtcdLockTestCase(TestClientApiInterface):
         lock.renew(2)
         self._mock_api(200, u'2')
         self.assertTrue(lock.is_locked())
+
+    def test_renew_fails_if_expired(self):
+        self._mock_api(200, u'4')
+        lock = self.client.get_lock('/testlock', value='test', ttl=1).acquire()
+        self._mock_api(500, 'renew lock error: cannot find: test')
+        self.assertRaises(etcd.EtcdException, lock.renew, 10)
 
     def test_renew_fails_without_locking(self):
         key = u'/testkey'
@@ -317,6 +337,13 @@ class EtcdLockTestCase(TestClientApiInterface):
                              u'Cannot release lock that is not locked')
         lock = self.client.get_lock(key, ttl=ttl)
         self.assertRaises(etcd.EtcdException, lock.release)
+
+    def test_release_fails_if_expired(self):
+        self._mock_api(200, u'4')
+        lock = self.client.get_lock('/testlock', value='test', ttl=1).acquire()
+        self._mock_api(500, 'release lock error: cannot find: test')
+        self.assertRaises(etcd.EtcdException, lock.release)
+
 
 
 class TestClientRequest(TestClientApiInterface):

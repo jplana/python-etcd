@@ -1,20 +1,20 @@
 import etcd
-from etcd.tests.integration import test_simple
-
+from . import test_simple
+import time
 
 class TestLocks(test_simple.EtcdIntegrationTest):
     def setUp(self):
         self.client = etcd.Client(port=6001)
 
     def test_acquire_lock(self):
-        """ Can get a lock. """
+        """ Can acquire a lock. """
         key = '/testkey'
         ttl = 1
         expected_index = '2'
-        lock = self.client.get_lock(key, ttl=ttl)
-        lock.acquire()
+        lock = self.client.get_lock(key, ttl=ttl).acquire()
         self.assertEquals(lock._index, expected_index)
         lock.release()
+        self.assertEquals(lock._index, None)
 
     def test_acquire_lock_invalid_ttl(self):
         """ Invalid TTL throws an error """
@@ -40,6 +40,13 @@ class TestLocks(test_simple.EtcdIntegrationTest):
         lock.acquire()
         self.assertTrue(lock.is_locked())
         lock.release()
+
+    def test_is_locked_on_expired_key(self):
+        key = '/testkey'
+        ttl = 1
+        lock = self.client.get_lock(key, value='test', ttl=ttl).acquire()
+        time.sleep(3)
+        self.assertFalse(lock.is_locked())
 
     def test_renew(self):
         key = '/testkey'
@@ -75,3 +82,11 @@ class TestLocks(test_simple.EtcdIntegrationTest):
         lock = self.client.get_lock(key, ttl=ttl)
         self.assertEquals(lock._index, None)
         self.assertRaises(etcd.EtcdException, lock.release)
+
+    def test_get(self):
+        key = '/testkey'
+        ttl = 5
+        with self.client.get_lock(key, ttl=ttl) as lock:
+            lock2 = self.client.get_lock(key).get()
+            self.assertTrue(lock2.is_locked())
+        self.assertFalse(lock2.is_locked())

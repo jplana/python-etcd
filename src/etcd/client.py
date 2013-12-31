@@ -525,6 +525,8 @@ class Client(object):
             try:
                 r = json.loads(resp)
             except ValueError:
+                r = None
+            if r:
+                etcd.EtcdError.handle(**r)
+            else:
                 raise etcd.EtcdException(resp)
-
-            etcd.EtcdError.handle(**json.loads(resp))
