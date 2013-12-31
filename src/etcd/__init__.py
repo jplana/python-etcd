@@ -1,5 +1,6 @@
 import collections
 from .client import Client
+from .lock import Lock
 
 
 class EtcdResult(object):

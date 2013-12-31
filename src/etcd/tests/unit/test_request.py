@@ -236,6 +236,98 @@ class TestClientApiInterface(unittest.TestCase):
         self.assertEquals(res, etcd.EtcdResult(**d))
 
 
+class EtcdLockTestCase(TestClientApiInterface):
+    def setUp(self):
+        self.client = etcd.Client()
+
+    def test_acquire_lock(self):
+        """ Can get a lock. """
+        key = '/testkey'
+        ttl = 1
+        expected_index = '2'
+        self._mock_api(200, expected_index)
+        lock = self.client.get_lock(key, ttl=ttl)
+        lock.acquire()
+        self.assertEquals(lock._index, expected_index)
+
+    def test_acquire_lock_invalid_ttl(self):
+        """ Invalid TTL throws an error """
+        key = '/testkey'
+        ttl = 'invalid'
+        expected_index = 'invalid'
+        self._mock_exception(etcd.EtcdException, 'invalid ttl: invalid')
+        lock = self.client.get_lock(key, ttl=ttl)
+        self.assertRaises(etcd.EtcdException, lock.acquire)
+
+    #def test_acquire_lock_no_ttl(self):
+        #""" No TTL throws an error """
+        #key = '/testkey'
+        #expected_index = 'invalid'
+        #self._mock_exception(etcd.EtcdException, 'invalid ttl:')
+        #lock = self.client.get_lock(key)
+        #self.assertRaises(etcd.EtcdException, lock.acquire)
+
+    def test_acquire_lock_with_context_manager(self):
+        key = '/testkey'
+        ttl = 1
+        self._mock_api(200, '2')
+        lock = self.client.get_lock(key, ttl=ttl)
+        with lock:
+            self.assertTrue(lock.is_locked())
+        self._mock_api(200, '')
+        self.assertFalse(lock.is_locked())
+
+    def test_is_locked(self):
+        key = '/testkey'
+        ttl = 1
+        self._mock_api(200, '')
+        lock = self.client.get_lock(key, ttl=ttl)
+        self.assertFalse(lock.is_locked())
+        self._mock_api(200, '2')
+        lock.acquire()
+        self.assertTrue(lock.is_locked())
+
+    def test_renew(self):
+        key = '/testkey'
+        ttl = 1
+        self._mock_api(200, '2')
+        lock = self.client.get_lock(key, ttl=ttl)
+        lock.acquire()
+        self.assertTrue(lock.is_locked())
+        self._mock_api(200, '')
+        lock.renew(2)
+        self._mock_api(200, '2')
+        self.assertTrue(lock.is_locked())
+
+    def test_renew_fails_without_locking(self):
+        key = '/testkey'
+        ttl = 1
+        self._mock_exception(etcd.EtcdException,
+                             'Cannot renew lock that is not locked')
+        lock = self.client.get_lock(key, ttl=ttl)
+        self.assertRaises(etcd.EtcdException, lock.renew, 2)
+
+    def test_release(self):
+        key = '/testkey'
+        ttl = 1
+        index = '2'
+        self._mock_api(200, index)
+        lock = self.client.get_lock(key, ttl=ttl)
+        lock.acquire()
+        self.assertTrue(lock.is_locked())
+        self._mock_api(200, '')
+        lock.release()
+        self.assertFalse(lock.is_locked())
+
+    def test_release_fails_without_locking(self):
+        key = '/testkey'
+        ttl = 1
+        self._mock_exception(etcd.EtcdException,
+                             'Cannot release lock that is not locked')
+        lock = self.client.get_lock(key, ttl=ttl)
+        self.assertRaises(etcd.EtcdException, lock.release)
+
+
 class TestClientRequest(TestClientApiInterface):
 
     def setUp(self):

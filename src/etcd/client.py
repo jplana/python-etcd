@@ -438,6 +438,9 @@ class Client(object):
                 local_index += 1
             yield response
 
+    def get_lock(self, *args, **kwargs):
+        return etcd.Lock(self, *args, **kwargs)
+
     def _result_from_response(self, response):
         """ Creates an EtcdResult from json dictionary """
         # TODO: add headers we obtained from the http respose to the etcd
