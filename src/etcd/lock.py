@@ -40,13 +40,13 @@ class Lock(object):
 
     @property
     def _path(self):
-        return '/mod/v2/lock{}'.format(self.key)
+        return u'/mod/v2/lock{}'.format(self.key)
 
     def acquire(self):
         """Acquire the lock from etcd. Blocks until lock is acquired."""
-        params = {'ttl': self.ttl}
+        params = {u'ttl': self.ttl}
         if self.value is not None:
-            params['value'] = self.value
+            params[u'value'] = self.value
 
         res = self._api_execute(self._path, self.client._MPOST, params=params)
         if res.status == 200:
@@ -54,15 +54,15 @@ class Lock(object):
 
     def is_locked(self):
         """Check if lock is currently locked."""
-        params = {'field': 'index'}
+        params = {u'field': u'index'}
         res = self._api_execute(self._path, self.client._MGET, params=params)
-        return res.data != ''
+        return bool(res.data)
 
     def release(self):
         """Release this lock."""
         if not self._index:
-            raise etcd.EtcdException('cannot release lock that has not been locked')
-        params = {'index': self._index}
+            raise etcd.EtcdException(u'Cannot release lock that has not been locked')
+        params = {u'index': self._index}
         res = self._api_execute(self._path, self.client._MDELETE, params=params)
         self._index = None
 
@@ -74,6 +74,6 @@ class Lock(object):
             new_ttl (int): new TTL to set.
         """
         if not self._index:
-            raise etcd.EtcdException('cannot renew lock that has not been locked')
-        params = {'ttl': new_ttl, 'index': self._index}
+            raise etcd.EtcdException(u'Cannot renew lock that has not been locked')
+        params = {u'ttl': new_ttl, u'index': self._index}
         res = self._api_execute(self._path, self.client._MPUT, params=params)
