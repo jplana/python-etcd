@@ -199,11 +199,10 @@ class Client(object):
         except KeyError:
             return False
 
-    def _sanitize_key(self,key):
+    def _sanitize_key(self, key):
         if not key.startswith('/'):
             key = "/{}".format(key)
         return key
-
 
     def write(self, key, value, ttl=None, dir=False, append=False, **kwdargs):
         """

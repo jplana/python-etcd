@@ -2,6 +2,7 @@ import contextlib
 
 import etcd
 
+
 class Lock(object):
 
     """
@@ -28,10 +29,6 @@ class Lock(object):
         self.value = value
         self._index = None
 
-    def _api_execute(self, *args, **kwargs):
-        """Proxy method for `self.client.api_execute`"""
-        return self.client.api_execute(*args, **kwargs)
-
     def __enter__(self):
         self.acquire()
 
@@ -48,7 +45,8 @@ class Lock(object):
         if self.value is not None:
             params[u'value'] = self.value
 
-        res = self._api_execute(self._path, self.client._MPOST, params=params)
+        res = self.client.api_execute(
+            self._path, self.client._MPOST, params=params)
         self._index = res.data.decode('utf-8')
         return self
 
@@ -57,7 +55,7 @@ class Lock(object):
         Get Information on the lock.
         This allows to operate on locks that have not been acquired directly.
         """
-        res = self._api_execute(self._path, self.client._MGET)
+        res = self.client.api_execute(self._path, self.client._MGET)
         if res.data:
             self.value = res.data.decode('utf-8')
         else:
@@ -66,7 +64,7 @@ class Lock(object):
         return self
 
     def _get_index(self):
-        res = self._api_execute(
+        res = self.client.api_execute(
             self._path,
             self.client._MGET,
             {u'field': u'index'})
@@ -74,19 +72,21 @@ class Lock(object):
             raise etcd.EtcdException('Lock is non-existent (or expired)')
         self._index = res.data.decode('utf-8')
 
-
     def is_locked(self):
         """Check if lock is currently locked."""
         params = {u'field': u'index'}
-        res = self._api_execute(self._path, self.client._MGET, params=params)
+        res = self.client.api_execute(
+            self._path, self.client._MGET, params=params)
         return bool(res.data)
 
     def release(self):
         """Release this lock."""
         if not self._index:
-            raise etcd.EtcdException(u'Cannot release lock that has not been locked')
+            raise etcd.EtcdException(
+                u'Cannot release lock that has not been locked')
         params = {u'index': self._index}
-        res = self._api_execute(self._path, self.client._MDELETE, params=params)
+        res = self.client.api_execute(
+            self._path, self.client._MDELETE, params=params)
         self._index = None
 
     def renew(self, new_ttl):
@@ -97,6 +97,8 @@ class Lock(object):
             new_ttl (int): new TTL to set.
         """
         if not self._index:
-            raise etcd.EtcdException(u'Cannot renew lock that has not been locked')
+            raise etcd.EtcdException(
+                u'Cannot renew lock that has not been locked')
         params = {u'ttl': new_ttl, u'index': self._index}
-        res = self._api_execute(self._path, self.client._MPUT, params=params)
+        res = self.client.api_execute(
+            self._path, self.client._MPUT, params=params)
