@@ -89,6 +89,31 @@ Watch a key
     client.watch('/nodes/n1') #equivalent to client.read('/nodes/n1', watch = True)
     client.watch('/nodes/n1', index = 10)
 
+Get a lock
+~~~~~~~~~~
+
+.. code:: python
+
+    # Initialize the lock object:
+    # NOTE: this does not acquire a lock yet
+    client = etcd.Client()
+    lock = client.get_lock('/customer1', ttl=60)
+
+    # Use the lock object:
+    lock.acquire()
+    lock.is_locked()  # True
+    lock.renew(60)
+    lock.release()
+    lock.is_locked()  # False
+
+    # The lock object may also be used as a context manager:
+    client = etcd.Client()
+    lock = client.get_lock('/customer1', ttl=60)
+    with lock as my_lock:
+        do_stuff()
+        lock.is_locked()  # True
+        lock.renew(60)
+    lock.is_locked()  # False
 
 Get machines in the cluster
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
