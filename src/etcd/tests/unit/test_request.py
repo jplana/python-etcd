@@ -96,7 +96,6 @@ class TestClientApiInterface(TestClientApiBase):
                  u'expiration': u'2013-09-14T00:56:59.316195568+02:00',
                  u'modifiedIndex': 183,
                  u'key': u'/testkey',
-                 'prevValue': 'test_old',
                  u'ttl': 19,
                  u'value': u'test'
              }

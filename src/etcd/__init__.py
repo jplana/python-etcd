@@ -11,7 +11,6 @@ class EtcdResult(object):
         'ttl': None,
         'modifiedIndex': None,
         'createdIndex': None,
-        'prevValue': None,
         'newKey': False,
         'dir': False,
     }
