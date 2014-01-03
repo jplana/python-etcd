@@ -37,23 +37,45 @@ Create a client object
    client = etcd.Client(port=4002)
    client = etcd.Client(host='127.0.0.1', port=4003)
    client = etcd.Client(host='127.0.0.1', port=4003, allow_redirect=False) # wont let you run sensitive commands on non-leader machines, default is true
-
+   client = etcd.Client(
+                host='127.0.0.1',
+                port=4003,
+                allow_reconnect=True,
+                protocol='https',)
 
 Set a key
 .........
 
 .. code-block:: python
 
-    client.set('/nodes/n1', 1)
+    client.write('/nodes/n1', 1)
     # with ttl
-    client.set('/nodes/n2', 2, ttl=4)  # sets the ttl to 4 seconds
+    client.write('/nodes/n2', 2, ttl=4)  # sets the ttl to 4 seconds
+    # create only
+    client.write('/nodes/n3', 'test', prevExist=False)
+    # Compare and swap values atomically
+    client.write('/nodes/n3', 'test2', prevValue='test1') #this fails to write
+    client.write('/nodes/n3', 'test2', prevIndex=10) #this fails to write
+    # mkdir
+    client.write('/nodes/queue', dir=True)
+    # Append a value to a queue dir
+    client.write('/nodes/queue', 'test', append=True) #will write i.e. /nodes/queue/11
+    client.write('/nodes/queue', 'test2', append=True) #will write i.e. /nodes/queue/12
 
 Get a key
 .........
 
 .. code-block:: python
 
-    client.get('/nodes/n2').value
+    client.read('/nodes/n2').value
+    #recursively read a directory
+    r = client.read('/nodes', recursive=True, sorted=True)
+    for child in r.children:
+        print("%s: %s" % (child.key,child.value))
+
+    client.read('/nodes/n2', wait=True) #Waits for a change in value in the key before returning.
+    client.read('/nodes/n2', wait=True, waitIndex=10)
+
 
 
 Delete a key
@@ -62,34 +84,10 @@ Delete a key
 .. code-block:: python
 
     client.delete('/nodes/n1')
+    client.delete('/nodes', dir=True) #spits an error if dir is not empty
+    client.delete('/nodes', recursive=True) #this works recursively
 
 
-Test and set
-............
-
-.. code-block:: python
-
-    client.test_and_set('/nodes/n2', 2, 4) # will set /nodes/n2 's value to 2 only if its previous value was 4
-
-
-Watch a key
-...........
-
-.. code-block:: python
-
-    client.watch('/nodes/n1') # will wait till the key is changed, and return once its changed
-
-
-List sub keys
-.............
-
-.. code-block:: python
-
-    # List nodes in the cluster
-    client.get('/nodes')
-
-    # List keys under /subtree
-    client.get('/subtree')
 
 
 Use lock primitives
