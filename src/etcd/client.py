@@ -24,7 +24,7 @@ class Client(object):
     _MPOST = 'POST'
     _MDELETE = 'DELETE'
     _comparison_conditions = ['prevValue', 'prevIndex', 'prevExist']
-    _read_options = ['recursive', 'wait', 'waitIndex']
+    _read_options = ['recursive', 'wait', 'waitIndex', 'sorted']
 
     def __init__(
             self,
@@ -278,6 +278,8 @@ class Client(object):
             wait (bool): If we should wait and return next time the key is changed
 
             waitIndex (int): The index to fetch results from.
+
+            sorted (bool): Sort the output keys (alphanumerically)
 
         Returns:
             client.EtcdResult (or an array of client.EtcdResult if a
