@@ -24,6 +24,8 @@ class Lock(object):
             value (mixed):  value to store on the lock.
         """
         self.client = client
+        if not key.startswith('/'):
+            key = '/' + key
         self.key = key
         self.ttl = ttl or 0
         self.value = value
