@@ -22,7 +22,7 @@ class LeaderElection(object):
             key = '/' + key
         return '/mod/v2/leader{}'.format(key)
 
-    def set(self, key, name=None, ttl=0):
+    def set(self, key, name=None, ttl=0, timeout=None):
         """
         Initialize a leader election object.
 
@@ -40,7 +40,8 @@ class LeaderElection(object):
         params = {'ttl': ttl, 'name': name}
         path = self.get_path(key)
 
-        res = self.client.api_execute(path, self.client._MPUT, params=params)
+        res = self.client.api_execute(
+            path, self.client._MPUT, params=params, timeout=timeout)
         return res.data.decode('utf-8')
 
     def get(self, key):
