@@ -85,6 +85,7 @@ Watch a key
 .. code:: python
 
     client.read('/nodes/n1', watch = True) # will wait till the key is changed, and return once its changed
+    client.read('/nodes/n1', watch = True, timeout=30) # will wait till the key is changed, and return once its changed, or exit with an exception after 30 seconds.
     client.read('/nodes/n1', watch = True, watchIndex = 10) # get all changes on this key starting from index 10
     client.watch('/nodes/n1') #equivalent to client.read('/nodes/n1', watch = True)
     client.watch('/nodes/n1', index = 10)
@@ -100,7 +101,7 @@ Locking module
     lock = client.get_lock('/customer1', ttl=60)
 
     # Use the lock object:
-    lock.acquire()
+    lock.acquire(timeout=30) #returns if lock could not be acquired within 30 seconds
     lock.is_locked()  # True
     lock.renew(60)
     lock.release()
@@ -125,7 +126,7 @@ Leader Election module
     # is used.
     # Zero or no ttl means the leader object is persistent.
     client = etcd.Client()
-    client.election.set('/mysql', name='foo.example.com', ttl=120) # returns the etcd index
+    client.election.set('/mysql', name='foo.example.com', ttl=120, timeout=30) # returns the etcd index
 
     # Get the name
     print(client.election.get('/mysql')) # 'foo.example.com'
