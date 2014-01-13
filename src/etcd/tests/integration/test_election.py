@@ -1,7 +1,7 @@
 import etcd
 from . import test_simple
 import time
-
+import unittest
 
 class TestElection(test_simple.EtcdIntegrationTest):
     def setUp(self):
@@ -19,6 +19,7 @@ class TestElection(test_simple.EtcdIntegrationTest):
     def test_set_invalid_ttl(self):
         self.assertRaises(etcd.EtcdException, self.client.election.set, '/mysql', name='foo.example.com', ttl='ciao')
 
+    @unittest.skip
     def test_get_non_existing(self):
         """This is actually expected to fail. See https://github.com/coreos/etcd/issues/446"""
         self.assertRaises(etcd.EtcdException, self.client.election.get, '/foobar')
