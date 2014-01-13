@@ -16,7 +16,7 @@ class EtcdResult(object):
         'dir': False,
     }
 
-    def __init__(self, action=None, node=None):
+    def __init__(self, action=None, node=None, **kwdargs):
         """
         Creates an EtcdResult object.
 

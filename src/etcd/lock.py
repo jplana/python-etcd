@@ -41,14 +41,14 @@ class Lock(object):
     def _path(self):
         return u'/mod/v2/lock{}'.format(self.key)
 
-    def acquire(self):
+    def acquire(self, timeout=None):
         """Acquire the lock from etcd. Blocks until lock is acquired."""
         params = {u'ttl': self.ttl}
         if self.value is not None:
             params[u'value'] = self.value
 
         res = self.client.api_execute(
-            self._path, self.client._MPOST, params=params)
+            self._path, self.client._MPOST, params=params, timeout=timeout)
         self._index = res.data.decode('utf-8')
         return self
 
@@ -91,7 +91,7 @@ class Lock(object):
             self._path, self.client._MDELETE, params=params)
         self._index = None
 
-    def renew(self, new_ttl):
+    def renew(self, new_ttl, timeout=None):
         """
         Renew the TTL on this lock.
 

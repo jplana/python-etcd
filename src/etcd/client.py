@@ -91,6 +91,9 @@ class Client(object):
 
         kw = {}
 
+        if self._read_timeout > 0:
+            kw['timeout'] = self._read_timeout
+
         if protocol == 'https':
             # If we don't allow TLSv1, clients using older version of OpenSSL
             # (<1.0) won't be able to connect.
@@ -261,7 +264,8 @@ class Client(object):
             path = kwdargs['_endpoint'] + key
         else:
             path = self.key_endpoint + key
-        response = self.api_execute(path, method, params)
+
+        response = self.api_execute(path, method, params=params)
         return self._result_from_response(response)
 
     def read(self, key, **kwdargs):
@@ -302,8 +306,10 @@ class Client(object):
                 else:
                     params[k] = v
 
+        timeout = 'timeout' in kwdargs and kwdargs['timeout'] or None
+
         response = self.api_execute(
-            self.key_endpoint + key, self._MGET, params)
+            self.key_endpoint + key, self._MGET, params=params, timeout=timeout)
         return self._result_from_response(response)
 
     def delete(self, key, recursive=None, dir=None):
@@ -400,7 +406,7 @@ class Client(object):
         """
         return self.read(key)
 
-    def watch(self, key, index=None):
+    def watch(self, key, index=None, timeout=None):
         """
         Blocks until a new event has been received, starting at index 'index'
 
@@ -420,9 +426,9 @@ class Client(object):
 
         """
         if index:
-            return self.read(key, wait=True, waitIndex=index)
+            return self.read(key, wait=True, waitIndex=index, timeout=timeout)
         else:
-            return self.read(key, wait=True)
+            return self.read(key, wait=True, timeout=timeout)
 
     def ethernal_watch(self, key, index=None):
         """
@@ -445,7 +451,7 @@ class Client(object):
         """
         local_index = index
         while True:
-            response = self.watch(key, index=local_index)
+            response = self.watch(key, index=local_index, timeout=0)
             if local_index is not None:
                 local_index += 1
             yield response
@@ -478,11 +484,17 @@ class Client(object):
         except IndexError:
             raise etcd.EtcdException('No more machines in the cluster')
 
-    def api_execute(self, path, method, params=None):
+    def api_execute(self, path, method,  params=None, timeout=None):
         """ Executes the query. """
 
         some_request_failed = False
         response = False
+
+        if timeout is None:
+            timeout = self.read_timeout
+
+        if timeout == 0:
+            timeout = None
 
         if not path.startswith('/'):
             raise ValueError('Path does not start with /')
@@ -495,6 +507,7 @@ class Client(object):
                     response = self.http.request(
                         method,
                         url,
+                        timeout=timeout,
                         fields=params,
                         redirect=self.allow_redirect)
 
@@ -503,6 +516,7 @@ class Client(object):
                         method,
                         url,
                         fields=params,
+                        timeout=timeout,
                         encode_multipart=False,
                         redirect=self.allow_redirect)
                 else:
