@@ -453,6 +453,10 @@ class Client(object):
     def get_lock(self, *args, **kwargs):
         return etcd.Lock(self, *args, **kwargs)
 
+    @property
+    def election(self):
+        return etcd.LeaderElection(self)
+
     def _result_from_response(self, response):
         """ Creates an EtcdResult from json dictionary """
         # TODO: add headers we obtained from the http respose to the etcd

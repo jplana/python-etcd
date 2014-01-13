@@ -116,6 +116,23 @@ Use lock primitives
         lock.renew(60)
     lock.is_locked()  # False
 
+Use the leader election primitives
+..................................
+
+.. code-block:: python
+
+    # Set a leader object with a name; if no name is given, the local hostname
+    # is used.
+    # Zero or no ttl means the leader object is persistent.
+    client = etcd.Client()
+    client.election.set('/mysql', name='foo.example.com', ttl=120) # returns the etcd index
+
+    # Get the name
+    print(client.election.get('/mysql')) # 'foo.example.com'
+    # Delete it!
+    print(client.election.delete('/mysql', name='foo.example.com'))
+
+
 
 Get machines in the cluster
 ...........................

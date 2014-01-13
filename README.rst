@@ -89,8 +89,8 @@ Watch a key
     client.watch('/nodes/n1') #equivalent to client.read('/nodes/n1', watch = True)
     client.watch('/nodes/n1', index = 10)
 
-Get a lock
-~~~~~~~~~~
+Locking module
+~~~~~~~~~~~~~~
 
 .. code:: python
 
@@ -114,6 +114,23 @@ Get a lock
         lock.is_locked()  # True
         lock.renew(60)
     lock.is_locked()  # False
+
+
+Leader Election module
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. code:: python
+
+    # Set a leader object with a name; if no name is given, the local hostname
+    # is used.
+    # Zero or no ttl means the leader object is persistent.
+    client = etcd.Client()
+    client.election.set('/mysql', name='foo.example.com', ttl=120) # returns the etcd index
+
+    # Get the name
+    print(client.election.get('/mysql')) # 'foo.example.com'
+    # Delete it!
+    print(client.election.delete('/mysql', name='foo.example.com'))
 
 Get machines in the cluster
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
