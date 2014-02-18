@@ -24,7 +24,7 @@ class Client(object):
     _MPOST = 'POST'
     _MDELETE = 'DELETE'
     _comparison_conditions = ['prevValue', 'prevIndex', 'prevExist']
-    _read_options = ['recursive', 'wait', 'waitIndex', 'sorted']
+    _read_options = ['recursive', 'wait', 'waitIndex', 'sorted', 'consistent']
 
     def __init__(
             self,
