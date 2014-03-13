@@ -35,6 +35,52 @@ class TestClientApiBase(unittest.TestCase):
     def _mock_exception(self, exc, msg):
         self.client.api_execute = mock.Mock(side_effect=exc(msg))
 
+
+class TestClientApiInternals(TestClientApiBase):
+
+    def test_read_default_timeout(self):
+        """ Read timeout set to the default """
+        d = {
+            u'action': u'get',
+            u'node': {
+                u'modifiedIndex': 190,
+                u'key': u'/testkey',
+                u'value': u'test'
+            }
+        }
+        self._mock_api(200, d)
+        res = self.client.read('/testkey')
+        self.assertEqual(self.client.api_execute.call_args[1]['timeout'], None)
+
+    def test_read_custom_timeout(self):
+        """ Read timeout set to the supplied value """
+        d = {
+            u'action': u'get',
+            u'node': {
+                u'modifiedIndex': 190,
+                u'key': u'/testkey',
+                u'value': u'test'
+            }
+        }
+        self._mock_api(200, d)
+        self.client.read('/testkey', timeout=15)
+        self.assertEqual(self.client.api_execute.call_args[1]['timeout'], 15)
+
+    def test_read_no_timeout(self):
+        """ Read timeout disabled """
+        d = {
+            u'action': u'get',
+            u'node': {
+                u'modifiedIndex': 190,
+                u'key': u'/testkey',
+                u'value': u'test'
+            }
+        }
+        self._mock_api(200, d)
+        self.client.read('/testkey', timeout=0)
+        self.assertEqual(self.client.api_execute.call_args[1]['timeout'], 0)
+
+
 class TestClientApiInterface(TestClientApiBase):
 
     def test_machines(self):

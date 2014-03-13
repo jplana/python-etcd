@@ -306,7 +306,7 @@ class Client(object):
                 else:
                     params[k] = v
 
-        timeout = 'timeout' in kwdargs and kwdargs['timeout'] or None
+        timeout = kwdargs.get('timeout', None)
 
         response = self.api_execute(
             self.key_endpoint + key, self._MGET, params=params, timeout=timeout)
