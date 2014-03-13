@@ -22,11 +22,6 @@ class TestClient(unittest.TestCase):
     def test_default_protocol(self):
         """ default protocol is http"""
         client = etcd.Client()
-        assert client.port == 'http'
-
-    def test_default_protocol(self):
-        """ default protocol is http"""
-        client = etcd.Client()
         assert client.protocol == 'http'
 
     def test_default_read_timeout(self):
