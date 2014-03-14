@@ -25,7 +25,7 @@ class Client(object):
     _MDELETE = 'DELETE'
     _comparison_conditions = ['prevValue', 'prevIndex', 'prevExist']
     _read_options = ['recursive', 'wait', 'waitIndex', 'sorted', 'consistent']
-
+    _del_conditions = ['prevValue', 'prevIndex']
     def __init__(
             self,
             host='127.0.0.1',
@@ -316,14 +316,21 @@ class Client(object):
             self.key_endpoint + key, self._MGET, params=params, timeout=timeout)
         return self._result_from_response(response)
 
-    def delete(self, key, recursive=None, dir=None):
+    def delete(self, key, recursive=None, dir=None, **kwdargs):
         """
         Removed a key from etcd.
 
         Args:
+
             key (str):  Key.
+
             recursive (bool): if we want to recursively delete a directory, set it to true
+
             dir (bool): if we want to delete a directory, set it to true
+
+            prevValue (str): compare key to this value, and swap only if corresponding (optional).
+
+            prevIndex (int): modify key only if actual modifiedIndex matches the provided one (optional).
 
         Returns:
             client.EtcdResult
@@ -342,6 +349,10 @@ class Client(object):
             kwds['recursive'] = recursive and "true" or "false"
         if dir is not None:
             kwds['dir'] = dir and "true" or "false"
+
+        for key in self._del_conditions:
+            if key in kwdargs:
+                kwds[key] = kwdargs[key]
 
         response = self.api_execute(
             self.key_endpoint + key, self._MDELETE, kwds)
