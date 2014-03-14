@@ -285,12 +285,16 @@ class Client(object):
 
             sorted (bool): Sort the output keys (alphanumerically)
 
+            timeout (int):  max seconds to wait for a read.
+
         Returns:
             client.EtcdResult (or an array of client.EtcdResult if a
             subtree is queried)
 
         Raises:
             KeyValue:  If the key doesn't exists.
+
+            urllib3.exceptions.TimeoutError: If timeout is reached.
 
         >>> print client.get('/key').value
         'value'
@@ -415,11 +419,15 @@ class Client(object):
 
             index (int): Index to start from.
 
+            timeout (int):  max seconds to wait for a read.
+
         Returns:
             client.EtcdResult
 
         Raises:
             KeyValue:  If the key doesn't exists.
+
+            urllib3.exceptions.TimeoutError: If timeout is reached.
 
         >>> print client.watch('/key').value
         'value'
