@@ -103,6 +103,16 @@ class TestSimple(EtcdIntegrationTest):
         except KeyError as e:
             pass
 
+    def test_update(self):
+        """INTEGRATION: update a value"""
+        self.client.set('/foo', 3)
+        c = self.client.get('/foo')
+        c.value = int(c.value) + 3
+        self.client.update(c)
+        newres = self.client.get('/foo')
+        self.assertEquals(newres.value, u'6')
+        self.assertRaises(ValueError, self.client.update, c)
+
     def test_retrieve_subkeys(self):
         """ INTEGRATION: retrieve multiple subkeys """
         set_result = self.client.write('/subtree/test_set', 'test-key1')

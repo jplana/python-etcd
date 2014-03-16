@@ -113,6 +113,26 @@ class TestClientApiInterface(TestClientApiBase):
         res = self.client.write('/testkey', 'test')
         self.assertEquals(res, etcd.EtcdResult(**d))
 
+
+    def test_update(self):
+        """Can update a result."""
+        d = {u'action': u'set',
+             u'node': {
+                 u'expiration': u'2013-09-14T00:56:59.316195568+02:00',
+                 u'modifiedIndex': 6,
+                 u'key': u'/testkey',
+                 u'ttl': 19,
+                 u'value': u'test'
+                 }
+             }
+        self._mock_api(200,d)
+        res = self.client.get('/testkey')
+        res.value = 'ciao'
+        d['node']['value'] = 'ciao'
+        self._mock_api(200,d)
+        newres = self.client.update(res)
+        self.assertEquals(newres.value, 'ciao')
+
     def test_newkey(self):
         """ Can set a new value """
         d = {
@@ -129,6 +149,8 @@ class TestClientApiInterface(TestClientApiBase):
         res = self.client.write('/testkey', 'test')
         d['node']['newKey'] = True
         self.assertEquals(res, etcd.EtcdResult(**d))
+
+
 
     def test_not_found_response(self):
         """ Can handle server not found response """
@@ -444,3 +466,25 @@ class TestClientRequest(TestClientApiInterface):
 
     def test_in(self):
         pass
+
+    def test_update_fails(self):
+        """ Non-atomic updates fail """
+        d = {u'action': u'set',
+             u'node': {
+                u'expiration': u'2013-09-14T00:56:59.316195568+02:00',
+                u'modifiedIndex': 6,
+                u'key': u'/testkey',
+                u'ttl': 19,
+                u'value': u'test'
+                }
+             }
+        res = etcd.EtcdResult(**d)
+
+        error = {
+            "errorCode":101,
+            "message":"Compare failed",
+            "cause":"[ != bar] [7 != 6]",
+            "index":6}
+        self._mock_api(412, error)
+        res.value = 'bar'
+        self.assertRaises(ValueError, self.client.update, res)

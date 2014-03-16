@@ -50,7 +50,7 @@ class Client(object):
             read_timeout (int):  max seconds to wait for a read.
 
             allow_redirect (bool): allow the client to connect to other nodes.
-
++
             protocol (str):  Protocol used to connect to etcd.
 
             cert (mixed):   If a string, the whole ssl client certificate;
@@ -207,6 +207,7 @@ class Client(object):
             key = "/{}".format(key)
         return key
 
+
     def write(self, key, value, ttl=None, dir=False, append=False, **kwdargs):
         """
         Writes the value for a key, possibly doing atomit Compare-and-Swap
@@ -267,6 +268,29 @@ class Client(object):
 
         response = self.api_execute(path, method, params=params)
         return self._result_from_response(response)
+
+    def update(self, obj):
+        """
+        Updates the value for a key atomically. Typical usage would be:
+
+        c = etcd.Client()
+        o = c.read("/somekey")
+        o.value += 1
+        c.update(o)
+
+        Args:
+            obj (etcd.EtcdResult):  The object that needs updating.
+
+        """
+        return self.write(
+            obj.key,
+            obj.value,
+            ttl=obj.ttl,
+            dir=obj.dir,
+            prevExist=True,
+            prevIndex=obj.modifiedIndex)
+
+
 
     def read(self, key, **kwdargs):
         """
