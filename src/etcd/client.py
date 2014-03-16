@@ -350,12 +350,12 @@ class Client(object):
         if dir is not None:
             kwds['dir'] = dir and "true" or "false"
 
-        for key in self._del_conditions:
-            if key in kwdargs:
-                kwds[key] = kwdargs[key]
+        for k in self._del_conditions:
+            if k in kwdargs:
+                kwds[k] = kwdargs[k]
 
         response = self.api_execute(
-            self.key_endpoint + key, self._MDELETE, kwds)
+            self.key_endpoint + key, self._MDELETE, params=kwds)
         return self._result_from_response(response)
 
     # Higher-level methods on top of the basic primitives
