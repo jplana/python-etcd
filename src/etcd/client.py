@@ -348,13 +348,16 @@ class Client(object):
 
             key (str):  Key.
 
-            recursive (bool): if we want to recursively delete a directory, set it to true
+            recursive (bool): if we want to recursively delete a directory, set
+                              it to true
 
             dir (bool): if we want to delete a directory, set it to true
 
-            prevValue (str): compare key to this value, and swap only if corresponding (optional).
+            prevValue (str): compare key to this value, and swap only if
+                             corresponding (optional).
 
-            prevIndex (int): modify key only if actual modifiedIndex matches the provided one (optional).
+            prevIndex (int): modify key only if actual modifiedIndex matches the
+                             provided one (optional).
 
         Returns:
             client.EtcdResult
@@ -527,7 +530,7 @@ class Client(object):
         except IndexError:
             raise etcd.EtcdException('No more machines in the cluster')
 
-    def api_execute(self, path, method,  params=None, timeout=None):
+    def api_execute(self, path, method, params=None, timeout=None):
         """ Executes the query. """
 
         some_request_failed = False
