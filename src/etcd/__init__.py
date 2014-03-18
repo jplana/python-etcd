@@ -40,12 +40,9 @@ class EtcdResult(object):
 
     @property
     def children(self):
-        if not self._children:
-            yield self
-            return
         for n in self._children:
-            for child in EtcdResult(None, n).children:
-                yield child
+            yield EtcdResult(None, n)
+
         return
 
     def __eq__(self, other):
