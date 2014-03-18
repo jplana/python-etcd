@@ -78,6 +78,15 @@ Atomic Compare and Swap
     client.write('/nodes/n2', 2, prevIndex = 30) # will set /nodes/n2 's value to 2 only if the key was last modified at index 30
     client.test_and_set('/nodes/n2', 2, 4) #equivalent to client.write('/nodes/n2', 2, prevValue = 4)
 
+You can also atomically update a result:
+
+.. code:: python
+
+    result = client.read('/foo')
+    print(result.value) # bar
+    result.value += u'bar'
+    updated = client.update(result) # if any other client wrote '/foo' in the meantime this will fail
+    print(updated.value) # barbar
 
 Watch a key
 ~~~~~~~~~~~

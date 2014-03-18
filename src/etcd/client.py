@@ -50,7 +50,7 @@ class Client(object):
             read_timeout (int):  max seconds to wait for a read.
 
             allow_redirect (bool): allow the client to connect to other nodes.
-
++
             protocol (str):  Protocol used to connect to etcd.
 
             cert (mixed):   If a string, the whole ssl client certificate;
@@ -207,6 +207,7 @@ class Client(object):
             key = "/{}".format(key)
         return key
 
+
     def write(self, key, value, ttl=None, dir=False, append=False, **kwdargs):
         """
         Writes the value for a key, possibly doing atomit Compare-and-Swap
@@ -268,6 +269,29 @@ class Client(object):
         response = self.api_execute(path, method, params=params)
         return self._result_from_response(response)
 
+    def update(self, obj):
+        """
+        Updates the value for a key atomically. Typical usage would be:
+
+        c = etcd.Client()
+        o = c.read("/somekey")
+        o.value += 1
+        c.update(o)
+
+        Args:
+            obj (etcd.EtcdResult):  The object that needs updating.
+
+        """
+        return self.write(
+            obj.key,
+            obj.value,
+            ttl=obj.ttl,
+            dir=obj.dir,
+            prevExist=True,
+            prevIndex=obj.modifiedIndex)
+
+
+
     def read(self, key, **kwdargs):
         """
         Returns the value of the key 'key'.
@@ -324,13 +348,16 @@ class Client(object):
 
             key (str):  Key.
 
-            recursive (bool): if we want to recursively delete a directory, set it to true
+            recursive (bool): if we want to recursively delete a directory, set
+                              it to true
 
             dir (bool): if we want to delete a directory, set it to true
 
-            prevValue (str): compare key to this value, and swap only if corresponding (optional).
+            prevValue (str): compare key to this value, and swap only if
+                             corresponding (optional).
 
-            prevIndex (int): modify key only if actual modifiedIndex matches the provided one (optional).
+            prevIndex (int): modify key only if actual modifiedIndex matches the
+                             provided one (optional).
 
         Returns:
             client.EtcdResult
@@ -503,7 +530,7 @@ class Client(object):
         except IndexError:
             raise etcd.EtcdException('No more machines in the cluster')
 
-    def api_execute(self, path, method,  params=None, timeout=None):
+    def api_execute(self, path, method, params=None, timeout=None):
         """ Executes the query. """
 
         some_request_failed = False

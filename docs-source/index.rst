@@ -62,6 +62,18 @@ Set a key
     client.write('/nodes/queue', 'test', append=True) #will write i.e. /nodes/queue/11
     client.write('/nodes/queue', 'test2', append=True) #will write i.e. /nodes/queue/12
 
+You can also atomically update a result:
+
+.. code:: python
+
+    result = client.read('/foo')
+    print(result.value) # bar
+    result.value += u'bar'
+    updated = client.update(result) # if any other client wrote '/foo' in the meantime this will fail
+    print(updated.value) # barbar
+
+
+
 Get a key
 .........
 
