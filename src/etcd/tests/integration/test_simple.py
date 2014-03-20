@@ -122,6 +122,13 @@ class TestSimple(EtcdIntegrationTest):
         result = [subkey.value for subkey in get_result.children]
         self.assertEquals(['test-key1', 'test-key2', 'test-key3'], result)
 
+    def test_directory_ttl_update(self):
+        """ INTEGRATION: should be able to update a dir TTL """
+        self.client.write('/dir', None, dir=True, ttl=30)
+        res = self.client.write('/dir', None, dir=True, ttl=31, prevExist=True)
+        self.assertEquals(res.ttl, 31)
+
+
 
 class TestErrors(EtcdIntegrationTest):
 
@@ -155,6 +162,18 @@ class TestErrors(EtcdIntegrationTest):
             assert False
         except ValueError as e:
             pass
+
+    def test_creating_already_existing_directory(self):
+        """ INTEGRATION: creating an already existing directory without
+        `prevExist=True` should fail """
+        self.client.write('/mydir', None, dir=True)
+
+        try:
+           self.client.write('/mydir', None, dir=True)
+           assert False
+        except KeyError as e:
+            pass
+
 
 
 class TestClusterFunctions(EtcdIntegrationTest):

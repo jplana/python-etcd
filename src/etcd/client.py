@@ -240,9 +240,9 @@ class Client(object):
 
         """
         key = self._sanitize_key(key)
-        params = {
-            'value': value
-        }
+        params = {}
+        if value:
+            params['value'] = value
 
         if ttl:
             params['ttl'] = ttl
