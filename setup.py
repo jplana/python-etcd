@@ -10,8 +10,10 @@ version = '0.3.0'
 
 install_requires = [
     'urllib3==1.7',
-    'pyOpenSSL==0.13.1',
 ]
+
+if sys.version_info[0] == 2:
+    install_requires.append('pyOpenSSL==0.13.1')
 
 
 setup(name='python-etcd',
