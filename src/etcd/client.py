@@ -282,13 +282,17 @@ class Client(object):
             obj (etcd.EtcdResult):  The object that needs updating.
 
         """
-        return self.write(
-            obj.key,
-            obj.value,
-            ttl=obj.ttl,
-            dir=obj.dir,
-            prevExist=True,
-            prevIndex=obj.modifiedIndex)
+        kwdargs = {
+            'dir': obj.dir,
+            'ttl': obj.ttl,
+            'prevExist': True
+            }
+
+        if not obj.dir:
+            # prevIndex on a dir causes a 'not a file' error. d'oh!
+            kwdargs['prevIndex'] = obj.modifiedIndex
+
+        return self.write(obj.key, obj.value, **kwdargs)
 
 
 
@@ -511,13 +515,12 @@ class Client(object):
 
     def _result_from_response(self, response):
         """ Creates an EtcdResult from json dictionary """
-        # TODO: add headers we obtained from the http respose to the etcd
-        # result.
         try:
             res = json.loads(response.data.decode('utf-8'))
             r = etcd.EtcdResult(**res)
             if response.status == 201:
                 r.newKey = True
+            r.parse_headers(response)
             return r
         except Exception as e:
             raise etcd.EtcdException(

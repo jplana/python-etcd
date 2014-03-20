@@ -14,6 +14,8 @@ class FakeHTTPResponse(object):
         self.status = status
         self.data = data.encode('utf-8')
 
+    def getheaders(self):
+        return {}
 
 class TestClientRequest(unittest.TestCase):
 

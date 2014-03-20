@@ -16,7 +16,7 @@ class EtcdResult(object):
         'dir': False,
     }
 
-    def __init__(self, action=None, node=None, **kwdargs):
+    def __init__(self, action=None, node=None, prevNode=None, **kwdargs):
         """
         Creates an EtcdResult object.
 
@@ -38,6 +38,16 @@ class EtcdResult(object):
             # We keep the data in raw format, converting them only when needed
             self._children = node['nodes']
 
+        if prevNode:
+            self._prev_node = EtcdResult(None, node=prevNode)
+            # See issue 38: when returning a write() op etcd has a bogus result.
+            if self._prev_node.dir and not self.dir:
+                self.dir = True
+
+    def parse_headers(self, response):
+        headers = response.getheaders()
+        self.etcd_index = headers.get('x-etcd-index', 1)
+        self.raft_index = headers.get('x-raft-index', 1)
 
     def get_subtree(self, leaves_only=False):
         """
