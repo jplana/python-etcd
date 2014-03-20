@@ -38,15 +38,37 @@ class EtcdResult(object):
             # We keep the data in raw format, converting them only when needed
             self._children = node['nodes']
 
-    @property
-    def children(self):
+
+    def get_subtree(self, leaves_only=False):
+        """
+        Get all the subtree resulting from a recursive=true call to etcd.
+
+        Args:
+            leaves_only (bool): if true, only value nodes are returned
+
+
+        """
         if not self._children:
+            #if the current result is a leaf, return itself
             yield self
             return
         for n in self._children:
-            for child in EtcdResult(None, n).children:
+            node = EtcdResult(None, n)
+            if not leaves_only:
+                #Return also dirs, not just value nodes
+                yield node
+            for child in node.children:
                 yield child
         return
+
+    @property
+    def leaves(self):
+        return self.get_subtree(leaves_only=True)
+
+    @property
+    def children(self):
+        """ Deprecated, use EtcdResult.leaves instead """
+        return self.leaves
 
     def __eq__(self, other):
         if not (type(self) is type(other)):

@@ -100,6 +100,11 @@ class TestClientApiInternals(TestClientApiBase):
 
 
 class TestClientApiInterface(TestClientApiBase):
+    """
+    All tests defined in this class are executed also in TestClientRequest.
+
+    If a test should be run only in this class, please override the method there.
+    """
 
     def test_machines(self):
         """ Can request machines """
