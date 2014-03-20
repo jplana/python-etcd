@@ -80,6 +80,24 @@ class TestClientApiInternals(TestClientApiBase):
         self.client.read('/testkey', timeout=0)
         self.assertEqual(self.client.api_execute.call_args[1]['timeout'], 0)
 
+    def test_write_no_params(self):
+        """ Calling `write` without a value argument will omit the `value` from
+        the API call params """
+        d = {
+            u'action': u'set',
+            u'node': {
+                u'createdIndex': 17,
+                u'dir': True,
+                u'key': u'/newdir',
+                u'modifiedIndex': 17
+            }
+        }
+        self._mock_api(200, d)
+        self.client.write('/newdir', None, dir=True)
+        self.assertEquals(self.client.api_execute.call_args,
+            (('/v2/keys/newdir', 'PUT'), dict(params={'dir': 'true'})))
+
+
 
 class TestClientApiInterface(TestClientApiBase):
 
@@ -112,7 +130,6 @@ class TestClientApiInterface(TestClientApiBase):
         self._mock_api(200, d)
         res = self.client.write('/testkey', 'test')
         self.assertEquals(res, etcd.EtcdResult(**d))
-
 
     def test_update(self):
         """Can update a result."""
