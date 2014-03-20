@@ -241,7 +241,7 @@ class Client(object):
         """
         key = self._sanitize_key(key)
         params = {}
-        if value:
+        if value is not None:
             params['value'] = value
 
         if ttl:

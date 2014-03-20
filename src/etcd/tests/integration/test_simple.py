@@ -133,15 +133,10 @@ class TestSimple(EtcdIntegrationTest):
 class TestErrors(EtcdIntegrationTest):
 
     def test_is_not_a_file(self):
-        """ INTEGRATION: try to write  value to a directory """
+        """ INTEGRATION: try to write  value to an existing directory """
 
-        set_result = self.client.set('/directory/test-key', 'test-value')
-
-        try:
-            get_result = self.client.set('/directory', 'test-value')
-            assert False
-        except KeyError as e:
-            pass
+        self.client.set('/directory/test-key', 'test-value')
+        self.assertRaises(KeyError, self.client.set, '/directory', 'test-value')
 
     def test_test_and_set(self):
         """ INTEGRATION: try test_and_set operation """
@@ -153,27 +148,14 @@ class TestErrors(EtcdIntegrationTest):
             'test-value',
             'old-test-value')
 
-        try:
-            set_result = self.client.test_and_set(
-                '/test-key',
-                'new-value',
-                'old-test-value')
-
-            assert False
-        except ValueError as e:
-            pass
+        self.assertRaises(ValueError, self.client.test_and_set, '/test-key', 'new-value', 'old-test-value')
 
     def test_creating_already_existing_directory(self):
         """ INTEGRATION: creating an already existing directory without
         `prevExist=True` should fail """
         self.client.write('/mydir', None, dir=True)
 
-        try:
-           self.client.write('/mydir', None, dir=True)
-           assert False
-        except KeyError as e:
-            pass
-
+        self.assertRaises(KeyError, self.client.write, '/mydir', None, dir=True)
 
 
 class TestClusterFunctions(EtcdIntegrationTest):
@@ -500,16 +482,8 @@ class TestAuthenticatedAccess(EtcdIntegrationTest):
         client = etcd.Client(
             protocol='https', port=6001, ca_cert=self.ca2_cert_path)
 
-        try:
-            set_result = client.set('/test_set', 'test-key')
-            assert False
-        except urllib3.exceptions.SSLError as e:
-            assert True
-
-        try:
-            get_result = client.get('/test_set')
-        except urllib3.exceptions.SSLError as e:
-            assert True
+        self.assertRaises(urllib3.exceptions.SSLError, client.set, '/test-set', 'test-key')
+        self.assertRaises(urllib3.exceptions.SSLError, client.get, '/test-set')
 
     def test_get_set_authenticated(self):
         """ INTEGRATION: set/get a new value authenticated """
