@@ -13,7 +13,7 @@ install:
 
 # command to run tests
 script:
-  PATH=$PATH:./etcd bin/test
+  PATH=$PATH:./etcd/bin bin/test
 
 # Add env var to detect it during build
 env: TRAVIS=True

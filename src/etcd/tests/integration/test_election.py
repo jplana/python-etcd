@@ -17,9 +17,8 @@ class TestElection(test_simple.EtcdIntegrationTest):
 
 
     def test_set_invalid_ttl(self):
-        self.assertRaises(etcd.EtcdException, self.client.election.set, '/mysql', name='foo.example.com', ttl='ciao')
+        self.assertRaises(ValueError, self.client.election.set, '/mysql', name='foo.example.com', ttl='ciao')
 
-    @unittest.skip
     def test_get_non_existing(self):
         """This is actually expected to fail. See https://github.com/coreos/etcd/issues/446"""
         self.assertRaises(etcd.EtcdException, self.client.election.get, '/foobar')
@@ -32,4 +31,4 @@ class TestElection(test_simple.EtcdIntegrationTest):
         e.set('/mysql', name='foo', ttl=1)
         time.sleep(2)
         self.assertRaises(etcd.EtcdException, e.get, '/mysql')
-        self.assertRaises(etcd.EtcdException, e.delete, '/mysql', name='foo')
+        self.assertRaises(KeyError, e.delete, '/mysql', name='foo')

@@ -22,7 +22,7 @@ class TestLocks(test_simple.EtcdIntegrationTest):
         ttl = 'invalid'
         expected_index = 'invalid'
         lock = self.client.get_lock(key, ttl=ttl)
-        self.assertRaises(etcd.EtcdException, lock.acquire)
+        self.assertRaises(ValueError, lock.acquire)
 
     def test_acquire_lock_with_context_manager(self):
         key = '/testkey'

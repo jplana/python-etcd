@@ -127,6 +127,7 @@ class TestSimple(EtcdIntegrationTest):
         self.client.write('/dir', None, dir=True, ttl=30)
         res = self.client.write('/dir', None, dir=True, ttl=31, prevExist=True)
         self.assertEquals(res.ttl, 31)
+        res = self.client.get('/dir')
         res.ttl = 120
         new_res = self.client.update(res)
         self.assertEquals(new_res.ttl, 120)
