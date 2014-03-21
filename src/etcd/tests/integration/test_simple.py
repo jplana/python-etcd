@@ -362,7 +362,7 @@ class TestWatch(EtcdIntegrationTest):
         def watch_value(key, queue):
             c = etcd.Client(port=6001)
             for i in range(0, 3):
-                event = next(c.ethernal_watch(key)).value
+                event = next(c.eternal_watch(key)).value
                 queue.put(event)
 
         changer = multiprocessing.Process(
@@ -400,7 +400,7 @@ class TestWatch(EtcdIntegrationTest):
 
         def watch_value(key, index, queue):
             c = etcd.Client(port=6001)
-            iterevents = c.ethernal_watch(key, index=index)
+            iterevents = c.eternal_watch(key, index=index)
             for i in range(0, 3):
                 queue.put(next(iterevents).value)
 

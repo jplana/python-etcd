@@ -480,7 +480,7 @@ class Client(object):
         else:
             return self.read(key, wait=True, timeout=timeout)
 
-    def ethernal_watch(self, key, index=None):
+    def eternal_watch(self, key, index=None):
         """
         Generator that will yield changes from a key.
         Note that this method will block forever until an event is generated.
@@ -492,7 +492,7 @@ class Client(object):
         Yields:
             client.EtcdResult
 
-        >>> for event in client.ethernal_watch('/subcription_key'):
+        >>> for event in client.eternal_watch('/subcription_key'):
         ...     print event.value
         ...
         value1
