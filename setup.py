@@ -13,6 +13,10 @@ install_requires = [
     'pyOpenSSL==0.13.1',
 ]
 
+test_requires = [
+    'mock',
+    'nose',
+]
 
 setup(name='python-etcd',
     version=version,
@@ -30,9 +34,11 @@ setup(name='python-etcd',
     url='http://github.com/jplana/python-etcd',
     license='MIT',
     packages=find_packages('src'),
-    package_dir = {'': 'src'},include_package_data=True,
+    package_dir = {'': 'src'},
+    include_package_data=True,
     zip_safe=False,
     install_requires=install_requires,
-      test_suite='tests.unit',
+    tests_require=test_requires,
+    test_suite='nose.collector',
 
 )
