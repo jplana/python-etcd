@@ -259,7 +259,7 @@ class TestEventGenerator(object):
                    u'value': u'test'}
                }) == result
 
-    def test_ethernal_watch(self):
+    def test_eternal_watch(self):
         """ Can watch values from generator """
         client = etcd.Client()
         client.api_execute = mock.Mock(
@@ -274,7 +274,7 @@ class TestEventGenerator(object):
                                           '"modifiedIndex":180}}')
         )
         for result in range(1, 5):
-            result = next(client.ethernal_watch('/testkey', index=180))
+            result = next(client.eternal_watch('/testkey', index=180))
             yield self.check_watch, result
 
 
