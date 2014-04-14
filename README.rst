@@ -93,10 +93,10 @@ Watch a key
 
 .. code:: python
 
-    client.read('/nodes/n1', watch = True) # will wait till the key is changed, and return once its changed
-    client.read('/nodes/n1', watch = True, timeout=30) # will wait till the key is changed, and return once its changed, or exit with an exception after 30 seconds.
-    client.read('/nodes/n1', watch = True, index = 10) # get all changes on this key starting from index 10
-    client.watch('/nodes/n1') #equivalent to client.read('/nodes/n1', watch = True)
+    client.read('/nodes/n1', wait = True) # will wait till the key is changed, and return once its changed
+    client.read('/nodes/n1', wait = True, timeout=30) # will wait till the key is changed, and return once its changed, or exit with an exception after 30 seconds.
+    client.read('/nodes/n1', wait = True, index = 10) # get all changes on this key starting from index 10
+    client.watch('/nodes/n1') #equivalent to client.read('/nodes/n1', wait = True)
     client.watch('/nodes/n1', index = 10)
 
 Locking module
