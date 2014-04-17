@@ -95,7 +95,7 @@ Watch a key
 
     client.read('/nodes/n1', wait = True) # will wait till the key is changed, and return once its changed
     client.read('/nodes/n1', wait = True, timeout=30) # will wait till the key is changed, and return once its changed, or exit with an exception after 30 seconds.
-    client.read('/nodes/n1', wait = True, index = 10) # get all changes on this key starting from index 10
+    client.read('/nodes/n1', wait = True, waitIndex = 10) # get all changes on this key starting from index 10
     client.watch('/nodes/n1') #equivalent to client.read('/nodes/n1', wait = True)
     client.watch('/nodes/n1', index = 10)
 
