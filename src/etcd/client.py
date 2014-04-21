@@ -23,9 +23,9 @@ class Client(object):
     _MPUT = 'PUT'
     _MPOST = 'POST'
     _MDELETE = 'DELETE'
-    _comparison_conditions = ['prevValue', 'prevIndex', 'prevExist']
-    _read_options = ['recursive', 'wait', 'waitIndex', 'sorted', 'consistent']
-    _del_conditions = ['prevValue', 'prevIndex']
+    _comparison_conditions = set(('prevValue', 'prevIndex', 'prevExist'))
+    _read_options = set(('recursive', 'wait', 'waitIndex', 'sorted', 'consistent'))
+    _del_conditions = set(('prevValue', 'prevIndex'))
     def __init__(
             self,
             host='127.0.0.1',
