@@ -18,9 +18,9 @@ class LeaderElection(object):
         self.client = client
 
     def get_path(self, key):
-        if not key.startswith('/'):
-            key = '/' + key
-        return '/mod/v2/leader{}'.format(key)
+        if key.startswith('/'):
+            return '/mod/v2/leader{}'.format(key)
+        return '/mod/v2/leader/{}'.format(key)
 
     def set(self, key, name=None, ttl=0, timeout=None):
         """
@@ -75,8 +75,5 @@ class LeaderElection(object):
         """
         path = self.get_path(key)
         name = name or platform.node()
-        res = self.client.api_execute(
-            path, self.client._MDELETE, {'name': name})
-        if (res.data.decode('utf-8') == ''):
-            return True
-        return False
+        res = self.client.api_execute(path, self.client._MDELETE, {'name': name})
+        return res.data.decode('utf-8') == ''
