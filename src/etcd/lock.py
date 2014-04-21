@@ -9,7 +9,7 @@ class Lock(object):
     Lock object using etcd's lock module.
     """
 
-    def __init__(self, client, key, ttl=None, value=None):
+    def __init__(self, client, key, ttl=0, value=None):
         """
         Initialize a lock object.
 
@@ -27,7 +27,7 @@ class Lock(object):
         if not key.startswith('/'):
             key = '/' + key
         self.key = key
-        self.ttl = ttl or 0
+        self.ttl = ttl
         self.value = value
         self._index = None
 
