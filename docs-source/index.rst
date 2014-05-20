@@ -34,6 +34,7 @@ Create a client object
    import etcd
 
    client = etcd.Client() # this will create a client against etcd server running on localhost on port 4001
+   client = etcd.Client(namespace="app/production") # like the previous one but will prefix all key path by /app/production
    client = etcd.Client(port=4002)
    client = etcd.Client(host='127.0.0.1', port=4003)
    client = etcd.Client(host='127.0.0.1', port=4003, allow_redirect=False) # wont let you run sensitive commands on non-leader machines, default is true

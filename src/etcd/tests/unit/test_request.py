@@ -97,6 +97,25 @@ class TestClientApiInternals(TestClientApiBase):
         self.assertEquals(self.client.api_execute.call_args,
             (('/v2/keys/newdir', 'PUT'), dict(params={'dir': 'true'})))
 
+    def test_namespace(self):
+        """ Check if the namespace is prepend when doing a request, and stripped
+        when returning the response """
+        d = {
+            u'action': u'get',
+            u'node': {
+                u'modifiedIndex': 190,
+                u'key': u'/testkey',
+                u'value': u'test'
+            }
+        }
+        self._mock_api(200, d)
+        self.client._namespace = "/hello/world"
+        res = self.client.read('/testkey')
+        print self.client.api_execute.call_args
+        self.assertEquals(self.client.api_execute.call_args[0],
+                          ('/v2/keys/hello/world/testkey', 'GET'))
+        self.assertEquals(res.key, "/testkey")
+        self.client._namespace = None
 
 
 class TestClientApiInterface(TestClientApiBase):
