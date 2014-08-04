@@ -1,6 +1,29 @@
 News
 ====
 
+0.3.1
+-----
+
+*Release date: 4-Aug-2014*
+
+* Added consisten read option
+* Fixed timeout parameter in read()
+* Added atomic delete parameter support
+* Fixed delete behaviour
+* Added update method that allows atomic updated on results
+* Fixed checks on write()
+* Added leaves generator to EtcdResult and get_subtree for recursive fetch
+* Added etcd_index to EtcdResult
+* Changed ethernal -> eternal
+* Updated urllib3 & pyOpenSSL libraries
+* Several performance fixes
+* Better parsing of etcd_index and raft_index
+* Removed duplicated tests
+* Added several integration and unit tests
+* Use etcd v0.3.0 in travis
+* Execute test using `python setup.py test` and nose
+
+
 0.3.0
 -----
 
@@ -35,4 +58,3 @@ News
 *Release date: 18-Sep-2013*
 
 * Initial release
-
