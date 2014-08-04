@@ -1,6 +1,14 @@
 News
 ====
 
+0.3.2
+-----
+
+*Release date: 4-Aug-2014*
+
+* Fixed generated documentation version.
+
+
 0.3.1
 -----
 
