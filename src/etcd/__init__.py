@@ -67,7 +67,7 @@ class EtcdResult(object):
             if not leaves_only:
                 #Return also dirs, not just value nodes
                 yield node
-            for child in node.children:
+            for child in node.get_subtree(leaves_only=leaves_only)::
                 yield child
         return
 
