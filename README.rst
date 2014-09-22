@@ -74,7 +74,7 @@ Atomic Compare and Swap
 .. code:: python
 
     client.write('/nodes/n2', 2, prevValue = 4) # will set /nodes/n2 's value to 2 only if its previous value was 4 and
-    client.write('/nodes/n2', 2, prevExists = False) # will set /nodes/n2 's value to 2 only if the key did not exist before
+    client.write('/nodes/n2', 2, prevExist = False) # will set /nodes/n2 's value to 2 only if the key did not exist before
     client.write('/nodes/n2', 2, prevIndex = 30) # will set /nodes/n2 's value to 2 only if the key was last modified at index 30
     client.test_and_set('/nodes/n2', 2, 4) #equivalent to client.write('/nodes/n2', 2, prevValue = 4)
 
