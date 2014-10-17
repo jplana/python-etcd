@@ -19,6 +19,10 @@ class TestClient(unittest.TestCase):
         client = etcd.Client()
         assert client.port == 4001
 
+    def test_default_prefix(self):
+        client = etcd.Client()
+        assert client.version_prefix == '/v2'
+
     def test_default_protocol(self):
         """ default protocol is http"""
         client = etcd.Client()
@@ -43,6 +47,10 @@ class TestClient(unittest.TestCase):
         """ can change port """
         client = etcd.Client(port=4002)
         assert client.port == 4002
+
+    def test_default_prefix(self):
+        client = etcd.Client(version_prefix='/etcd')
+        assert client.version_prefix == '/etcd'
 
     def test_set_protocol(self):
         """ can change protocol """

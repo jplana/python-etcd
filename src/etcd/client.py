@@ -30,6 +30,7 @@ class Client(object):
             self,
             host='127.0.0.1',
             port=4001,
+            version_prefix='/v2',
             read_timeout=60,
             allow_redirect=True,
             protocol='http',
@@ -46,6 +47,8 @@ class Client(object):
                            If a tuple ((host, port), (host, port), ...)
 
             port (int):  Port used to connect to etcd.
+
+            version_prefix (str): Url or version prefix in etcd url (default=/v2).
 
             read_timeout (int):  max seconds to wait for a read.
 
@@ -81,7 +84,7 @@ class Client(object):
 
         self._base_uri = uri(self._protocol, self._host, self._port)
 
-        self.version_prefix = '/v2'
+        self.version_prefix = version_prefix
 
         self._read_timeout = read_timeout
         self._allow_redirect = allow_redirect
