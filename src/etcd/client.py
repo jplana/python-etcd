@@ -36,6 +36,7 @@ class Client(object):
             cert=None,
             ca_cert=None,
             allow_reconnect=False,
+            namespace=None,
     ):
         """
         Initialize the client.
@@ -82,6 +83,10 @@ class Client(object):
         self._base_uri = uri(self._protocol, self._host, self._port)
 
         self.version_prefix = '/v2'
+
+        self._namespace = None
+        if namespace:
+          self._namespace = etcd.sanitize_path(namespace)
 
         self._read_timeout = read_timeout
         self._allow_redirect = allow_redirect
@@ -202,9 +207,11 @@ class Client(object):
         except KeyError:
             return False
 
-    def _sanitize_key(self, key):
-        if not key.startswith('/'):
-            key = "/{}".format(key)
+    def _build_key(self, key):
+        if self._namespace:
+            key = etcd.sanitize_path(self._namespace, key)
+        else:
+            key = etcd.sanitize_path(key)
         return key
 
 
@@ -239,7 +246,7 @@ class Client(object):
         'newValue'
 
         """
-        key = self._sanitize_key(key)
+        key = self._build_key(key)
         params = {}
         if value is not None:
             params['value'] = value
@@ -328,7 +335,7 @@ class Client(object):
         'value'
 
         """
-        key = self._sanitize_key(key)
+        key = self._build_key(key)
 
         params = {}
         for (k, v) in kwdargs.items():
@@ -373,7 +380,7 @@ class Client(object):
         '/key'
 
         """
-        key = self._sanitize_key(key)
+        key = self._build_key(key)
 
         kwds = {}
         if recursive is not None:
@@ -517,7 +524,7 @@ class Client(object):
         """ Creates an EtcdResult from json dictionary """
         try:
             res = json.loads(response.data.decode('utf-8'))
-            r = etcd.EtcdResult(**res)
+            r = etcd.EtcdResult(namespace=self._namespace, **res)
             if response.status == 201:
                 r.newKey = True
             r.parse_headers(response)

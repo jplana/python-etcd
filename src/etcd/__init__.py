@@ -1,4 +1,6 @@
 import collections
+import os
+import operator
 from .client import Client
 from .lock import Lock
 from .election import LeaderElection
@@ -16,7 +18,8 @@ class EtcdResult(object):
         'dir': False,
     }
 
-    def __init__(self, action=None, node=None, prevNode=None, **kwdargs):
+    def __init__(self, action=None, node=None, prevNode=None, namespace=None,
+                 **kwdargs):
         """
         Creates an EtcdResult object.
 
@@ -32,6 +35,11 @@ class EtcdResult(object):
                 setattr(self, key, node[key])
             else:
                 setattr(self, key, default)
+
+        if namespace:
+            key = getattr(self, 'key')
+            if key and key.startswith(namespace):
+              setattr(self, 'key', key[len(namespace):])
 
         self._children = []
         if self.dir and 'nodes' in node:
@@ -108,6 +116,11 @@ class EtcdException(Exception):
 
     pass
 
+def sanitize_path(*paths):
+  path_splitted = []
+  for path in paths:
+    path_splitted += filter(operator.truth, path.split("/"))
+  return os.path.join("/", *path_splitted)
 
 class EtcdError(object):
     # See https://github.com/coreos/etcd/blob/master/Documentation/errorcode.md

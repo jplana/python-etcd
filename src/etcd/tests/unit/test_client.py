@@ -71,3 +71,8 @@ class TestClient(unittest.TestCase):
             port=4003,
             protocol='https')
         assert client.base_uri == 'https://192.168.1.1:4003'
+
+    def test_namespace(self):
+      """ check namespace """
+      client = etcd.Client(namespace="hello/world")
+      assert client._namespace == "/hello/world"
