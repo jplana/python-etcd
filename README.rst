@@ -41,7 +41,8 @@ Create a client object
     client = etcd.Client(port=4002)
     client = etcd.Client(host='127.0.0.1', port=4003)
     client = etcd.Client(host='127.0.0.1', port=4003, allow_redirect=False) # wont let you run sensitive commands on non-leader machines, default is true
-
+    # create a client against https://api.example.com:443/etcd
+    client = etcd.Client(host='api.example.com', protocol='https', port=443, version_prefix='/etcd')
 Write a key
 ~~~~~~~~~
 
