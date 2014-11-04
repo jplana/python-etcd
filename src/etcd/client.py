@@ -455,7 +455,7 @@ class Client(object):
         """
         return self.read(key)
 
-    def watch(self, key, index=None, timeout=None):
+    def watch(self, key, index=None, timeout=None, recursive=None):
         """
         Blocks until a new event has been received, starting at index 'index'
 
@@ -479,9 +479,11 @@ class Client(object):
 
         """
         if index:
-            return self.read(key, wait=True, waitIndex=index, timeout=timeout)
+            return self.read(key, wait=True, waitIndex=index, timeout=timeout,
+                             recursive=recursive)
         else:
-            return self.read(key, wait=True, timeout=timeout)
+            return self.read(key, wait=True, timeout=timeout,
+                             recursive=recursive)
 
     def eternal_watch(self, key, index=None):
         """
