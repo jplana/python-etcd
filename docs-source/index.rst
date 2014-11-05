@@ -89,6 +89,29 @@ Get a key
     client.read('/nodes/n2', wait=True, waitIndex=10)
 
 
+Watch a key
+...........
+
+.. code-block:: python
+
+    # eternal_watch(key, index=None, recursive=False):
+    #
+    # The generator will yield changes from a key. 
+    # Note that this method will block forever until an event is generated.
+    # Equivalent shell command: etcdctl watch
+    #
+    # Arguments:
+    #    key (str):  Key to subcribe to.
+    #    index (int):  Index from where the changes will be received.
+    #    recursive (bool): Watch for updates on the hole directory.
+    # Yields:
+    #    client.EtcdResult
+    # Raises:
+    #    etcd.EtcdException If etcd closes the connection
+    
+    # Example
+    for event in client.eternal_watch('/subcription_key'):
+        print event.value
 
 Delete a key
 ............
