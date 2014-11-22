@@ -105,19 +105,56 @@ class EtcdException(Exception):
     """
     Generic Etcd Exception.
     """
+    def __init__(self, message, payload=None):
+        super(Exception, self).__init__(message)
+        self.payload=payload
 
+
+class EtcdKeyError(EtcdException):
+    """
+    Etcd Generic KeyError Exception
+    """
     pass
 
+class EtcdKeyNotFound(EtcdKeyError):
+    """
+    Etcd key not found exception (100)
+    """
+    pass
+
+class EtcdNotFile(EtcdKeyError):
+    """
+    Etcd not a file exception (102)
+    """
+    pass
+
+class EtcdNotDir(EtcdKeyError):
+    """
+    Etcd not a directory exception (104)
+    """
+    pass
+
+class EtcdAlreadyExist(EtcdKeyError):
+    """
+    Etcd already exist exception (105)
+    """
+    pass
+
+class EtcdEventIndexCleared(EtcdException):
+    """
+    Etcd event index is outdated and cleared exception (401)
+    """
+    pass
 
 class EtcdError(object):
     # See https://github.com/coreos/etcd/blob/master/Documentation/errorcode.md
     error_exceptions = {
-        100: KeyError,
+        100: EtcdKeyNotFound,
         101: ValueError,
-        102: KeyError,
+        102: EtcdNotFile,
         103: Exception,
-        104: KeyError,
-        105: KeyError,
+        104: EtcdNotDir,
+        105: EtcdAlreadyExist,
         106: KeyError,
         200: ValueError,
         201: ValueError,
@@ -126,7 +163,7 @@ class EtcdError(object):
         300: Exception,
         301: Exception,
         400: Exception,
-        401: EtcdException,
+        401: EtcdEventIndexCleared,
         500: EtcdException
     }
 
@@ -135,11 +172,18 @@ class EtcdError(object):
         """ Decodes the error and throws the appropriate error message"""
         try:
             msg = "{} : {}".format(message, cause)
+            payload={'errorCode': errorCode, 'message': message, 'cause': cause}
+            if len(kwdargs) > 0:
+                for key, value in kwdargs.iteritems():
+                    payload[key]=value
             exc = cls.error_exceptions[errorCode]
         except:
             msg = "Unable to decode server response"
             exc = EtcdException
-        raise exc(msg)
+        if exc in [EtcdException, EtcdKeyNotFound, EtcdNotFile, EtcdNotDir, EtcdAlreadyExist, EtcdEventIndexCleared]:
+            raise exc(msg, payload)
+        else:
+            raise exc(msg)
 
 
 # Attempt to enable urllib3's SNI support, if possible
