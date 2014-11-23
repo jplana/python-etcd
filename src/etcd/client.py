@@ -202,7 +202,7 @@ class Client(object):
         try:
             self.get(key)
             return True
-        except KeyError:
+        except etcd.EtcdKeyNotFound:
             return False
 
     def _sanitize_key(self, key):
