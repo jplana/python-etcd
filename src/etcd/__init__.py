@@ -173,9 +173,13 @@ class EtcdError(object):
         try:
             msg = '{} : {}'.format(message, cause)
             payload={'errorCode': errorCode, 'message': message, 'cause': cause}
+            print("============================")
+            print(payload)
+            print("length: {}".format(len(kwdargs)))
             if len(kwdargs) > 0:
-                for key, value in kwdargs.iteritems():
-                    payload[key]=value
+                for key in kwdargs:
+                    print("{}={}".format(key, kwdargs[key]))
+                    payload[key]=kwdargs[key]
             exc = cls.error_exceptions[errorCode]
         except:
             msg = "Unable to decode server response"
