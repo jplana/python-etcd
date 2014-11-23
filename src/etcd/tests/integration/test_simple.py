@@ -120,7 +120,7 @@ class TestSimple(EtcdIntegrationTest):
         set_result = self.client.write('/subtree/test_set2', 'test-key3')
         get_result = self.client.read('/subtree', recursive=True)
         result = [subkey.value for subkey in get_result.leaves]
-        self.assertEquals(['test-key1', 'test-key2', 'test-key3'], result)
+        self.assertEquals(['test-key1', 'test-key2', 'test-key3'].sort(), result.sort())
 
     def test_directory_ttl_update(self):
         """ INTEGRATION: should be able to update a dir TTL """
