@@ -5,6 +5,7 @@ python:
 
 before_install:
   - ./build_etcd.sh v0.3.0
+  - pip install --upgrade setuptools
 
 # command to install dependencies
 install: 
