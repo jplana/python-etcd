@@ -31,4 +31,4 @@ class TestElection(test_simple.EtcdIntegrationTest):
         e.set('/mysql', name='foo', ttl=1)
         time.sleep(2)
         self.assertRaises(etcd.EtcdException, e.get, '/mysql')
-        self.assertRaises(KeyError, e.delete, '/mysql', name='foo')
+        self.assertRaises(etcd.EtcdKeyNotFound, e.delete, '/mysql', name='foo')
