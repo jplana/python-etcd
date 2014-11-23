@@ -105,7 +105,7 @@ class EtcdException(Exception):
     """
     Generic Etcd Exception.
     """
-    def __init__(self, message, payload=None):
+    def __init__(self, message=None, payload=None):
         super(Exception, self).__init__(message)
         self.payload=payload
 
@@ -171,7 +171,7 @@ class EtcdError(object):
     def handle(cls, errorCode=None, message=None, cause=None, **kwdargs):
         """ Decodes the error and throws the appropriate error message"""
         try:
-            msg = "{} : {}".format(message, cause)
+            msg = '{} : {}'.format(message, cause)
             payload={'errorCode': errorCode, 'message': message, 'cause': cause}
             if len(kwdargs) > 0:
                 for key, value in kwdargs.iteritems():
