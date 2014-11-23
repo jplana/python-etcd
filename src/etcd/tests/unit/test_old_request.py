@@ -171,7 +171,7 @@ class TestClientRequest(unittest.TestCase):
     def test_not_in(self):
         """ Can check if key is not in client """
         client = etcd.Client()
-        client.get = mock.Mock(side_effect=KeyError())
+        client.get = mock.Mock(side_effect=etcd.EtcdKeyNotFound())
         result = '/testkey' not in client
         self.assertEquals(True, result)
 
@@ -307,8 +307,8 @@ class TestClientApiExecutor(unittest.TestCase):
         try:
             client.api_execute('/v2/keys/testkey', client._MGET)
             assert False
-        except KeyError as e:
-            self.assertEquals(str(e), "'message : cause'")
+        except etcd.EtcdKeyNotFound as e:
+            self.assertEquals(str(e), 'message : cause')
 
     def test_put(self):
         """ http put request """
@@ -357,8 +357,8 @@ class TestClientApiExecutor(unittest.TestCase):
         try:
             client.api_execute('/v2/keys/testkey', client._MPUT, payload)
             self.fail()
-        except KeyError as e:
-            self.assertEquals("'message : cause'", str(e))
+        except etcd.EtcdNotFile as e:
+            self.assertEquals('message : cause', str(e))
 
     def test_get_error_unknown(self):
         """ http get error request unknown """

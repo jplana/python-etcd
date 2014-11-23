@@ -282,7 +282,7 @@ class TestClientApiInterface(TestClientApiBase):
 
     def test_not_in(self):
         """ Can check if key is not in client """
-        self._mock_exception(KeyError, 'Key not Found : /testKey')
+        self._mock_exception(etcd.EtcdKeyNotFound, 'Key not Found : /testKey')
         self.assertTrue('/testey' not in self.client)
 
     def test_in(self):
