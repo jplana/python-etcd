@@ -102,18 +102,18 @@ class Client(object):
             # (<1.0) won't be able to connect.
             kw['ssl_version'] = ssl.PROTOCOL_TLSv1
 
-            if cert:
-                if isinstance(cert, tuple):
-                    # Key and cert are separate
-                    kw['cert_file'] = cert[0]
-                    kw['key_file'] = cert[1]
-                else:
-                    # combined certificate
-                    kw['cert_file'] = cert
+        if cert:
+            if isinstance(cert, tuple):
+                # Key and cert are separate
+                kw['cert_file'] = cert[0]
+                kw['key_file'] = cert[1]
+            else:
+                # combined certificate
+                kw['cert_file'] = cert
 
-            if ca_cert:
-                kw['ca_certs'] = ca_cert
-                kw['cert_reqs'] = ssl.CERT_REQUIRED
+        if ca_cert:
+            kw['ca_certs'] = ca_cert
+            kw['cert_reqs'] = ssl.CERT_REQUIRED
 
         self.http = urllib3.PoolManager(num_pools=10, **kw)
 
