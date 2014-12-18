@@ -41,7 +41,8 @@ Create a client object
     client = etcd.Client(port=4002)
     client = etcd.Client(host='127.0.0.1', port=4003)
     client = etcd.Client(host='127.0.0.1', port=4003, allow_redirect=False) # wont let you run sensitive commands on non-leader machines, default is true
-
+    # create a client against https://api.example.com:443/etcd
+    client = etcd.Client(host='api.example.com', protocol='https', port=443, version_prefix='/etcd')
 Write a key
 ~~~~~~~~~
 
@@ -74,7 +75,7 @@ Atomic Compare and Swap
 .. code:: python
 
     client.write('/nodes/n2', 2, prevValue = 4) # will set /nodes/n2 's value to 2 only if its previous value was 4 and
-    client.write('/nodes/n2', 2, prevExists = False) # will set /nodes/n2 's value to 2 only if the key did not exist before
+    client.write('/nodes/n2', 2, prevExist = False) # will set /nodes/n2 's value to 2 only if the key did not exist before
     client.write('/nodes/n2', 2, prevIndex = 30) # will set /nodes/n2 's value to 2 only if the key was last modified at index 30
     client.test_and_set('/nodes/n2', 2, 4) #equivalent to client.write('/nodes/n2', 2, prevValue = 4)
 
