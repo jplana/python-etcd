@@ -121,7 +121,9 @@ class Client(object):
             # we need the set of servers in the cluster in order to try
             # reconnecting upon error.
             self._machines_cache = self.machines
-            self._machines_cache.remove(self._base_uri)
+            if self._base_uri in self._machines_cache:
+                # this would fail if client is connected to a proxy
+                self._machines_cache.remove(self._base_uri)
         else:
             self._machines_cache = []
 
