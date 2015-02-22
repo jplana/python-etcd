@@ -74,7 +74,7 @@ class TestSimple(EtcdIntegrationTest):
         try:
             get_result = self.client.get('/test_set')
             assert False
-        except KeyError as e:
+        except etcd.EtcdKeyNotFound as e:
             pass
 
         self.assertFalse('/test_set' in self.client)
@@ -100,7 +100,7 @@ class TestSimple(EtcdIntegrationTest):
         try:
             get_result = self.client.get('/test_set')
             assert False
-        except KeyError as e:
+        except etcd.EtcdKeyNotFound as e:
             pass
 
     def test_update(self):
@@ -120,7 +120,7 @@ class TestSimple(EtcdIntegrationTest):
         set_result = self.client.write('/subtree/test_set2', 'test-key3')
         get_result = self.client.read('/subtree', recursive=True)
         result = [subkey.value for subkey in get_result.leaves]
-        self.assertEquals(['test-key1', 'test-key2', 'test-key3'], result)
+        self.assertEquals(['test-key1', 'test-key2', 'test-key3'].sort(), result.sort())
 
     def test_directory_ttl_update(self):
         """ INTEGRATION: should be able to update a dir TTL """
@@ -140,7 +140,7 @@ class TestErrors(EtcdIntegrationTest):
         """ INTEGRATION: try to write  value to an existing directory """
 
         self.client.set('/directory/test-key', 'test-value')
-        self.assertRaises(KeyError, self.client.set, '/directory', 'test-value')
+        self.assertRaises(etcd.EtcdNotFile, self.client.set, '/directory', 'test-value')
 
     def test_test_and_set(self):
         """ INTEGRATION: try test_and_set operation """
@@ -159,7 +159,8 @@ class TestErrors(EtcdIntegrationTest):
         `prevExist=True` should fail """
         self.client.write('/mydir', None, dir=True)
 
-        self.assertRaises(KeyError, self.client.write, '/mydir', None, dir=True)
+        self.assertRaises(etcd.EtcdNotFile, self.client.write, '/mydir', None, dir=True)
+        self.assertRaises(etcd.EtcdAlreadyExist, self.client.write, '/mydir', None, dir=True, prevExist=False)
 
 
 class TestClusterFunctions(EtcdIntegrationTest):
