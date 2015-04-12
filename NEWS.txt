@@ -1,6 +1,18 @@
 News
 ====
 
+0.3.3
+-----
+*Release date: 12-Apr-2015*
+
+* Forward leaves_only value in get_subtree() recursive calls
+* Fix README prevExists->prevExist
+* Added configurable version_prefix
+* Added support for recursive watch
+* Better error handling support (more detailed exceptions)
+* Fixed some unreliable tests
+
+
 0.3.2
 -----
 
