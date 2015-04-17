@@ -543,12 +543,15 @@ class Client(object):
 
         some_request_failed = False
         response = False
+        request_kwargs = {}
 
         if timeout is None:
             timeout = self.read_timeout
+        else:
+            request_kwargs['retries'] = False
 
-        if timeout == 0:
-            timeout = None
+        if timeout:
+            request_kwargs['timeout'] = timeout
 
         if not path.startswith('/'):
             raise ValueError('Path does not start with /')
@@ -561,23 +564,26 @@ class Client(object):
                     response = self.http.request(
                         method,
                         url,
-                        timeout=timeout,
                         fields=params,
-                        redirect=self.allow_redirect)
+                        redirect=self.allow_redirect,
+                        **request_kwargs)
 
                 elif (method == self._MPUT) or (method == self._MPOST):
                     response = self.http.request_encode_body(
                         method,
                         url,
                         fields=params,
-                        timeout=timeout,
                         encode_multipart=False,
-                        redirect=self.allow_redirect)
+                        redirect=self.allow_redirect,
+                        **request_kwargs)
                 else:
                     raise etcd.EtcdException(
                         'HTTP method {} not supported'.format(method))
 
-            except urllib3.exceptions.MaxRetryError:
+            except urllib3.exceptions.HTTPError as exc:
+                if 'timeout' in request_kwargs and \
+                   isinstance(exc, urllib3.exceptions.TimeoutError):
+                    raise
                 self._base_uri = self._next_server()
                 some_request_failed = True
 
