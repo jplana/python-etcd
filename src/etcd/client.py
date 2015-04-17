@@ -580,8 +580,10 @@ class Client(object):
                     raise etcd.EtcdException(
                         'HTTP method {} not supported'.format(method))
 
-            except (urllib3.exceptions.MaxRetryError,
-                    urllib3.exceptions.ConnectionError):
+            except urllib3.exceptions.HTTPError as exc:
+                if 'timeout' in request_kwargs and \
+                   isinstance(exc, urllib3.exceptions.TimeoutError):
+                    raise
                 self._base_uri = self._next_server()
                 some_request_failed = True
 
