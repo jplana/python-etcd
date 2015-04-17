@@ -581,7 +581,7 @@ class Client(object):
                         'HTTP method {} not supported'.format(method))
 
             except (urllib3.exceptions.MaxRetryError,
-                    urllib3.exceptions.ProtocolError):
+                    urllib3.exceptions.ConnectionError):
                 self._base_uri = self._next_server()
                 some_request_failed = True
 
