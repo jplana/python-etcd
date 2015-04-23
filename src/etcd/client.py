@@ -506,7 +506,7 @@ class Client(object):
         """
         local_index = index
         while True:
-            response = self.watch(key, index=local_index, timeout=0, recursive=True)
+            response = self.watch(key, index=local_index, timeout=0, recursive=recursive)
             if local_index is not None:
                 local_index += 1
             yield response
