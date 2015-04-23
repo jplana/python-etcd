@@ -160,6 +160,7 @@ class EtcdError(object):
         201: ValueError,
         202: ValueError,
         203: ValueError,
+        209: ValueError,
         300: Exception,
         301: Exception,
         400: Exception,
