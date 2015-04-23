@@ -338,7 +338,7 @@ class Client(object):
             if k in self._read_options:
                 if type(v) == bool:
                     params[k] = v and "true" or "false"
-                else:
+                elif v is not None:
                     params[k] = v
 
         timeout = kwdargs.get('timeout', None)
