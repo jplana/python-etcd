@@ -247,7 +247,7 @@ class Client(object):
         if value is not None:
             params['value'] = value
 
-        if ttl:
+        if ttl is not None:
             params['ttl'] = ttl
 
         if dir:
