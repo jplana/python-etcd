@@ -121,7 +121,11 @@ class Client(object):
             # we need the set of servers in the cluster in order to try
             # reconnecting upon error.
             self._machines_cache = self.machines
-            self._machines_cache.remove(self._base_uri)
+            if self._base_uri in self._machines_cache:
+                self._machines_cache.remove(self._base_uri)
+            else:
+                # This happens if the code includes the hostname and not the ip, or vice-versa
+                self._base_uri = self._machines_cache.pop(0)
         else:
             self._machines_cache = []
 
@@ -166,11 +170,27 @@ class Client(object):
         >>> print client.machines
         ['http://127.0.0.1:4001', 'http://127.0.0.1:4002']
         """
-        return [
-            node.strip() for node in self.api_execute(
-                self.version_prefix + '/machines',
-                self._MGET).data.decode('utf-8').split(',')
-        ]
+        # We can't use api_execute here, or it causes a logical loop
+        try:
+            uri = self._base_uri + self.version_prefix + '/machines'
+            response = self.http.request(
+                self._MGET,
+                uri,
+                timeout=self.read_timeout,
+                redirect=self.allow_redirect)
+
+            return [
+                node.strip() for node in
+                self._handle_server_response(response).data.decode('utf-8').split(',')
+            ]
+        except:
+            # We can't get the list of machines, if one server is in the machines cache, try on it
+            if self._machines_cache:
+                self._base_uri = self._machines_cache.pop(0)
+                # Call myself
+                return self.machines
+            else:
+                raise etcd.EtcdException("Could not get the list of servers, maybe you provided the wrong host(s) to connect to?")
 
     @property
     def leader(self):

@@ -105,13 +105,13 @@ class TestClientApiInterface(TestClientApiBase):
 
     If a test should be run only in this class, please override the method there.
     """
-
-    def test_machines(self):
+    @mock.patch('urllib3.request.RequestMethods.request')
+    def test_machines(self, mocker):
         """ Can request machines """
         data = ['http://127.0.0.1:4001',
                 'http://127.0.0.1:4002', 'http://127.0.0.1:4003']
         d = ','.join(data)
-        self._mock_api(200, d)
+        mocker.return_value = self._prepare_response(200, d)
         self.assertEquals(data, self.client.machines)
 
     def test_leader(self):
