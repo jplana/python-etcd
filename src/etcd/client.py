@@ -9,9 +9,12 @@
 import urllib3
 import json
 import ssl
-
 import etcd
 
+try:
+    from urlparse import urlparse
+except ImportError:
+    from urllib.parse import urlparse
 
 class Client(object):
 
@@ -37,6 +40,7 @@ class Client(object):
             cert=None,
             ca_cert=None,
             allow_reconnect=False,
+            use_proxies=False,
     ):
         """
         Initialize the client.
@@ -66,28 +70,28 @@ class Client(object):
                                     etcd server in the cluster in the case the
                                     default one does not respond.
 
+            use_proxies (bool): we are using a list of proxies to which we connect,
+                                 and don't want to connect to the original etcd cluster.
         """
-        self._machines_cache = []
-
         self._protocol = protocol
 
         def uri(protocol, host, port):
             return '%s://%s:%d' % (protocol, host, port)
 
         if not isinstance(host, tuple):
-            self._host = host
-            self._port = port
+            self._machines_cache = []
+            self._base_uri = uri(self._protocol, host, port)
         else:
-            self._host, self._port = host[0]
-            self._machines_cache.extend(
-                [uri(self._protocol, *conn) for conn in host])
-
-        self._base_uri = uri(self._protocol, self._host, self._port)
+            if not allow_reconnect:
+                raise etcd.EtcdException("A list of hosts to connect to was given, but reconnection not allowed?")
+            self._machines_cache = [uri(self._protocol, *conn) for conn in host]
+            self._base_uri = self._machines_cache.pop(0)
 
         self.version_prefix = version_prefix
 
         self._read_timeout = read_timeout
         self._allow_redirect = allow_redirect
+        self._use_proxies = use_proxies
         self._allow_reconnect = allow_reconnect
 
         # SSL Client certificate support
@@ -119,15 +123,22 @@ class Client(object):
 
         if self._allow_reconnect:
             # we need the set of servers in the cluster in order to try
-            # reconnecting upon error.
-            self._machines_cache = self.machines
+            # reconnecting upon error. The cluster members will be
+            # added to the hosts list you provided. If you are using
+            # proxies, set all
+            #
+            # Beware though: if you input '127.0.0.1' as your host and
+            # etcd advertises 'localhost', both will be in the
+            # resulting list.
+
+            # If we're connecting to the original cluster, we can
+            # extend the list given to the client with what we get
+            # from self.machines
+            if not self._use_proxies:
+                self._machines_cache = list(set(self._machines_cache).union(set(self.machines)))
             if self._base_uri in self._machines_cache:
                 self._machines_cache.remove(self._base_uri)
-            else:
-                # This happens if the code includes the hostname and not the ip, or vice-versa
-                self._base_uri = self._machines_cache.pop(0)
-        else:
-            self._machines_cache = []
+
 
     @property
     def base_uri(self):
@@ -137,12 +148,12 @@ class Client(object):
     @property
     def host(self):
         """Node to connect  etcd."""
-        return self._host
+        return urlparse(self._base_uri).netloc.split(':')[0]
 
     @property
     def port(self):
         """Port to connect etcd."""
-        return self._port
+        return int(urlparse(self._base_uri).netloc.split(':')[1])
 
     @property
     def protocol(self):
@@ -602,7 +613,9 @@ class Client(object):
                 some_request_failed = True
 
         if some_request_failed:
-            self._machines_cache = self.machines
+            if not self._use_proxies:
+                # The cluster may have changed since last invokation
+                self._machines_cache = self.machines
             self._machines_cache.remove(self._base_uri)
         return self._handle_server_response(response)
 

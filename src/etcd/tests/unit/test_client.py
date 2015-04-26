@@ -79,3 +79,21 @@ class TestClient(unittest.TestCase):
             port=4003,
             protocol='https')
         assert client.base_uri == 'https://192.168.1.1:4003'
+
+    def test_set_use_proxies(self):
+        """ can set the use_proxies flag """
+        client = etcd.Client(use_proxies = True)
+        assert client._use_proxies
+
+    def test_allow_reconnect(self):
+        """ Fails if allow_reconnect is false and a list of hosts is given"""
+        with self.assertRaises(etcd.EtcdException):
+            etcd.Client(
+                host=(('localhost', 4001), ('localhost', 4002)),
+            )
+        # This doesn't raise an exception
+        client = etcd.Client(
+            host=(('localhost', 4001), ('localhost', 4002)),
+            allow_reconnect=True,
+            use_proxies=True,
+        )
