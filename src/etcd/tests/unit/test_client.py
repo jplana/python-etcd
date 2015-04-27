@@ -48,7 +48,7 @@ class TestClient(unittest.TestCase):
         client = etcd.Client(port=4002)
         assert client.port == 4002
 
-    def test_default_prefix(self):
+    def test_set_prefix(self):
         client = etcd.Client(version_prefix='/etcd')
         assert client.version_prefix == '/etcd'
 
