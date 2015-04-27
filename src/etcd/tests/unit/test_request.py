@@ -240,6 +240,26 @@ class TestClientApiInterface(TestClientApiBase):
         res = self.client.delete('/testKey')
         self.assertEquals(res, etcd.EtcdResult(**d))
 
+    def test_pop(self):
+        """ Can pop a value """
+        d = {
+            u'action': u'delete',
+            u'node': {
+                u'key': u'/testkey',
+                u'modifiedIndex': 3,
+                u'createdIndex': 2
+            },
+            u'prevNode': {u'newKey': False, u'createdIndex': None,
+                          u'modifiedIndex': 190, u'value': u'test', u'expiration': None,
+                          u'key': u'/testkey', u'ttl': None, u'dir': False}
+        }
+
+        self._mock_api(200, d)
+        res = self.client.pop(d['node']['key'])
+        self.assertEquals({attr: getattr(res, attr) for attr in dir(res)
+                           if attr in etcd.EtcdResult._node_props}, d['prevNode'])
+        self.assertEqual(res.value, d['prevNode']['value'])
+
     def test_read(self):
         """ Can get a value """
         d = {

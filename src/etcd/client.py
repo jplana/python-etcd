@@ -392,6 +392,37 @@ class Client(object):
             self.key_endpoint + key, self._MDELETE, params=kwds)
         return self._result_from_response(response)
 
+    def pop(self, key, recursive=None, dir=None, **kwdargs):
+        """
+        Remove specified key from etcd and return the corresponding value.
+
+        Args:
+
+            key (str):  Key.
+
+            recursive (bool): if we want to recursively delete a directory, set
+                              it to true
+
+            dir (bool): if we want to delete a directory, set it to true
+
+            prevValue (str): compare key to this value, and swap only if
+                             corresponding (optional).
+
+            prevIndex (int): modify key only if actual modifiedIndex matches the
+                             provided one (optional).
+
+        Returns:
+            client.EtcdResult
+
+        Raises:
+            KeyValue:  If the key doesn't exists.
+
+        >>> print client.pop('/key').value
+        'value'
+
+        """
+        return self.delete(key=key, recursive=recursive, dir=dir, **kwdargs)._prev_node
+
     # Higher-level methods on top of the basic primitives
     def test_and_set(self, key, value, prev_value, ttl=None):
         """

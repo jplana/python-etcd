@@ -25,6 +25,8 @@ class EtcdResult(object):
 
             node (dict): The dictionary containing all node information.
 
+            prevNode (dict): The dictionary containing previous node information.
+
         """
         self.action = action
         for (key, default) in self._node_props.items():
