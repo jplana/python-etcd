@@ -135,7 +135,6 @@ class TestClientApiInterface(TestClientApiBase):
             allow_reconnect=True,
             use_proxies=False
         )
-        print c.machines
         self.assertIn('https://10.0.0.3:4001', c._machines_cache)
         self.assertNotIn(c.base_uri,c._machines_cache)
 
