@@ -543,11 +543,11 @@ class Client(object):
             yield response
 
     def get_lock(self, *args, **kwargs):
-        return etcd.Lock(self, *args, **kwargs)
+        raise NotImplementedError('Lock primitives were removed from etcd 2.0')
 
     @property
     def election(self):
-        return etcd.LeaderElection(self)
+        raise NotImplementedError('Election primitives were removed from etcd 2.0')
 
     def _result_from_response(self, response):
         """ Creates an EtcdResult from json dictionary """
