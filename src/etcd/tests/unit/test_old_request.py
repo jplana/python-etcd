@@ -19,23 +19,6 @@ class FakeHTTPResponse(object):
 
 class TestClientRequest(unittest.TestCase):
 
-    def test_machines(self):
-        """ Can request machines """
-        client = etcd.Client()
-        client.api_execute = mock.Mock(
-            return_value=FakeHTTPResponse(200, data=
-                                          "http://127.0.0.1:4002,"
-                                          " http://127.0.0.1:4001,"
-                                          " http://127.0.0.1:4003,"
-                                          " http://127.0.0.1:4001")
-        )
-
-        assert client.machines == [
-            'http://127.0.0.1:4002',
-            'http://127.0.0.1:4001',
-            'http://127.0.0.1:4003',
-            'http://127.0.0.1:4001'
-        ]
 
     def test_leader(self):
         """ Can request the leader """

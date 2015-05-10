@@ -105,14 +105,40 @@ class TestClientApiInterface(TestClientApiBase):
 
     If a test should be run only in this class, please override the method there.
     """
-
-    def test_machines(self):
+    @mock.patch('urllib3.request.RequestMethods.request')
+    def test_machines(self, mocker):
         """ Can request machines """
         data = ['http://127.0.0.1:4001',
                 'http://127.0.0.1:4002', 'http://127.0.0.1:4003']
         d = ','.join(data)
-        self._mock_api(200, d)
+        mocker.return_value = self._prepare_response(200, d)
         self.assertEquals(data, self.client.machines)
+
+    @mock.patch('etcd.Client.machines', new_callable=mock.PropertyMock)
+    def test_use_proxies(self, mocker):
+        """Do not overwrite the machines cache when using proxies"""
+        mocker.return_value = ['https://10.0.0.2:4001', 'https://10.0.0.3:4001', 'https://10.0.0.4:4001']
+        c = etcd.Client(
+            host=(('localhost', 4001), ('localproxy', 4001)),
+            protocol='https',
+            allow_reconnect=True,
+            use_proxies=True
+        )
+
+        self.assertEquals(c._machines_cache, ['https://localproxy:4001'])
+        self.assertEquals(c._base_uri, 'https://localhost:4001')
+        self.assertNotIn(c.base_uri,c._machines_cache)
+
+        c = etcd.Client(
+            host=(('localhost', 4001), ('10.0.0.2',4001)),
+            protocol='https',
+            allow_reconnect=True,
+            use_proxies=False
+        )
+        print c.machines
+        self.assertIn('https://10.0.0.3:4001', c._machines_cache)
+        self.assertNotIn(c.base_uri,c._machines_cache)
+
 
     def test_leader(self):
         """ Can request the leader """
