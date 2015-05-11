@@ -49,13 +49,14 @@ class EtcdResult(object):
         self.etcd_index = int(headers.get('x-etcd-index', 1))
         self.raft_index = int(headers.get('x-raft-index', 1))
 
-    def get_subtree(self, leaves_only=False):
+    def get_subtree(self, leaves_only=False, as_tree=False):
         """
         Get all the subtree resulting from a recursive=true call to etcd.
 
         Args:
             leaves_only (bool): if true, only value nodes are returned
-
+            as_tree (bool): if true, only value nodes are returned and
+                 no flat children contents will be returned
 
         """
         if not self._children:
@@ -64,11 +65,14 @@ class EtcdResult(object):
             return
         for n in self._children:
             node = EtcdResult(None, n)
-            if not leaves_only:
-                #Return also dirs, not just value nodes
+            if as_tree:
                 yield node
-            for child in node.get_subtree(leaves_only=leaves_only):
-                yield child
+            else:
+                if not leaves_only:
+                    #Return also dirs, not just value nodes
+                    yield node
+                for child in node.get_subtree(leaves_only=leaves_only):
+                    yield child
         return
 
     @property
@@ -160,7 +164,6 @@ class EtcdError(object):
         201: ValueError,
         202: ValueError,
         203: ValueError,
-        209: ValueError,
         300: Exception,
         301: Exception,
         400: Exception,
