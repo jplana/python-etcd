@@ -204,17 +204,42 @@ class Client(object):
                 raise etcd.EtcdException("Could not get the list of servers, maybe you provided the wrong host(s) to connect to?")
 
     @property
+    def members(self):
+        """
+        A more structured view of peers in the cluster.
+
+        Note that while we have an internal DS called _members, accessing the public property will call etcd.
+        """
+        # Empty the members list
+        self._members = {}
+        try:
+            data = self.api_execute(self.version_prefix + '/members',
+                                    self._MGET).data.decode('utf-8')
+            res = json.loads(data)
+            for member in res['members']:
+                self._members[member['id']] = member
+            return self._members
+        except:
+            raise
+            raise etcd.EtcdException("Could not get the members list, maybe the cluster has gone away?")
+
+    @property
     def leader(self):
         """
         Returns:
-            str. the leader of the cluster.
+            dict. the leader of the cluster.
 
         >>> print client.leader
-        'http://127.0.0.1:4001'
+        {"id":"ce2a822cea30bfca","name":"default","peerURLs":["http://localhost:2380","http://localhost:7001"],"clientURLs":["http://127.0.0.1:4001"]}
         """
-        return self.api_execute(
-            self.version_prefix + '/leader',
-            self._MGET).data.decode('ascii')
+        try:
+
+            leader = json.loads(
+                self.api_execute(self.version_prefix + '/stats/leader',
+                                 self._MGET).data.decode('utf-8'))
+            return self.members[leader['leader']]
+        except Exception as e:
+            raise etcd.EtcdException("Cannot get leader data: %s" % e)
 
     @property
     def key_endpoint(self):
@@ -325,7 +350,6 @@ class Client(object):
         if not obj.dir:
             # prevIndex on a dir causes a 'not a file' error. d'oh!
             kwdargs['prevIndex'] = obj.modifiedIndex
-
         return self.write(obj.key, obj.value, **kwdargs)
 
 

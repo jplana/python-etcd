@@ -17,7 +17,9 @@ class EtcdProcessHelper(object):
             proc_name='etcd',
             port_range_start=4001,
             internal_port_range_start=7001,
-            cluster=False):
+            cluster=False,
+            tls=False
+    ):
 
         self.base_directory = base_directory
         self.proc_name = proc_name
@@ -25,8 +27,17 @@ class EtcdProcessHelper(object):
         self.internal_port_range_start = internal_port_range_start
         self.processes = {}
         self.cluster = cluster
+        self.schema = 'http://'
+        if tls:
+            self.schema = 'https://'
 
-    def run(self, number=1, proc_args=None):
+    def run(self, number=1, proc_args=[]):
+        if number > 1:
+            initial_cluster = ",".join([ "test-node-{}={}127.0.0.1:{}".format(slot, 'http://', self.internal_port_range_start + slot) for slot in xrange(0, number)])
+            proc_args.extend([
+                '-initial-cluster', initial_cluster,
+                '-initial-cluster-state', 'new'
+            ])
         for i in range(0, number):
             self.add_one(i, proc_args)
 
@@ -42,22 +53,21 @@ class EtcdProcessHelper(object):
             prefix='python-etcd.%d-' % slot)
 
         log.debug('Created directory %s' % directory)
+        client = '%s127.0.0.1:%d' % (self.schema, self.port_range_start + slot)
+        peer = '%s127.0.0.1:%d' % ('http://', self.internal_port_range_start
+                                   + slot)
         daemon_args = [
             self.proc_name,
             '-data-dir', directory,
             '-name', 'test-node-%d' % slot,
-            '-peer-addr', '127.0.0.1:%d' % (self.internal_port_range_start +
-                                            slot),
-            '-addr', '127.0.0.1:%d' % (self.port_range_start + slot),
+            '-initial-advertise-peer-urls', peer,
+            '-listen-peer-urls', peer,
+            '-advertise-client-urls', client,
+            '-listen-client-urls', client
         ]
 
         if proc_args:
             daemon_args.extend(proc_args)
-
-        if slot > 0 and self.cluster:
-            daemon_args.append('-peers')
-            daemon_args.append(
-                '127.0.0.1:%d' % self.internal_port_range_start)
 
         daemon = subprocess.Popen(daemon_args)
         log.debug('Started %d' % daemon.pid)
@@ -158,6 +168,10 @@ class TestingCA(object):
                 "extendedKeyUsage".encode('ascii'),
                 False,
                 "clientAuth,serverAuth".encode('ascii')),
+            crypto.X509Extension(
+                "subjectAltName".encode('ascii'),
+                False,
+                "IP: 127.0.0.1".encode('ascii')),
         ])
 
         cert.gmtime_adj_notBefore(0)
