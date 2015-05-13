@@ -374,8 +374,16 @@ class Client(object):
 
         timeout = kwdargs.get('timeout', None)
 
-        response = self.api_execute(
-            self.key_endpoint + key, self._MGET, params=params, timeout=timeout)
+        response = None
+        while response is None:
+            try:
+                response = self.api_execute(
+                    self.key_endpoint + key, self._MGET, params=params, timeout=timeout)
+            except urllib3.exceptions.ProtocolError:
+                # etcd will close the connection after a default of 5 minutes
+                # https://github.com/coreos/etcd/commit/084dcb5596d52a3a1386d59acced24286137e385
+                # Swallow this error and retry instead of giving up.
+                pass
         return self._result_from_response(response)
 
     def delete(self, key, recursive=None, dir=None, **kwdargs):

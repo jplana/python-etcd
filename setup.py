@@ -9,7 +9,7 @@ NEWS = open(os.path.join(here, 'NEWS.txt')).read()
 version = '0.3.3'
 
 install_requires = [
-    'urllib3>=1.7',
+    'urllib3>=1.9',
     'pyOpenSSL>=0.14',
 ]
 
