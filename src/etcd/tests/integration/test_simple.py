@@ -217,7 +217,8 @@ class TestClusterFunctions(EtcdIntegrationTest):
         self.processHelper.run(number=3)
         self.client = etcd.Client(port=6001, allow_reconnect=False)
         self.processHelper.kill_one(0)
-        self.assertRaises(etcd.EtcdException, self.client.get, '/test_set')
+        self.assertRaises(etcd.EtcdConnectionFailed, self.client.get,
+                          '/test_set')
 
     def test_reconnet_fails(self):
         """ INTEGRATION: fails to reconnect if no available machines """
@@ -487,8 +488,8 @@ class TestAuthenticatedAccess(EtcdIntegrationTest):
         client = etcd.Client(
             protocol='https', port=6001, ca_cert=self.ca2_cert_path)
 
-        self.assertRaises(urllib3.exceptions.SSLError, client.set, '/test-set', 'test-key')
-        self.assertRaises(urllib3.exceptions.SSLError, client.get, '/test-set')
+        self.assertRaises(etcd.EtcdConnectionFailed, client.set, '/test-set', 'test-key')
+        self.assertRaises(etcd.EtcdConnectionFailed, client.get, '/test-set')
 
     def test_get_set_authenticated(self):
         """ INTEGRATION: set/get a new value authenticated """
