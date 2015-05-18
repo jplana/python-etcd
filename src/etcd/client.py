@@ -630,9 +630,8 @@ class Client(object):
             # throw the appropriate exception
             try:
                 r = json.loads(resp)
-            except ValueError:
-                r = None
-            if r:
-                etcd.EtcdError.handle(**r)
-            else:
-                raise etcd.EtcdException(resp)
+            except (TypeError, ValueError):
+                # Bad JSON, make a response locally.
+                r = {"message": "Bad response",
+                     "cause": str(resp)}
+            etcd.EtcdError.handle(r)
