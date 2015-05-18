@@ -513,9 +513,19 @@ class TestClientRequest(TestClientApiInterface):
 
     def test_read_cluster_id_changed(self):
         """ Read timeout set to the default """
-        self._mock_api(200, {}, cluster_id="notabcd1234")
+        d = {u'action': u'set',
+             u'node': {
+                u'expiration': u'2013-09-14T00:56:59.316195568+02:00',
+                u'modifiedIndex': 6,
+                u'key': u'/testkey',
+                u'ttl': 19,
+                u'value': u'test'
+                }
+             }
+        self._mock_api(200, d, cluster_id="notabcd1234")
         self.assertRaises(etcd.EtcdClusterIdChanged,
                           self.client.read, '/testkey')
+        self.client.read("/testkey")
 
     def test_not_in(self):
         pass

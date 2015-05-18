@@ -624,18 +624,21 @@ class Client(object):
                 some_request_failed = True
 
             else:
-                # Check the cluster ID hasn't changed under us.
-                # We need preload_content == False above to ensure we can read
-                # the headers here before waiting for the content of a watch
-                # below.
+                # Check the cluster ID hasn't changed under us.  We use
+                # preload_content=False above so we can read the headers
+                # before we wait for the content of a long poll.
                 cluster_id = response.getheader("x-etcd-cluster-id")
-                if self.expected_cluster_id:
-                    if self.expected_cluster_id != cluster_id:
-                        raise etcd.EtcdClusterIdChanged(
-                            'The UUID of the cluster changed from {} to '
-                            '{}.'.format(self.expected_cluster_id, cluster_id))
-                else:
-                    self.expected_cluster_id = cluster_id
+                id_changed = (self.expected_cluster_id and
+                              cluster_id != self.expected_cluster_id)
+                # Update the ID so we only raise the exception once.
+                self.expected_cluster_id = cluster_id
+                if id_changed:
+                    # Defensive: clear the pool so that we connect afresh next
+                    # time.
+                    self.http.clear()
+                    raise etcd.EtcdClusterIdChanged(
+                        'The UUID of the cluster changed from {} to '
+                        '{}.'.format(self.expected_cluster_id, cluster_id))
 
         if some_request_failed:
             if not self._use_proxies:
