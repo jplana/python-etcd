@@ -216,7 +216,8 @@ class TestClusterFunctions(EtcdIntegrationTest):
         self.processHelper.run(number=3)
         self.client = etcd.Client(port=6001, allow_reconnect=False)
         self.processHelper.kill_one(0)
-        self.assertRaises(etcd.EtcdException, self.client.get, '/test_set')
+        self.assertRaises(etcd.EtcdConnectionFailed, self.client.get,
+                          '/test_set')
 
     def test_reconnet_fails(self):
         """ INTEGRATION: fails to reconnect if no available machines """

@@ -1,5 +1,19 @@
-import collections
+import logging
 from .client import Client
+
+_log = logging.getLogger(__name__)
+
+# Prevent "no handler" warnings to stderr in projects that do not configure
+# logging.
+try:
+    from logging import NullHandler
+except ImportError:
+    # Python <2.7, just define it.
+    class NullHandler(logging.Handler):
+        def emit(self, record):
+            pass
+_log.addHandler(NullHandler())
+
 
 class EtcdResult(object):
     _node_props = {
@@ -142,6 +156,14 @@ class EtcdEventIndexCleared(EtcdException):
     Etcd event index is outdated and cleared exception (401)
     """
     pass
+
+
+class EtcdConnectionFailed(EtcdException):
+    """
+    Connection to etcd failed.
+    """
+    pass
+
 
 class EtcdError(object):
     # See https://github.com/coreos/etcd/blob/master/Documentation/errorcode.md
