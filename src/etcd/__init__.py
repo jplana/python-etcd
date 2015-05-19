@@ -118,7 +118,21 @@ class EtcdException(Exception):
     """
     def __init__(self, message=None, payload=None):
         super(Exception, self).__init__(message)
-        self.payload=payload
+        self.payload = payload
+
+
+class EtcdValueError(EtcdException, ValueError):
+    """
+    Base class for Etcd value-related errors.
+    """
+    pass
+
+
+class EtcdCompareFailed(EtcdValueError):
+    """
+    Compare-and-swap failure
+    """
+    pass
 
 
 class EtcdKeyError(EtcdException):
@@ -127,11 +141,13 @@ class EtcdKeyError(EtcdException):
     """
     pass
 
+
 class EtcdKeyNotFound(EtcdKeyError):
     """
     Etcd key not found exception (100)
     """
     pass
+
 
 class EtcdNotFile(EtcdKeyError):
     """
@@ -139,17 +155,20 @@ class EtcdNotFile(EtcdKeyError):
     """
     pass
 
+
 class EtcdNotDir(EtcdKeyError):
     """
     Etcd not a directory exception (104)
     """
     pass
 
+
 class EtcdAlreadyExist(EtcdKeyError):
     """
     Etcd already exist exception (105)
     """
     pass
+
 
 class EtcdEventIndexCleared(EtcdException):
     """
@@ -165,42 +184,80 @@ class EtcdConnectionFailed(EtcdException):
     pass
 
 
+class EtcdWatcherCleared(EtcdException):
+    """
+    Watcher is cleared due to etcd recovery.
+    """
+    pass
+
+
+class EtcdLeaderElectionInProgress(EtcdException):
+    """
+    Request failed due to in-progress leader election.
+    """
+    pass
+
+
+class EtcdRootReadOnly(EtcdKeyError):
+    """
+    Operation is not valid on the root, which is read only.
+    """
+    pass
+
+
+class EtcdDirNotEmpty(EtcdValueError):
+    """
+    Directory not empty.
+    """
+    pass
+
+
 class EtcdError(object):
     # See https://github.com/coreos/etcd/blob/master/Documentation/errorcode.md
     error_exceptions = {
         100: EtcdKeyNotFound,
-        101: ValueError,
+        101: EtcdCompareFailed,
         102: EtcdNotFile,
-        103: Exception,
+        # 103: Non-public: no more peers.
         104: EtcdNotDir,
         105: EtcdAlreadyExist,
-        106: KeyError,
-        200: ValueError,
-        201: ValueError,
-        202: ValueError,
-        203: ValueError,
-        209: ValueError,
-        300: Exception,
-        301: Exception,
-        400: Exception,
+        # 106: Non-public: key is preserved.
+        107: EtcdRootReadOnly,
+        108: EtcdDirNotEmpty,
+        # 109: Non-public: existing peer addr.
+
+        200: EtcdValueError,
+        201: EtcdValueError,
+        202: EtcdValueError,
+        203: EtcdValueError,
+        204: EtcdValueError,
+        205: EtcdValueError,
+        206: EtcdValueError,
+        207: EtcdValueError,
+        208: EtcdValueError,
+        209: EtcdValueError,
+        210: EtcdValueError,
+
+        # 300: Non-public: Raft internal error.
+        301: EtcdLeaderElectionInProgress,
+
+        400: EtcdWatcherCleared,
         401: EtcdEventIndexCleared,
-        500: EtcdException
     }
 
     @classmethod
-    def handle(cls, errorCode=None, message=None, cause=None, **kwdargs):
-        """ Decodes the error and throws the appropriate error message"""
-        try:
-            msg = '{} : {}'.format(message, cause)
-            payload={'errorCode': errorCode, 'message': message, 'cause': cause}
-            if len(kwdargs) > 0:
-                for key in kwdargs:
-                    payload[key]=kwdargs[key]
-            exc = cls.error_exceptions[errorCode]
-        except:
-            msg = "Unable to decode server response"
-            exc = EtcdException
-        if exc in [EtcdException, EtcdKeyNotFound, EtcdNotFile, EtcdNotDir, EtcdAlreadyExist, EtcdEventIndexCleared]:
+    def handle(cls, payload):
+        """
+        Decodes the error and throws the appropriate error message
+
+        :param payload: The decoded JSON error payload as a dict.
+        """
+        error_code = payload.get("errorCode")
+        message = payload.get("message")
+        cause = payload.get("cause")
+        msg = '{} : {}'.format(message, cause)
+        exc = cls.error_exceptions.get(error_code, EtcdException)
+        if issubclass(exc, EtcdException):
             raise exc(msg, payload)
         else:
             raise exc(msg)
