@@ -607,8 +607,7 @@ class Client(object):
         local_index = index
         while True:
             response = self.watch(key, index=local_index, timeout=0, recursive=recursive)
-            if local_index is not None:
-                local_index += 1
+            local_index = response.etcd_index
             yield response
 
     def get_lock(self, *args, **kwargs):
