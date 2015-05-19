@@ -1,8 +1,5 @@
 import collections
 from .client import Client
-from .lock import Lock
-from .election import LeaderElection
-
 
 class EtcdResult(object):
     _node_props = {

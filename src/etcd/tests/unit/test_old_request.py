@@ -17,16 +17,8 @@ class FakeHTTPResponse(object):
     def getheaders(self):
         return {}
 
+
 class TestClientRequest(unittest.TestCase):
-
-
-    def test_leader(self):
-        """ Can request the leader """
-        client = etcd.Client()
-        client.api_execute = mock.Mock(
-            return_value=FakeHTTPResponse(200, "http://127.0.0.1:7002"))
-        result = client.leader
-        self.assertEquals('http://127.0.0.1:7002', result)
 
     def test_set(self):
         """ Can set a value """
