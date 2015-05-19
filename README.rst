@@ -157,7 +157,7 @@ Get leader of the cluster
 
     client.leader
 
-Generate a key in a directory
+Generate a sequential key in a directory
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: python
