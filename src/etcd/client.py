@@ -258,7 +258,6 @@ class Client(object):
                 self._members[member['id']] = member
             return self._members
         except:
-            raise
             raise etcd.EtcdException("Could not get the members list, maybe the cluster has gone away?")
 
     @property
@@ -278,6 +277,39 @@ class Client(object):
             return self.members[leader['leader']]
         except Exception as e:
             raise etcd.EtcdException("Cannot get leader data: %s" % e)
+
+    @property
+    def stats(self):
+        """
+        Returns:
+            dict. the stats of the local server
+        """
+        return self._stats()
+
+    @property
+    def leader_stats(self):
+        """
+        Returns:
+            dict. the stats of the leader
+        """
+        return self._stats('leader')
+
+    @property
+    def store_stats(self):
+        """
+        Returns:
+           dict. the stats of the kv store
+        """
+        return self._stats('store')
+
+    def _stats(self, what='self'):
+        """ Internal method to access the stats endpoints"""
+        data = self.api_execute(self.version_prefix
+                                + '/stats/' + what, self._MGET).data.decode('utf-8')
+        try:
+            return json.loads(data)
+        except (TypeError,ValueError):
+            raise etcd.EtcdException("Cannot parse json data in the response")
 
     @property
     def key_endpoint(self):

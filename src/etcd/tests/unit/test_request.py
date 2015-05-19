@@ -155,6 +155,33 @@ class TestClientApiInterface(TestClientApiBase):
         self._mock_api(200, data)
         self.assertEquals(self.client.members["ce2a822cea30bfca"]["id"], "ce2a822cea30bfca")
 
+    def test_self_stats(self):
+        """ Request for stats """
+        data = {
+            "id": "eca0338f4ea31566",
+            "leaderInfo": {
+                "leader": "8a69d5f6b7814500",
+                "startTime": "2014-10-24T13:15:51.186620747-07:00",
+                "uptime": "10m59.322358947s"
+            },
+            "name": "node3",
+            "recvAppendRequestCnt": 5944,
+            "recvBandwidthRate": 570.6254930219969,
+            "recvPkgRate": 9.00892789741075,
+            "sendAppendRequestCnt": 0,
+            "startTime": "2014-10-24T13:15:50.072007085-07:00",
+            "state": "StateFollower"
+        }
+        self._mock_api(200,data)
+        self.assertEquals(self.client.stats['name'], "node3")
+
+    def test_leader_stats(self):
+        """ Request for leader stats """
+        data = {"leader": "924e2e83e93f2560", "followers": {}}
+        self._mock_api(200,data)
+        self.assertEquals(self.client.leader_stats['leader'], "924e2e83e93f2560")
+
+
     @mock.patch('etcd.Client.members', new_callable=mock.PropertyMock)
     def test_leader(self, mocker):
         """ Can request the leader """
