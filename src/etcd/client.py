@@ -7,7 +7,12 @@
 
 """
 import logging
-import httplib
+try:
+    # Python 3
+    from http.client import HTTPException
+except ImportError:
+    # Python 2
+    from httplib import HTTPException
 import socket
 import urllib3
 import json
@@ -210,7 +215,7 @@ class Client(object):
             _log.debug("Retrieved list of machines: %s", machines)
             return machines
         except (urllib3.exceptions.HTTPError,
-                httplib.HTTPException,
+                HTTPException,
                 socket.error) as e:
             # We can't get the list of machines, if one server is in the
             # machines cache, try on it
@@ -648,7 +653,7 @@ class Client(object):
             # urllib3 doesn't wrap all httplib exceptions and earlier versions
             # don't wrap socket errors either.
             except (urllib3.exceptions.HTTPError,
-                    httplib.HTTPException,
+                    HTTPException,
                     socket.error) as e:
                 _log.error("Request to server %s failed: %r",
                            self._base_uri, e)
