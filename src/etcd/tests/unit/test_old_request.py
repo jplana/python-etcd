@@ -10,12 +10,18 @@ from etcd import EtcdException
 
 class FakeHTTPResponse(object):
 
-    def __init__(self, status, data=''):
+    def __init__(self, status, data='', headers=None):
         self.status = status
         self.data = data.encode('utf-8')
+        self.headers = headers or {
+            "x-etcd-cluster-id": "abdef12345",
+        }
 
     def getheaders(self):
-        return {}
+        return self.headers
+
+    def getheader(self, header):
+        return self.headers[header]
 
 
 class TestClientRequest(unittest.TestCase):

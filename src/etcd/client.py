@@ -15,6 +15,7 @@ except ImportError:
     from httplib import HTTPException
 import socket
 import urllib3
+import urllib3.util
 import json
 import ssl
 import etcd
@@ -53,6 +54,7 @@ class Client(object):
             ca_cert=None,
             allow_reconnect=False,
             use_proxies=False,
+            expected_cluster_id=None,
     ):
         """
         Initialize the client.
@@ -84,6 +86,13 @@ class Client(object):
 
             use_proxies (bool): we are using a list of proxies to which we connect,
                                  and don't want to connect to the original etcd cluster.
+
+            expected_cluster_id (str): If a string, recorded as the expected
+                                       UUID of the cluster (rather than
+                                       learning it from the first request),
+                                       reads will raise EtcdClusterIdChanged
+                                       if they receive a response with a
+                                       different cluster ID.
         """
         _log.info("New etcd client created for %s:%s%s",
                   host, port, version_prefix)
@@ -102,6 +111,7 @@ class Client(object):
             self._machines_cache = [uri(self._protocol, *conn) for conn in host]
             self._base_uri = self._machines_cache.pop(0)
 
+        self.expected_cluster_id = expected_cluster_id
         self.version_prefix = version_prefix
 
         self._read_timeout = read_timeout
@@ -383,8 +393,6 @@ class Client(object):
             kwdargs['prevIndex'] = obj.modifiedIndex
         return self.write(obj.key, obj.value, **kwdargs)
 
-
-
     def read(self, key, **kwdargs):
         """
         Returns the value of the key 'key'.
@@ -431,7 +439,8 @@ class Client(object):
         timeout = kwdargs.get('timeout', None)
 
         response = self.api_execute(
-            self.key_endpoint + key, self._MGET, params=params, timeout=timeout)
+            self.key_endpoint + key, self._MGET, params=params,
+            timeout=timeout)
         return self._result_from_response(response)
 
     def delete(self, key, recursive=None, dir=None, **kwdargs):
@@ -660,7 +669,8 @@ class Client(object):
                         url,
                         timeout=timeout,
                         fields=params,
-                        redirect=self.allow_redirect)
+                        redirect=self.allow_redirect,
+                        preload_content=False)
 
                 elif (method == self._MPUT) or (method == self._MPOST):
                     response = self.http.request_encode_body(
@@ -669,7 +679,8 @@ class Client(object):
                         fields=params,
                         timeout=timeout,
                         encode_multipart=False,
-                        redirect=self.allow_redirect)
+                        redirect=self.allow_redirect,
+                        preload_content=False)
                 else:
                     raise etcd.EtcdException(
                         'HTTP method {} not supported'.format(method))
@@ -695,6 +706,23 @@ class Client(object):
             except:
                 _log.exception("Unexpected request failure, re-raising.")
                 raise
+
+            else:
+                # Check the cluster ID hasn't changed under us.  We use
+                # preload_content=False above so we can read the headers
+                # before we wait for the content of a long poll.
+                cluster_id = response.getheader("x-etcd-cluster-id")
+                id_changed = (self.expected_cluster_id and
+                              cluster_id != self.expected_cluster_id)
+                # Update the ID so we only raise the exception once.
+                self.expected_cluster_id = cluster_id
+                if id_changed:
+                    # Defensive: clear the pool so that we connect afresh next
+                    # time.
+                    self.http.clear()
+                    raise etcd.EtcdClusterIdChanged(
+                        'The UUID of the cluster changed from {} to '
+                        '{}.'.format(self.expected_cluster_id, cluster_id))
 
         if some_request_failed:
             if not self._use_proxies:

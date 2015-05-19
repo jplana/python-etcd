@@ -135,6 +135,15 @@ class EtcdCompareFailed(EtcdValueError):
     pass
 
 
+class EtcdClusterIdChanged(EtcdException):
+    """
+    The etcd cluster ID changed.  This may indicate the cluster was replaced
+    with a backup.  Raised to prevent waiting on an etcd_index that was only
+    valid on the old cluster.
+    """
+    pass
+
+
 class EtcdKeyError(EtcdException):
     """
     Etcd Generic KeyError Exception

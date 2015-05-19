@@ -16,7 +16,7 @@ class TestClientApiBase(unittest.TestCase):
     def setUp(self):
         self.client = etcd.Client()
 
-    def _prepare_response(self, s, d):
+    def _prepare_response(self, s, d, cluster_id=None):
         if isinstance(d, dict):
             data = json.dumps(d).encode('utf-8')
         else:
@@ -25,10 +25,11 @@ class TestClientApiBase(unittest.TestCase):
         r = mock.create_autospec(urllib3.response.HTTPResponse)()
         r.status = s
         r.data = data
+        r.getheader.return_value = cluster_id or "abcd1234"
         return r
 
-    def _mock_api(self, status, d):
-        resp = self._prepare_response(status, d)
+    def _mock_api(self, status, d, cluster_id=None):
+        resp = self._prepare_response(status, d, cluster_id=cluster_id)
         self.client.api_execute = mock.create_autospec(
             self.client.api_execute, return_value=resp)
 
@@ -96,7 +97,6 @@ class TestClientApiInternals(TestClientApiBase):
         self.client.write('/newdir', None, dir=True)
         self.assertEquals(self.client.api_execute.call_args,
             (('/v2/keys/newdir', 'PUT'), dict(params={'dir': 'true'})))
-
 
 
 class TestClientApiInterface(TestClientApiBase):
@@ -373,10 +373,11 @@ class TestClientApiInterface(TestClientApiBase):
 class TestClientRequest(TestClientApiInterface):
 
     def setUp(self):
-        self.client = etcd.Client()
+        self.client = etcd.Client(expected_cluster_id="abcdef1234")
 
-    def _mock_api(self, status, d):
+    def _mock_api(self, status, d, cluster_id=None):
         resp = self._prepare_response(status, d)
+        resp.getheader.return_value = cluster_id or "abcdef1234"
         self.client.http.request_encode_body = mock.create_autospec(
             self.client.http.request_encode_body, return_value=resp
         )
@@ -384,11 +385,13 @@ class TestClientRequest(TestClientApiInterface):
             self.client.http.request, return_value=resp
         )
 
-    def _mock_error(self, error_code, msg, cause, method='PUT', fields=None):
+    def _mock_error(self, error_code, msg, cause, method='PUT', fields=None,
+                    cluster_id=None):
         resp = self._prepare_response(
             500,
             {'errorCode': error_code, 'message': msg, 'cause': cause}
         )
+        resp.getheader.return_value = cluster_id or "abcdef1234"
         self.client.http.request_encode_body = mock.create_autospec(
             self.client.http.request_encode_body, return_value=resp
         )
@@ -417,6 +420,22 @@ class TestClientRequest(TestClientApiInterface):
         """ Exception will be raised if an unsupported HTTP method is used """
         self.assertRaises(etcd.EtcdException,
                           self.client.api_execute, '/testpath/bar', 'TRACE')
+
+    def test_read_cluster_id_changed(self):
+        """ Read timeout set to the default """
+        d = {u'action': u'set',
+             u'node': {
+                u'expiration': u'2013-09-14T00:56:59.316195568+02:00',
+                u'modifiedIndex': 6,
+                u'key': u'/testkey',
+                u'ttl': 19,
+                u'value': u'test'
+                }
+             }
+        self._mock_api(200, d, cluster_id="notabcd1234")
+        self.assertRaises(etcd.EtcdClusterIdChanged,
+                          self.client.read, '/testkey')
+        self.client.read("/testkey")
 
     def test_not_in(self):
         pass
