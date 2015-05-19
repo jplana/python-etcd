@@ -157,6 +157,33 @@ Get leader of the cluster
 
     client.leader
 
+Generate a sequential key in a directory
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code:: python
+
+    x = client.write("/dir/name", "value", append=True)
+    print("generated key: " + x.key)
+    print("stored value: " + x.value)
+
+List contents of a directory
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code:: python
+
+    #stick a couple values in the directory
+    client.write("/dir/name", "value1", append=True)
+    client.write("/dir/name", "value2", append=True)
+
+    directory = client.get("/dir/name")
+
+    # loop through directory children
+    for result in directory.children:
+      print(result.key + ": " + result.value)
+
+    # or just get the first child value
+    print(directory.children.next().value)
+
 Development setup
 -----------------
 
