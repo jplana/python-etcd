@@ -40,7 +40,8 @@ class Client(object):
     _MPOST = 'POST'
     _MDELETE = 'DELETE'
     _comparison_conditions = set(('prevValue', 'prevIndex', 'prevExist'))
-    _read_options = set(('recursive', 'wait', 'waitIndex', 'sorted', 'quorum'))
+    _read_options = set(('recursive', 'wait', 'waitIndex', 'sorted', 'quorum',
+                         'stream'))
     _del_conditions = set(('prevValue', 'prevIndex'))
     def __init__(
             self,
@@ -71,7 +72,7 @@ class Client(object):
             read_timeout (int):  max seconds to wait for a read.
 
             allow_redirect (bool): allow the client to connect to other nodes.
-+
+
             protocol (str):  Protocol used to connect to etcd.
 
             cert (mixed):   If a string, the whole ssl client certificate;
@@ -457,9 +458,15 @@ class Client(object):
         'value'
 
         """
+        response = self._raw_read(key, **kwdargs)
+        return self._result_from_response(response)
+
+    def _raw_read(self, key, **kwdargs):
+        """
+        Do a read from etcd, returns the urllib3 Response object.
+        """
         _log.info("Issuing read for key %s with args %s", key, kwdargs)
         key = self._sanitize_key(key)
-
         params = {}
         for (k, v) in kwdargs.items():
             if k in self._read_options:
@@ -467,13 +474,13 @@ class Client(object):
                     params[k] = v and "true" or "false"
                 elif v is not None:
                     params[k] = v
-
+            else:
+                raise TypeError("Unexpected keyword argument %s" % k)
         timeout = kwdargs.get('timeout', None)
-
         response = self.api_execute(
             self.key_endpoint + key, self._MGET, params=params,
             timeout=timeout)
-        return self._result_from_response(response)
+        return response
 
     def delete(self, key, recursive=None, dir=None, **kwdargs):
         """
@@ -617,7 +624,7 @@ class Client(object):
             return self.read(key, wait=True, timeout=timeout,
                              recursive=recursive)
 
-    def eternal_watch(self, key, index=None, recursive=None):
+    def eternal_watch(self, key, index=None, recursive=None, **kwargs):
         """
         Generator that will yield changes from a key.
         Note that this method will block forever until an event is generated.
@@ -636,11 +643,37 @@ class Client(object):
         value2
 
         """
-        local_index = index
+        next_index = index
         while True:
-            response = self.watch(key, index=local_index, timeout=0, recursive=recursive)
-            local_index = response.etcd_index
-            yield response
+            resp = self._raw_read(key,
+                                  waitIndex=next_index,
+                                  wait=True,
+                                  recursive=recursive,
+                                  stream=True,
+                                  **kwargs)
+            read_failed = False
+            while not read_failed:
+                try:
+                    event = resp.readline().strip()
+                except (urllib3.exceptions.HTTPError,
+                        HTTPException,
+                        socket.error) as exc:
+                    # Expect to hit timeouts and broken connections if the
+                    # server fails-over.  If the server really has gone then
+                    # the call to _raw_read above will fail next time and
+                    # we'll bail out.
+                    _log.debug("Read failed, (expected if no events): %r",
+                               exc)
+                    read_failed = True
+                except Exception:
+                    _log.exception("Read failed with unexpected exception")
+                    raise
+                else:
+                    _log.debug("Read event %s", event)
+                    result = self._result_from_json(event, resp.getheaders())
+                    next_index = max(next_index, result.modifiedIndex) + 1
+                    _log.debug("Next index to watch on %s", next_index)
+                    yield result
 
     def get_lock(self, *args, **kwargs):
         raise NotImplementedError('Lock primitives were removed from etcd 2.0')
@@ -652,15 +685,26 @@ class Client(object):
     def _result_from_response(self, response):
         """ Creates an EtcdResult from json dictionary """
         try:
-            res = json.loads(response.data.decode('utf-8'))
-            r = etcd.EtcdResult(**res)
+            json_str = response.data.decode('utf-8')
+            r = self._result_from_json(json_str, response.getheaders())
             if response.status == 201:
                 r.newKey = True
-            r.parse_headers(response)
-            return r
         except Exception as e:
             raise etcd.EtcdException(
                 'Unable to decode server response: %s' % e)
+        else:
+            return r
+
+    def _result_from_json(self, json_str, headers):
+        try:
+            res = json.loads(json_str)
+            r = etcd.EtcdResult(**res)
+            r.parse_headers(headers)
+        except Exception as e:
+            raise etcd.EtcdException(
+                'Unable to decode server response: %s' % e)
+        else:
+            return r
 
     def _next_server(self):
         """ Selects the next server in the list, refreshes the server list. """
