@@ -55,8 +55,7 @@ class EtcdResult(object):
             if self._prev_node.dir and not self.dir:
                 self.dir = True
 
-    def parse_headers(self, response):
-        headers = response.getheaders()
+    def parse_headers(self, headers):
         self.etcd_index = int(headers.get('x-etcd-index', 1))
         self.raft_index = int(headers.get('x-raft-index', 1))
 
