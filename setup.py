@@ -11,6 +11,7 @@ version = '0.3.3'
 install_requires = [
     'urllib3>=1.7',
     'pyOpenSSL>=0.14',
+    'ndg-httpsclient>=0.4.0',
 ]
 
 test_requires = [

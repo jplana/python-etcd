@@ -14,11 +14,15 @@ except ImportError:
     # Python 2
     from httplib import HTTPException
 import socket
-import urllib3
-import urllib3.util
 import json
 import ssl
 import etcd
+
+# Fix InsecurePlatformWarning for Python < 2.7.9
+import urllib3
+import urllib3.util
+import urllib3.contrib.pyopenssl
+urllib3.contrib.pyopenssl.inject_into_urllib3()
 
 try:
     from urlparse import urlparse
