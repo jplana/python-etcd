@@ -473,6 +473,7 @@ class Client(object):
         response = self.api_execute(
             self.key_endpoint + key, self._MGET, params=params,
             timeout=timeout)
+        print response
         return self._result_from_response(response)
 
     def delete(self, key, recursive=None, dir=None, **kwdargs):
@@ -639,7 +640,7 @@ class Client(object):
         local_index = index
         while True:
             response = self.watch(key, index=local_index, timeout=0, recursive=recursive)
-            local_index = response.etcd_index + 1
+            local_index = response.modifiedIndex + 1
             yield response
 
     def get_lock(self, *args, **kwargs):
