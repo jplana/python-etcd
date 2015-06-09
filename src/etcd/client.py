@@ -639,7 +639,7 @@ class Client(object):
         local_index = index
         while True:
             response = self.watch(key, index=local_index, timeout=0, recursive=recursive)
-            local_index = response.etcd_index
+            local_index = response.etcd_index + 1
             yield response
 
     def get_lock(self, *args, **kwargs):
