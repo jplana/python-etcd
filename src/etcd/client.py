@@ -473,7 +473,6 @@ class Client(object):
         response = self.api_execute(
             self.key_endpoint + key, self._MGET, params=params,
             timeout=timeout)
-        print response
         return self._result_from_response(response)
 
     def delete(self, key, recursive=None, dir=None, **kwdargs):
