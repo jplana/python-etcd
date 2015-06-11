@@ -55,6 +55,7 @@ class Client(object):
             allow_reconnect=False,
             use_proxies=False,
             expected_cluster_id=None,
+            per_host_pool_size=10
     ):
         """
         Initialize the client.
@@ -93,6 +94,9 @@ class Client(object):
                                        reads will raise EtcdClusterIdChanged
                                        if they receive a response with a
                                        different cluster ID.
+            per_host_pool_size (int): specifies maximum number of connections to pool
+                                      by host. By default this will use up to 10 
+                                      connections.
         """
         _log.info("New etcd client created for %s:%s%s",
                   host, port, version_prefix)
@@ -121,7 +125,9 @@ class Client(object):
 
         # SSL Client certificate support
 
-        kw = {}
+        kw = {
+          'maxsize': per_host_pool_size
+        }
 
         if self._read_timeout > 0:
             kw['timeout'] = self._read_timeout
