@@ -9,13 +9,13 @@ NEWS = open(os.path.join(here, 'NEWS.txt')).read()
 version = '0.3.3'
 
 install_requires = [
-    'urllib3>=1.7',
-    'pyOpenSSL>=0.14',
+    'urllib3>=1.7'
 ]
 
 test_requires = [
     'mock',
     'nose',
+    'pyOpenSSL>=0.14'
 ]
 
 setup(name='python-etcd',
