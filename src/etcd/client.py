@@ -95,10 +95,10 @@ class Client(object):
                                        if they receive a response with a
                                        different cluster ID.
             per_host_pool_size (int): specifies maximum number of connections to pool
-                                      by host. By default this will use up to 10 
+                                      by host. By default this will use up to 10
                                       connections.
         """
-        _log.info("New etcd client created for %s:%s%s",
+        _log.debug("New etcd client created for %s:%s%s",
                   host, port, version_prefix)
         self._protocol = protocol
 
@@ -374,7 +374,7 @@ class Client(object):
         'newValue'
 
         """
-        _log.info("Writing %s to key %s ttl=%s dir=%s append=%s",
+        _log.debug("Writing %s to key %s ttl=%s dir=%s append=%s",
                   value, key, ttl, dir, append)
         key = self._sanitize_key(key)
         params = {}
@@ -419,7 +419,7 @@ class Client(object):
             obj (etcd.EtcdResult):  The object that needs updating.
 
         """
-        _log.info("Updating %s to %s.", obj.key, obj.value)
+        _log.debug("Updating %s to %s.", obj.key, obj.value)
         kwdargs = {
             'dir': obj.dir,
             'ttl': obj.ttl,
@@ -463,7 +463,7 @@ class Client(object):
         'value'
 
         """
-        _log.info("Issuing read for key %s with args %s", key, kwdargs)
+        _log.debug("Issuing read for key %s with args %s", key, kwdargs)
         key = self._sanitize_key(key)
 
         params = {}
@@ -510,7 +510,7 @@ class Client(object):
         '/key'
 
         """
-        _log.info("Deleting %s recursive=%s dir=%s extra args=%s",
+        _log.debug("Deleting %s recursive=%s dir=%s extra args=%s",
                    key, recursive, dir, kwdargs)
         key = self._sanitize_key(key)
 
@@ -768,7 +768,7 @@ class Client(object):
                     self._base_uri = self._next_server()
                     some_request_failed = True
                 else:
-                    _log.info("Reconnection disabled, giving up.")
+                    _log.debug("Reconnection disabled, giving up.")
                     raise etcd.EtcdConnectionFailed(
                         "Connection to etcd failed due to %r" % e)
             except:
