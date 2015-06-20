@@ -780,7 +780,8 @@ class Client(object):
                 # preload_content=False above so we can read the headers
                 # before we wait for the content of a long poll.
                 cluster_id = response.getheader("x-etcd-cluster-id")
-                id_changed = (self.expected_cluster_id and
+                id_changed = (self.expected_cluster_id
+                              and cluster_id is not None and
                               cluster_id != self.expected_cluster_id)
                 # Update the ID so we only raise the exception once.
                 self.expected_cluster_id = cluster_id
