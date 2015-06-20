@@ -18,6 +18,7 @@ import urllib3
 import urllib3.util
 import json
 import ssl
+import dns.resolver
 import etcd
 
 try:
@@ -46,6 +47,7 @@ class Client(object):
             self,
             host='127.0.0.1',
             port=4001,
+            srv_domain=None,
             version_prefix='/v2',
             read_timeout=60,
             allow_redirect=True,
@@ -66,6 +68,8 @@ class Client(object):
                            If a tuple ((host, port), (host, port), ...)
 
             port (int):  Port used to connect to etcd.
+
+            srv_domain (str): Domain to search the SRV record for cluster autodiscovery.
 
             version_prefix (str): Url or version prefix in etcd url (default=/v2).
 
@@ -98,8 +102,17 @@ class Client(object):
                                       by host. By default this will use up to 10
                                       connections.
         """
+
+        # If a DNS record is provided, use it to get the hosts list
+        if srv_domain is not None:
+            try:
+                host = self._discover(srv_domain)
+            except Exception as e:
+                _log.error("Could not discover the etcd hosts from %s: %s",
+                           srv_domain, e)
+
         _log.debug("New etcd client created for %s:%s%s",
-                  host, port, version_prefix)
+                   host, port, version_prefix)
         self._protocol = protocol
 
         def uri(protocol, host, port):
@@ -173,6 +186,17 @@ class Client(object):
                 self._machines_cache.remove(self._base_uri)
             _log.debug("Machines cache initialised to %s",
                        self._machines_cache)
+
+    def _discover(self, domain):
+        srv_name = "_etcd._tcp.{}".format(domain)
+        answers = dns.resolver.query(srv_name, 'SRV')
+        hosts = []
+        for answer in answers:
+            hosts.append(
+                (answer.target.to_text(omit_final_dot=True), answer.port))
+        if not len(hosts):
+            raise ValueError("The SRV record is present but no host were found")
+        return tuple(hosts)
 
     @property
     def base_uri(self):

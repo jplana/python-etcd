@@ -9,7 +9,8 @@ NEWS = open(os.path.join(here, 'NEWS.txt')).read()
 version = '0.4.1'
 
 install_requires = [
-    'urllib3>=1.7'
+    'urllib3>=1.7',
+    'dnspython'
 ]
 
 test_requires = [
