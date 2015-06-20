@@ -1,10 +1,10 @@
 language: python
 python:
   - "2.7"
-  - "3.3"
+  - "3.5"
 
 before_install:
-  - ./build_etcd.sh v2.0.10
+  - ./build_etcd.sh v2.2.0
   - pip install --upgrade setuptools
 
 # command to install dependencies
