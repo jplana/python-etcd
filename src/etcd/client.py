@@ -111,8 +111,6 @@ class Client(object):
                 _log.error("Could not discover the etcd hosts from %s: %s",
                            srv_domain, e)
 
-        _log.debug("New etcd client created for %s:%s%s",
-                   host, port, version_prefix)
         self._protocol = protocol
 
         def uri(protocol, host, port):
@@ -166,6 +164,8 @@ class Client(object):
 
         self.http = urllib3.PoolManager(num_pools=10, **kw)
 
+        _log.debug("New etcd client created for %s", self.base_uri)
+
         if self._allow_reconnect:
             # we need the set of servers in the cluster in order to try
             # reconnecting upon error. The cluster members will be
@@ -194,6 +194,7 @@ class Client(object):
         for answer in answers:
             hosts.append(
                 (answer.target.to_text(omit_final_dot=True), answer.port))
+        _log.debug("Found %s", hosts)
         if not len(hosts):
             raise ValueError("The SRV record is present but no host were found")
         return tuple(hosts)
