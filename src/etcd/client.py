@@ -784,6 +784,7 @@ class Client(object):
                               and cluster_id is not None and
                               cluster_id != self.expected_cluster_id)
                 # Update the ID so we only raise the exception once.
+                old_expected_cluster_id = self.expected_cluster_id
                 self.expected_cluster_id = cluster_id
                 if id_changed:
                     # Defensive: clear the pool so that we connect afresh next
@@ -791,7 +792,7 @@ class Client(object):
                     self.http.clear()
                     raise etcd.EtcdClusterIdChanged(
                         'The UUID of the cluster changed from {} to '
-                        '{}.'.format(self.expected_cluster_id, cluster_id))
+                        '{}.'.format(old_expected_cluster_id, cluster_id))
 
         if some_request_failed:
             if not self._use_proxies:
