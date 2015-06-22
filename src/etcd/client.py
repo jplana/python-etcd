@@ -800,6 +800,7 @@ class Client(object):
         id_changed = (self.expected_cluster_id and
                       cluster_id != self.expected_cluster_id)
         # Update the ID so we only raise the exception once.
+        old_expected_cluster_id = self.expected_cluster_id
         self.expected_cluster_id = cluster_id
         if id_changed:
             # Defensive: clear the pool so that we connect afresh next
@@ -807,7 +808,7 @@ class Client(object):
             self.http.clear()
             raise etcd.EtcdClusterIdChanged(
                 'The UUID of the cluster changed from {} to '
-                '{}.'.format(self.expected_cluster_id, cluster_id))
+                '{}.'.format(old_expected_cluster_id, cluster_id))
 
     def _handle_server_response(self, response):
         """ Handles the server response """
