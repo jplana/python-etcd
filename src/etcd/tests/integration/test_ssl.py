@@ -81,8 +81,8 @@ class TestEncryptedAccess(test_simple.EtcdIntegrationTest):
         client = etcd.Client(
             protocol='https', port=6001, ca_cert=self.ca2_cert_path)
 
-        self.assertRaises(urllib3.exceptions.SSLError, client.set, '/test-set', 'test-key')
-        self.assertRaises(urllib3.exceptions.SSLError, client.get, '/test-set')
+        self.assertRaises(etcd.EtcdConnectionFailed, client.set, '/test-set', 'test-key')
+        self.assertRaises(etcd.EtcdConnectionFailed, client.get, '/test-set')
 
     def test_get_set_authenticated(self):
         """ INTEGRATION: set/get a new value authenticated """
