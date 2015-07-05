@@ -1,5 +1,6 @@
 import logging
 from .client import Client
+from .lock import Lock
 
 _log = logging.getLogger(__name__)
 
@@ -221,6 +222,11 @@ class EtcdDirNotEmpty(EtcdValueError):
     Directory not empty.
     """
     pass
+
+class EtcdLockExpired(EtcdException):
+    """
+    Our lock apparently expired while we were trying to acquire it.
+    """
 
 
 class EtcdError(object):
