@@ -76,13 +76,14 @@ class EtcdResult(object):
             #if the current result is a leaf, return itself
             yield self
             return
-        for n in self._children:
-            node = EtcdResult(None, n)
+        else:
+            # node is not a leaf
             if not leaves_only:
-                #Return also dirs, not just value nodes
-                yield node
-            for child in node.get_subtree(leaves_only=leaves_only):
-                yield child
+                yield self
+            for n in self._children:
+                node = EtcdResult(None, n)
+                for child in node.get_subtree(leaves_only=leaves_only):
+                    yield child
         return
 
     @property
