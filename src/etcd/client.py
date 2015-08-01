@@ -72,7 +72,7 @@ class Client(object):
             read_timeout (int):  max seconds to wait for a read.
 
             allow_redirect (bool): allow the client to connect to other nodes.
-+
+
             protocol (str):  Protocol used to connect to etcd.
 
             cert (mixed):   If a string, the whole ssl client certificate;
