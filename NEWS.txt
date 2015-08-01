@@ -1,6 +1,27 @@
 News
 ====
 
+0.4.1
+-----
+*Release date: 1-Aug-2015*
+
+* Added client-side leader election
+* Added stats endpoints
+* Added logging
+* Better exception handling
+* Check for cluster ID on each request
+* Added etcd.Client.members and fixed etcd.Client.leader
+* Removed locking and election etcd support
+* Allow the use of etcd proxies with reconnections
+* Implement pop: Remove key from etc and return the corresponding value.
+* Eternal watcher can be now recursive
+* Fix etcd.Client machines
+* Do not send parameters with `None` value to etcd
+* Support ttl=0 in write.
+* Moved pyOpenSSL into test requirements.
+* Always set certificate information so redirects from http to https work.
+
+
 0.3.3
 -----
 *Release date: 12-Apr-2015*
