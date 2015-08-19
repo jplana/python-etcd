@@ -120,7 +120,7 @@ Locking module
 
     # The lock object may also be used as a context manager:
     client = etcd.Client()
-    with etcd.Lock('customer1') as my_lock:
+    with etcd.Lock(client, 'customer1') as my_lock:
         do_stuff()
         my_lock.is_acquired()  # True
         my_lock.acquire(lock_ttl = 60)
