@@ -423,12 +423,19 @@ class Client(object):
         kwdargs = {
             'dir': obj.dir,
             'ttl': obj.ttl,
-            'prevExist': True
             }
 
         if not obj.dir:
             # prevIndex on a dir causes a 'not a file' error. d'oh!
             kwdargs['prevIndex'] = obj.modifiedIndex
+            # Note that it *should* be safe to set prevExist for file objects,
+            # but etcd 2.0.9 has a bug where setting prevExist causes it to
+            # ignore prevIndex!  So, we don't do that for file objects.
+        else:
+            # On dir, best we can do is verify it exists.  Note that this is
+            # implied above by setting prevIndex.
+            kwdargs['prevExist'] = True
+
         return self.write(obj.key, obj.value, **kwdargs)
 
     def read(self, key, **kwdargs):
