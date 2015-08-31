@@ -9,7 +9,7 @@ class Lock(object):
     Locking recipe for etcd, inspired by the kazoo recipe for zookeeper
     """
 
-    def __init__(self, client, lock_name):
+    def __init__(self, client, lock_name, default_ttl=3600):
         self.client = client
         self.name = lock_name
         # props to Netflix Curator for this trick. It is possible for our
@@ -20,6 +20,7 @@ class Lock(object):
         self.path = "/_locks/{}".format(lock_name)
         self.is_taken = False
         self._sequence = None
+        self.default_ttl = default_ttl
         _log.debug("Initiating lock for %s with uuid %s", self.path, self._uuid)
 
     @property
@@ -54,7 +55,7 @@ class Lock(object):
             self.is_taken = False
             return False
 
-    def acquire(self, blocking=True, lock_ttl=3600, timeout=None):
+    def acquire(self, blocking=True, lock_ttl=None, timeout=None):
         """
         Acquire the lock.
 
@@ -62,6 +63,9 @@ class Lock(object):
         :param lock_ttl The duration of the lock we acquired, set to None for eternal locks
         :param timeout The time to wait before giving up on getting a lock
         """
+        if lock_ttl is None and self.default_ttl is not None:
+            lock_ttl = self.default_ttl
+
         # First of all try to write, if our lock is not present.
         if not self._find_lock():
             _log.debug("Lock not found, writing it to %s", self.path)
@@ -114,7 +118,10 @@ class Lock(object):
             # Let's look for the lock
             watch_key = nearest
             _log.debug("Lock not acquired, now watching %s", watch_key)
-            t = max(0, timeout)
+            if timeout is None:
+                t = 0
+            else:
+                t = max(0, timeout)
             while True:
                 try:
                     r = self.client.watch(watch_key, timeout=t)
