@@ -77,12 +77,12 @@ class EtcdProcessHelper(object):
 
     def kill_one(self, slot):
         log = logging.getLogger()
-        dir, process = self.processes.pop(slot)
+        data_dir, process = self.processes.pop(slot)
         process.kill()
         time.sleep(2)
         log.debug('Killed etcd pid:%d', process.pid)
-        shutil.rmtree(dir)
-        log.debug('Removed directory %s' % dir)
+        shutil.rmtree(data_dir)
+        log.debug('Removed directory %s' % data_dir)
 
 
 class TestingCA(object):
