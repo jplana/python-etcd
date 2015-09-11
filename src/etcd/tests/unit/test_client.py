@@ -38,6 +38,16 @@ class TestClient(unittest.TestCase):
         client = etcd.Client()
         assert client.allow_redirect
 
+    def test_default_username(self):
+        """ default username is None"""
+        client = etcd.Client()
+        assert client.username is None
+
+    def test_default_password(self):
+        """ default username is None"""
+        client = etcd.Client()
+        assert client.password is None
+
     def test_set_host(self):
         """ can change host """
         client = etcd.Client(host='192.168.1.1')
@@ -84,6 +94,29 @@ class TestClient(unittest.TestCase):
         """ can set the use_proxies flag """
         client = etcd.Client(use_proxies = True)
         assert client._use_proxies
+
+    def test_set_username_only(self):
+        client = etcd.Client(username='username')
+        assert client.username is None
+
+    def test_set_password_only(self):
+        client = etcd.Client(password='password')
+        assert client.password is None
+
+    def test_set_username_password(self):
+        client = etcd.Client(username='username', password='password')
+        assert client.username == 'username'
+        assert client.password == 'password'
+
+    def test_get_headers_with_auth(self):
+        client = etcd.Client(username='username', password='password')
+        assert client._get_headers() == {
+            'authorization': 'Basic dXNlcm5hbWU6cGFzc3dvcmQ='
+        }
+
+    def test_get_headers_without_auth(self):
+        client = etcd.Client()
+        assert client._get_headers() == {}
 
     def test_allow_reconnect(self):
         """ Fails if allow_reconnect is false and a list of hosts is given"""

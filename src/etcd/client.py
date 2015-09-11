@@ -52,6 +52,8 @@ class Client(object):
             protocol='http',
             cert=None,
             ca_cert=None,
+            username=None,
+            password=None,
             allow_reconnect=False,
             use_proxies=False,
             expected_cluster_id=None,
@@ -80,6 +82,10 @@ class Client(object):
 
             ca_cert (str): The ca certificate. If pressent it will enable
                            validation.
+
+            username (str): username for etcd authentication.
+
+            password (str): password for etcd authentication.
 
             allow_reconnect (bool): allow the client to reconnect to another
                                     etcd server in the cluster in the case the
@@ -151,6 +157,16 @@ class Client(object):
             kw['ca_certs'] = ca_cert
             kw['cert_reqs'] = ssl.CERT_REQUIRED
 
+        self.username = None
+        self.password = None
+        if username and password:
+            self.username = username
+            self.password = password
+        elif username:
+            _log.warning('Username provided without password, both are required for authentication')
+        elif password:
+            _log.warning('Password provided without username, both are required for authentication')
+
         self.http = urllib3.PoolManager(num_pools=10, **kw)
 
         if self._allow_reconnect:
@@ -221,6 +237,7 @@ class Client(object):
             response = self.http.request(
                 self._MGET,
                 uri,
+                headers=self._get_headers(),
                 timeout=self.read_timeout,
                 redirect=self.allow_redirect)
 
@@ -738,6 +755,7 @@ class Client(object):
                         timeout=timeout,
                         fields=params,
                         redirect=self.allow_redirect,
+                        headers=self._get_headers(),
                         preload_content=False)
 
                 elif (method == self._MPUT) or (method == self._MPOST):
@@ -748,6 +766,7 @@ class Client(object):
                         timeout=timeout,
                         encode_multipart=False,
                         redirect=self.allow_redirect,
+                        headers=self._get_headers(),
                         preload_content=False)
                 else:
                     raise etcd.EtcdException(
@@ -817,3 +836,10 @@ class Client(object):
                 r = {"message": "Bad response",
                      "cause": str(resp)}
             etcd.EtcdError.handle(r)
+
+    def _get_headers(self):
+        if self.username and self.password:
+            credentials = ':'.join((self.username, self.password))
+            return urllib3.make_headers(basic_auth=credentials)
+        return {}
+
