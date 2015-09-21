@@ -711,7 +711,7 @@ class Client(object):
             raise etcd.EtcdException(
                 'Unable to decode server response: %r' % e)
 
-    def _next_server(self):
+    def _next_server(self, cause=None):
         """ Selects the next server in the list, refreshes the server list. """
         _log.debug("Selection next machine in cache. Available machines: %s",
                    self._machines_cache)
@@ -719,7 +719,8 @@ class Client(object):
             mach = self._machines_cache.pop()
         except IndexError:
             _log.error("Machines cache is empty, no machines to try.")
-            raise etcd.EtcdConnectionFailed('No more machines in the cluster')
+            raise etcd.EtcdConnectionFailed('No more machines in the cluster',
+                                            cause=cause)
         else:
             _log.info("Selected new etcd server %s", mach)
             return mach
@@ -785,12 +786,14 @@ class Client(object):
                               "server.")
                     # _next_server() raises EtcdException if there are no
                     # machines left to try, breaking out of the loop.
-                    self._base_uri = self._next_server()
+                    self._base_uri = self._next_server(cause=e)
                     some_request_failed = True
                 else:
                     _log.debug("Reconnection disabled, giving up.")
                     raise etcd.EtcdConnectionFailed(
-                        "Connection to etcd failed due to %r" % e)
+                        "Connection to etcd failed due to %r" % e,
+                        cause=e
+                    )
             except:
                 _log.exception("Unexpected request failure, re-raising.")
                 raise
