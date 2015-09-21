@@ -64,6 +64,7 @@ class TestSimple(EtcdIntegrationTest):
     def test_machines(self):
         """ INTEGRATION: retrieve machines """
         self.assertEquals(self.client.machines[0], 'http://127.0.0.1:6001')
+
     def test_leader(self):
         """ INTEGRATION: retrieve leader """
         self.assertEquals(self.client.leader['clientURLs'], ['http://127.0.0.1:6001'])

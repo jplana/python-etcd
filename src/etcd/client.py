@@ -804,6 +804,9 @@ class Client(object):
 
     def _check_cluster_id(self, response):
         cluster_id = response.getheader("x-etcd-cluster-id")
+        if not cluster_id:
+            _log.warning("etcd response did not contain a cluster ID")
+            return
         id_changed = (self.expected_cluster_id and
                       cluster_id != self.expected_cluster_id)
         # Update the ID so we only raise the exception once.
