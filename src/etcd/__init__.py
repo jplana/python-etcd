@@ -121,7 +121,7 @@ class EtcdException(Exception):
     Generic Etcd Exception.
     """
     def __init__(self, message=None, payload=None):
-        super(Exception, self).__init__(message)
+        super(EtcdException, self).__init__(message)
         self.payload = payload
 
 
@@ -194,7 +194,10 @@ class EtcdConnectionFailed(EtcdException):
     """
     Connection to etcd failed.
     """
-    pass
+    def __init__(self, message=None, payload=None, cause=None):
+        super(EtcdConnectionFailed, self).__init__(message=message,
+                                                   payload=payload)
+        self.cause = cause
 
 
 class EtcdWatcherCleared(EtcdException):
