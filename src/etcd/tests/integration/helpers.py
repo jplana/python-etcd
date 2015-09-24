@@ -38,6 +38,12 @@ class EtcdProcessHelper(object):
                 '-initial-cluster', initial_cluster,
                 '-initial-cluster-state', 'new'
             ])
+        else:
+            proc_args.extend([
+                '-initial-cluster', 'test-node-0=http://127.0.0.1:{}'.format(self.internal_port_range_start),
+                '-initial-cluster-state', 'new'
+            ])
+
         for i in range(0, number):
             self.add_one(i, proc_args)
 
