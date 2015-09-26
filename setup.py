@@ -18,7 +18,8 @@ test_requires = [
     'pyOpenSSL>=0.14'
 ]
 
-setup(name='python-etcd',
+setup(
+    name='python-etcd',
     version=version,
     description="A python client for etcd",
     long_description=README + '\n\n' + NEWS,
@@ -42,5 +43,4 @@ setup(name='python-etcd',
     install_requires=install_requires,
     tests_require=test_requires,
     test_suite='nose.collector',
-
 )

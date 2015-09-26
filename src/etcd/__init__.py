@@ -76,13 +76,14 @@ class EtcdResult(object):
             #if the current result is a leaf, return itself
             yield self
             return
-        for n in self._children:
-            node = EtcdResult(None, n)
+        else:
+            # node is not a leaf
             if not leaves_only:
-                #Return also dirs, not just value nodes
-                yield node
-            for child in node.get_subtree(leaves_only=leaves_only):
-                yield child
+                yield self
+            for n in self._children:
+                node = EtcdResult(None, n)
+                for child in node.get_subtree(leaves_only=leaves_only):
+                    yield child
         return
 
     @property
@@ -120,7 +121,7 @@ class EtcdException(Exception):
     Generic Etcd Exception.
     """
     def __init__(self, message=None, payload=None):
-        super(Exception, self).__init__(message)
+        super(EtcdException, self).__init__(message)
         self.payload = payload
 
 
@@ -193,7 +194,10 @@ class EtcdConnectionFailed(EtcdException):
     """
     Connection to etcd failed.
     """
-    pass
+    def __init__(self, message=None, payload=None, cause=None):
+        super(EtcdConnectionFailed, self).__init__(message=message,
+                                                   payload=payload)
+        self.cause = cause
 
 
 class EtcdWatcherCleared(EtcdException):
