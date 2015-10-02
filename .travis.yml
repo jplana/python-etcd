@@ -9,7 +9,8 @@ before_install:
 
 # command to install dependencies
 install: 
-  - python bootstrap.py
+  - if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then python bootstrap.py; fi;
+  - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then python bootstrap.py -c buildout3.cfg; fi;
   - bin/buildout
 
 # command to run tests
