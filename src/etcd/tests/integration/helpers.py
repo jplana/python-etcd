@@ -38,6 +38,12 @@ class EtcdProcessHelper(object):
                 '-initial-cluster', initial_cluster,
                 '-initial-cluster-state', 'new'
             ])
+        else:
+            proc_args.extend([
+                '-initial-cluster', 'test-node-0=http://127.0.0.1:{}'.format(self.internal_port_range_start),
+                '-initial-cluster-state', 'new'
+            ])
+
         for i in range(0, number):
             self.add_one(i, proc_args)
 
@@ -77,12 +83,12 @@ class EtcdProcessHelper(object):
 
     def kill_one(self, slot):
         log = logging.getLogger()
-        dir, process = self.processes.pop(slot)
+        data_dir, process = self.processes.pop(slot)
         process.kill()
         time.sleep(2)
         log.debug('Killed etcd pid:%d', process.pid)
-        shutil.rmtree(dir)
-        log.debug('Removed directory %s' % dir)
+        shutil.rmtree(data_dir)
+        log.debug('Removed directory %s' % data_dir)
 
 
 class TestingCA(object):
