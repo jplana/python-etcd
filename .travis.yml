@@ -1,15 +1,16 @@
 language: python
 python:
   - "2.7"
-  - "3.3"
+  - "3.5"
 
 before_install:
-  - ./build_etcd.sh v2.0.10
+  - ./build_etcd.sh v2.2.0
   - pip install --upgrade setuptools
 
 # command to install dependencies
 install: 
-  - python bootstrap.py
+  - if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then python bootstrap.py; fi;
+  - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then python bootstrap.py -c buildout3.cfg; fi;
   - bin/buildout
 
 # command to run tests
