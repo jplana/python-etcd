@@ -205,7 +205,11 @@ class Client(object):
     def __del__(self):
         """Clean up open connections"""
         if self.http is not None:
-            self.http.clear()
+            try:
+                self.http.clear()
+            except ReferenceError:
+                # this may hit an already-cleared weakref
+                pass
 
     @property
     def base_uri(self):
