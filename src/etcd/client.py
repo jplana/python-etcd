@@ -43,6 +43,9 @@ class Client(object):
     _comparison_conditions = set(('prevValue', 'prevIndex', 'prevExist'))
     _read_options = set(('recursive', 'wait', 'waitIndex', 'sorted', 'quorum'))
     _del_conditions = set(('prevValue', 'prevIndex'))
+
+    http = None
+
     def __init__(
             self,
             host='127.0.0.1',
@@ -198,6 +201,11 @@ class Client(object):
         if not len(hosts):
             raise ValueError("The SRV record is present but no host were found")
         return tuple(hosts)
+
+    def __del__(self):
+        """Clean up open connections"""
+        if self.http is not None:
+            self.http.clear()
 
     @property
     def base_uri(self):
@@ -783,7 +791,7 @@ class Client(object):
                 else:
                     raise etcd.EtcdException(
                         'HTTP method {} not supported'.format(method))
-                
+
                 # Check the cluster ID hasn't changed under us.  We use
                 # preload_content=False above so we can read the headers
                 # before we wait for the content of a watch.
@@ -823,7 +831,7 @@ class Client(object):
             except:
                 _log.exception("Unexpected request failure, re-raising.")
                 raise
-            
+
         if some_request_failed:
             if not self._use_proxies:
                 # The cluster may have changed since last invocation
