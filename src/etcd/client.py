@@ -42,6 +42,9 @@ class Client(object):
     _comparison_conditions = set(('prevValue', 'prevIndex', 'prevExist'))
     _read_options = set(('recursive', 'wait', 'waitIndex', 'sorted', 'quorum'))
     _del_conditions = set(('prevValue', 'prevIndex'))
+
+    http = None
+
     def __init__(
             self,
             host='127.0.0.1',
@@ -173,6 +176,15 @@ class Client(object):
                 self._machines_cache.remove(self._base_uri)
             _log.debug("Machines cache initialised to %s",
                        self._machines_cache)
+
+    def __del__(self):
+        """Clean up open connections"""
+        if self.http is not None:
+            try:
+                self.http.clear()
+            except ReferenceError:
+                # this may hit an already-cleared weakref
+                pass
 
     @property
     def base_uri(self):
