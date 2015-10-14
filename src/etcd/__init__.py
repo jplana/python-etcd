@@ -200,6 +200,13 @@ class EtcdConnectionFailed(EtcdException):
         self.cause = cause
 
 
+class EtcdWatchTimedOut(EtcdConnectionFailed):
+    """
+    A watch timed out without returning a result.
+    """
+    pass
+
+
 class EtcdWatcherCleared(EtcdException):
     """
     Watcher is cleared due to etcd recovery.
