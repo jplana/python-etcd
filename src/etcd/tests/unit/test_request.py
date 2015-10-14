@@ -1,3 +1,5 @@
+import urllib3
+
 import etcd
 from etcd.tests.unit import TestClientApiBase
 
@@ -426,6 +428,20 @@ class TestClientRequest(TestClientApiInterface):
             '/testKey',
             'test',
             prevValue='oldbog'
+        )
+
+    def test_watch_timeout(self):
+        """ Exception will be raised if prevValue != value in test_set """
+        self.client.http.request = mock.create_autospec(
+            self.client.http.request,
+            side_effect=urllib3.exceptions.ReadTimeoutError(self.client.http,
+                                                            "foo",
+                                                            "Read timed out")
+        )
+        self.assertRaises(
+            etcd.EtcdWatchTimedOut,
+            self.client.watch,
+            '/testKey',
         )
 
     def test_path_without_trailing_slash(self):

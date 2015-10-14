@@ -772,6 +772,14 @@ class Client(object):
             except (urllib3.exceptions.HTTPError,
                     HTTPException,
                     socket.error) as e:
+                if (params.get("wait") == "true" and
+                        isinstance(e, urllib3.exceptions.ReadTimeoutError)):
+                    _log.debug("Watch timed out.")
+                    raise etcd.EtcdWatchTimedOut(
+                        "Watch timed out: %r" % e,
+                        cause=e
+                    )
+
                 _log.error("Request to server %s failed: %r",
                            self._base_uri, e)
                 if self._allow_reconnect:
