@@ -8,13 +8,16 @@ before_install:
   - pip install --upgrade setuptools
 
 # command to install dependencies
-install: 
+install:
+  - pip install coveralls
+  - pip install coverage
   - python bootstrap.py
   - bin/buildout
 
 # command to run tests
 script:
-  PATH=$PATH:./etcd/bin bin/test
+  PATH=$PATH:./etcd/bin coverage run --source=src/etcd --omit="src/etcd/tests/*" bin/test
 
+after_success: coveralls
 # Add env var to detect it during build
 env: TRAVIS=True
