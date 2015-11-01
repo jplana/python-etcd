@@ -1,5 +1,8 @@
 import etcd
-import mock
+try:
+    import mock
+except ImportError:
+    from unittest import mock
 from etcd.tests.unit import TestClientApiBase
 
 
@@ -92,8 +95,7 @@ class TestClientLock(TestClientApiBase):
         self.assertTrue(self.locker._acquired())
         self.assertTrue(self.locker.is_taken)
         retval = ('/_locks/test_lock/1', '/_locks/test_lock/4')
-        self.locker._get_locker = mock.create_autospec(
-            self.locker._get_locker, return_value=retval)
+        self.locker._get_locker = mock.MagicMock(return_value=retval)
         self.assertFalse(self.locker._acquired(blocking=False))
         self.assertFalse(self.locker.is_taken)
         d = {

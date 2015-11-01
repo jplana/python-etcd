@@ -397,12 +397,9 @@ class TestClientRequest(TestClientApiInterface):
     def _mock_api(self, status, d, cluster_id=None):
         resp = self._prepare_response(status, d)
         resp.getheader.return_value = cluster_id or "abcdef1234"
-        self.client.http.request_encode_body = mock.create_autospec(
-            self.client.http.request_encode_body, return_value=resp
-        )
-        self.client.http.request = mock.create_autospec(
-            self.client.http.request, return_value=resp
-        )
+        self.client.http.request_encode_body = mock.MagicMock(
+            return_value=resp)
+        self.client.http.request = mock.MagicMock(return_value=resp)
 
     def _mock_error(self, error_code, msg, cause, method='PUT', fields=None,
                     cluster_id=None):

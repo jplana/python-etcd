@@ -8,8 +8,15 @@ NEWS = open(os.path.join(here, 'NEWS.txt')).read()
 
 version = '0.4.2'
 
+# Dnspython is two different packages depending on python version
+if sys.version_info.major == 2:
+    dns = 'dnspython'
+else:
+    dns = 'dnspython3'
+
 install_requires = [
-    'urllib3>=1.7.1'
+    'urllib3>=1.7.1',
+    dns
 ]
 
 test_requires = [
