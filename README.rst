@@ -8,6 +8,9 @@ Official documentation: http://python-etcd.readthedocs.org/
 .. image:: https://travis-ci.org/jplana/python-etcd.png?branch=master
    :target: https://travis-ci.org/jplana/python-etcd
 
+.. image:: https://coveralls.io/repos/jplana/python-etcd/badge.svg?branch=master&service=github
+   :target: https://coveralls.io/github/jplana/python-etcd?branch=master
+
 Installation
 ------------
 
