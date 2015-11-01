@@ -111,7 +111,11 @@ class TestClient(unittest.TestCase):
         for i in range(1,3):
             r = mock.create_autospec(dns.rdtypes.IN.SRV.SRV)
             r.port = 2379
-            r.target = dns.name.from_unicode(u'etcd{}.example.com'.format(i))
+            try:
+                method = dns.name.from_unicode
+            except AttributeError:
+                method = dns.name.from_text
+            r.target = method(u'etcd{}.example.com'.format(i))
             answers.append(r)
         dns.resolver.query = mock.create_autospec(dns.resolver.query, return_value=answers)
         self.machines = etcd.Client.machines

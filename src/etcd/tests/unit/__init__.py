@@ -27,8 +27,7 @@ class TestClientApiBase(unittest.TestCase):
 
     def _mock_api(self, status, d, cluster_id=None):
         resp = self._prepare_response(status, d, cluster_id=cluster_id)
-        self.client.api_execute = mock.create_autospec(
-            self.client.api_execute, return_value=resp)
+        self.client.api_execute = mock.MagicMock(return_value=resp)
 
     def _mock_exception(self, exc, msg):
         self.client.api_execute = mock.Mock(side_effect=exc(msg))
