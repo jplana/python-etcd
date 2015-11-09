@@ -1,11 +1,11 @@
-import etcd
+import aioetcd
 import unittest
 try:
     import mock
 except ImportError:
     from unittest import mock
 
-from etcd import EtcdException
+from aioetcd import EtcdException
 
 
 class FakeHTTPResponse(object):

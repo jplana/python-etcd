@@ -1,4 +1,4 @@
-import etcd
+import aioetcd
 import unittest
 import urllib3
 import json

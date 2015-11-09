@@ -1,6 +1,6 @@
-import etcd
+import aioetcd
 import mock
-from etcd.tests.unit import TestClientApiBase
+from aioetcd.tests.unit import TestClientApiBase
 
 
 class TestClientLock(TestClientApiBase):

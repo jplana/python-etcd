@@ -8,7 +8,7 @@ import tempfile
 
 import urllib3
 
-import etcd
+import aioetcd
 from . import helpers
 from . import test_simple
 from nose.tools import nottest

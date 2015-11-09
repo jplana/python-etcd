@@ -1,5 +1,5 @@
-import etcd
-from etcd.tests.unit import TestClientApiBase
+import aioetcd
+from aioetcd.tests.unit import TestClientApiBase
 
 try:
     import mock

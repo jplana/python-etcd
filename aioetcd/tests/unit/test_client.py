@@ -1,5 +1,5 @@
 import unittest
-import etcd
+import aioetcd
 
 
 class TestClient(unittest.TestCase):

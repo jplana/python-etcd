@@ -18,7 +18,7 @@ import urllib3
 import urllib3.util
 import json
 import ssl
-import etcd
+import aioetcd
 
 try:
     from urlparse import urlparse
@@ -114,7 +114,7 @@ class Client(object):
         else:
             if not allow_reconnect:
                 _log.error("List of hosts incompatible with allow_reconnect.")
-                raise etcd.EtcdException("A list of hosts to connect to was given, but reconnection not allowed?")
+                raise aioetcd.EtcdException("A list of hosts to connect to was given, but reconnection not allowed?")
             self._machines_cache = [uri(self._protocol, *conn) for conn in host]
             self._base_uri = self._machines_cache.pop(0)
 
@@ -255,7 +255,7 @@ class Client(object):
                 # Call myself
                 return self.machines
             else:
-                raise etcd.EtcdException("Could not get the list of servers, "
+                raise aioetcd.EtcdException("Could not get the list of servers, "
                                          "maybe you provided the wrong "
                                          "host(s) to connect to?")
 
@@ -276,7 +276,7 @@ class Client(object):
                 self._members[member['id']] = member
             return self._members
         except:
-            raise etcd.EtcdException("Could not get the members list, maybe the cluster has gone away?")
+            raise aioetcd.EtcdException("Could not get the members list, maybe the cluster has gone away?")
 
     @property
     def leader(self):
@@ -294,7 +294,7 @@ class Client(object):
                                  self._MGET).data.decode('utf-8'))
             return self.members[leader['leader']]
         except Exception as e:
-            raise etcd.EtcdException("Cannot get leader data: %s" % e)
+            raise aioetcd.EtcdException("Cannot get leader data: %s" % e)
 
     @property
     def stats(self):
@@ -327,7 +327,7 @@ class Client(object):
         try:
             return json.loads(data)
         except (TypeError,ValueError):
-            raise etcd.EtcdException("Cannot parse json data in the response")
+            raise aioetcd.EtcdException("Cannot parse json data in the response")
 
     @property
     def key_endpoint(self):
@@ -398,7 +398,7 @@ class Client(object):
 
         if dir:
             if value:
-                raise etcd.EtcdException(
+                raise aioetcd.EtcdException(
                     'Cannot create a directory with a value')
             params['dir'] = "true"
 
@@ -495,7 +495,7 @@ class Client(object):
 
     def delete(self, key, recursive=None, dir=None, **kwdargs):
         """
-        Removed a key from etcd.
+        Removed a key from aioetcd.
 
         Args:
 
@@ -543,7 +543,7 @@ class Client(object):
 
     def pop(self, key, recursive=None, dir=None, **kwdargs):
         """
-        Remove specified key from etcd and return the corresponding value.
+        Remove specified key from aioetcd and return the corresponding value.
 
         Args:
 
@@ -692,11 +692,11 @@ class Client(object):
             yield response
 
     def get_lock(self, *args, **kwargs):
-        raise NotImplementedError('Lock primitives were removed from etcd 2.0')
+        raise NotImplementedError('Lock primitives were removed from aioetcd 2.0')
 
     @property
     def election(self):
-        raise NotImplementedError('Election primitives were removed from etcd 2.0')
+        raise NotImplementedError('Election primitives were removed from aioetcd 2.0')
 
     def _result_from_response(self, response):
         """ Creates an EtcdResult from json dictionary """
@@ -708,7 +708,7 @@ class Client(object):
             r.parse_headers(response)
             return r
         except Exception as e:
-            raise etcd.EtcdException(
+            raise aioetcd.EtcdException(
                 'Unable to decode server response: %s' % e)
 
     def _next_server(self):
@@ -719,7 +719,7 @@ class Client(object):
             mach = self._machines_cache.pop()
         except IndexError:
             _log.error("Machines cache is empty, no machines to try.")
-            raise etcd.EtcdConnectionFailed('No more machines in the cluster')
+            raise aioetcd.EtcdConnectionFailed('No more machines in the cluster')
         else:
             _log.info("Selected new etcd server %s", mach)
             return mach
@@ -762,7 +762,7 @@ class Client(object):
                         redirect=self.allow_redirect,
                         preload_content=False)
                 else:
-                    raise etcd.EtcdException(
+                    raise aioetcd.EtcdException(
                         'HTTP method {} not supported'.format(method))
 
             # urllib3 doesn't wrap all httplib exceptions and earlier versions
@@ -781,7 +781,7 @@ class Client(object):
                     some_request_failed = True
                 else:
                     _log.debug("Reconnection disabled, giving up.")
-                    raise etcd.EtcdConnectionFailed(
+                    raise aioetcd.EtcdConnectionFailed(
                         "Connection to etcd failed due to %r" % e)
             except:
                 _log.exception("Unexpected request failure, re-raising.")
@@ -802,7 +802,7 @@ class Client(object):
                     # Defensive: clear the pool so that we connect afresh next
                     # time.
                     self.http.clear()
-                    raise etcd.EtcdClusterIdChanged(
+                    raise aioetcd.EtcdClusterIdChanged(
                         'The UUID of the cluster changed from {} to '
                         '{}.'.format(old_expected_cluster_id, cluster_id))
 

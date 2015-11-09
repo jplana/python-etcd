@@ -1,5 +1,5 @@
 import logging
-import etcd
+import aioetcd
 import uuid
 
 _log = logging.getLogger(__name__)
@@ -172,4 +172,4 @@ class Lock(object):
         except ValueError:
             # Something very wrong is going on, most probably
             # our lock has expired
-            raise etcd.EtcdLockExpired(u"Lock not found")
+            raise aioetcd.EtcdLockExpired(u"Lock not found")
