@@ -7,18 +7,14 @@
 
 """
 import logging
-try:
-    # Python 3
-    from http.client import HTTPException
-except ImportError:
-    # Python 2
-    from httplib import HTTPException
+from http.client import HTTPException
 import socket
-import urllib3
-import urllib3.util
+import aiohttp
 import json
 import ssl
 import aioetcd
+import asyncio
+import inspect
 
 try:
     from urlparse import urlparse
@@ -171,7 +167,7 @@ class Client(object):
             # from self.machines
             if not self._use_proxies:
                 self._machines_cache = list(set(self._machines_cache) |
-                                            set(self.machines))
+                                            set((yield from self.machines())))
             if self._base_uri in self._machines_cache:
                 self._machines_cache.remove(self._base_uri)
             _log.debug("Machines cache initialised to %s",
@@ -216,7 +212,7 @@ class Client(object):
         """Allow the client to connect to other nodes."""
         return self._allow_redirect
 
-    @property
+    @asyncio.coroutine
     def machines(self):
         """
         Members of the cluster.
@@ -230,7 +226,7 @@ class Client(object):
         # We can't use api_execute here, or it causes a logical loop
         try:
             uri = self._base_uri + self.version_prefix + '/machines'
-            response = self.http.request(
+            response = yield from aiohttp.request(
                 self._MGET,
                 uri,
                 timeout=self.read_timeout,
@@ -253,13 +249,13 @@ class Client(object):
                 self._base_uri = self._machines_cache.pop(0)
                 _log.info("Retrying on %s", self._base_uri)
                 # Call myself
-                return self.machines
+                return (yield from self.machines())
             else:
                 raise aioetcd.EtcdException("Could not get the list of servers, "
                                          "maybe you provided the wrong "
                                          "host(s) to connect to?")
 
-    @property
+    @asyncio.coroutine
     def members(self):
         """
         A more structured view of peers in the cluster.
@@ -269,7 +265,7 @@ class Client(object):
         # Empty the members list
         self._members = {}
         try:
-            data = self.api_execute(self.version_prefix + '/members',
+            data = yield from self.api_execute(self.version_prefix + '/members',
                                     self._MGET).data.decode('utf-8')
             res = json.loads(data)
             for member in res['members']:
@@ -278,13 +274,13 @@ class Client(object):
         except:
             raise aioetcd.EtcdException("Could not get the members list, maybe the cluster has gone away?")
 
-    @property
+    @asyncio.coroutine
     def leader(self):
         """
         Returns:
             dict. the leader of the cluster.
 
-        >>> print client.leader
+        >>> print (loop.run_until_complete(client.leader()))
         {"id":"ce2a822cea30bfca","name":"default","peerURLs":["http://localhost:2380","http://localhost:7001"],"clientURLs":["http://127.0.0.1:4001"]}
         """
         try:
@@ -292,11 +288,10 @@ class Client(object):
             leader = json.loads(
                 self.api_execute(self.version_prefix + '/stats/leader',
                                  self._MGET).data.decode('utf-8'))
-            return self.members[leader['leader']]
+            return (yield from self.members())[leader['leader']]
         except Exception as e:
             raise aioetcd.EtcdException("Cannot get leader data: %s" % e)
 
-    @property
     def stats(self):
         """
         Returns:
@@ -304,7 +299,6 @@ class Client(object):
         """
         return self._stats()
 
-    @property
     def leader_stats(self):
         """
         Returns:
@@ -312,7 +306,6 @@ class Client(object):
         """
         return self._stats('leader')
 
-    @property
     def store_stats(self):
         """
         Returns:
@@ -320,9 +313,10 @@ class Client(object):
         """
         return self._stats('store')
 
+    @asyncio.coroutine
     def _stats(self, what='self'):
         """ Internal method to access the stats endpoints"""
-        data = self.api_execute(self.version_prefix
+        data = yield from self.api_execute(self.version_prefix
                                 + '/stats/' + what, self._MGET).data.decode('utf-8')
         try:
             return json.loads(data)
@@ -355,6 +349,7 @@ class Client(object):
         return key
 
 
+    @asyncio.coroutine
     def write(self, key, value, ttl=None, dir=False, append=False, **kwdargs):
         """
         Writes the value for a key, possibly doing atomit Compare-and-Swap
@@ -415,7 +410,7 @@ class Client(object):
         else:
             path = self.key_endpoint + key
 
-        response = self.api_execute(path, method, params=params)
+        response = yield from self.api_execute(path, method, params=params)
         return self._result_from_response(response)
 
     def update(self, obj):
@@ -430,6 +425,7 @@ class Client(object):
         Args:
             obj (aioetcd.EtcdResult):  The object that needs updating.
 
+        This method returns a coroutine.
         """
         _log.debug("Updating %s to %s.", obj.key, obj.value)
         kwdargs = {
@@ -443,6 +439,7 @@ class Client(object):
             kwdargs['prevIndex'] = obj.modifiedIndex
         return self.write(obj.key, obj.value, **kwdargs)
 
+    @asyncio.coroutine
     def read(self, key, **kwdargs):
         """
         Returns the value of the key 'key'.
@@ -488,11 +485,12 @@ class Client(object):
 
         timeout = kwdargs.get('timeout', None)
 
-        response = self.api_execute(
+        response = yield from self.api_execute(
             self.key_endpoint + key, self._MGET, params=params,
             timeout=timeout)
         return self._result_from_response(response)
 
+    @asyncio.coroutine
     def delete(self, key, recursive=None, dir=None, **kwdargs):
         """
         Removed a key from etcd.
@@ -537,7 +535,7 @@ class Client(object):
                 kwds[k] = kwdargs[k]
         _log.debug("Calculated params = %s", kwds)
 
-        response = self.api_execute(
+        response = yield from self.api_execute(
             self.key_endpoint + key, self._MDELETE, params=kwds)
         return self._result_from_response(response)
 
@@ -561,7 +559,7 @@ class Client(object):
                              provided one (optional).
 
         Returns:
-            client.EtcdResult
+            A coroutine returning client.EtcdResult
 
         Raises:
             KeyValue:  If the key doesn't exists.
@@ -587,7 +585,7 @@ class Client(object):
             ttl (int):  Time in seconds of expiration (optional).
 
         Returns:
-            client.EtcdResult
+            A coroutine returning client.EtcdResult
 
         Raises:
             ValueError: When the 'prev_value' is not the current value.
@@ -608,7 +606,7 @@ class Client(object):
             ttl (int):  Time in seconds of expiration (optional).
 
         Returns:
-            client.EtcdResult
+            A coroutine returning client.EtcdResult
 
         Raises:
            aioetcd.EtcdException: when something weird goes wrong.
@@ -624,7 +622,7 @@ class Client(object):
             key (str):  Key.
 
         Returns:
-            client.EtcdResult
+            A coroutine returning client.EtcdResult
 
         Raises:
             KeyError:  If the key doesn't exists.
@@ -635,7 +633,7 @@ class Client(object):
         """
         return self.read(key)
 
-    def watch(self, key, index=None, timeout=None, recursive=None):
+    def watch(self, key, index=None, recursive=None):
         """
         Blocks until a new event has been received, starting at index 'index'
 
@@ -647,7 +645,7 @@ class Client(object):
             timeout (int):  max seconds to wait for a read.
 
         Returns:
-            client.EtcdResult
+            A coroutine returning client.EtcdResult
 
         Raises:
             KeyValue:  If the key doesn't exists.
@@ -666,7 +664,8 @@ class Client(object):
             return self.read(key, wait=True, timeout=timeout,
                              recursive=recursive)
 
-    def eternal_watch(self, key, index=None, recursive=None):
+    @asyncio.coroutine
+    def eternal_watch(self, key, callback, index=None, recursive=None):
         """
         Generator that will yield changes from a key.
         Note that this method will block forever until an event is generated.
@@ -687,9 +686,11 @@ class Client(object):
         """
         local_index = index
         while True:
-            response = self.watch(key, index=local_index, timeout=0, recursive=recursive)
+            response = yield from self.watch(key, index=local_index, recursive=recursive)
             local_index = response.modifiedIndex + 1
-            yield response
+            res = callback(response)
+            if isinstance(res, asyncio.Future) or inspect.isgenerator(res):
+                yield from res
 
     def get_lock(self, *args, **kwargs):
         raise NotImplementedError('Lock primitives were removed from etcd 2.0')
@@ -724,6 +725,7 @@ class Client(object):
             _log.info("Selected new etcd server %s", mach)
             return mach
 
+    @asyncio.coroutine
     def api_execute(self, path, method, params=None, timeout=None):
         """ Executes the query. """
 
@@ -744,7 +746,7 @@ class Client(object):
                 url = self._base_uri + path
 
                 if (method == self._MGET) or (method == self._MDELETE):
-                    response = self.http.request(
+                    response = yield from aiohttp.request(
                         method,
                         url,
                         timeout=timeout,
@@ -753,7 +755,7 @@ class Client(object):
                         preload_content=False)
 
                 elif (method == self._MPUT) or (method == self._MPOST):
-                    response = self.http.request_encode_body(
+                    response = yield from aiohttp.request(
                         method,
                         url,
                         fields=params,
@@ -809,7 +811,7 @@ class Client(object):
         if some_request_failed:
             if not self._use_proxies:
                 # The cluster may have changed since last invocation
-                self._machines_cache = self.machines
+                self._machines_cache = yield from self.machines()
             self._machines_cache.remove(self._base_uri)
         return self._handle_server_response(response)
 
