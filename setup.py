@@ -9,36 +9,33 @@ NEWS = open(os.path.join(here, 'NEWS.txt')).read()
 version = '0.4.1'
 
 install_requires = [
-    'urllib3>=1.7'
+    'aiohttp',
 ]
 
 test_requires = [
     'mock',
     'nose',
-    'pyOpenSSL>=0.14'
 ]
 
-setup(name='python-etcd',
+setup(name='aioetcd',
     version=version,
-    description="A python client for etcd",
-    long_description=README + '\n\n' + NEWS,
+    description="An asynchronous python client for etcd",
+    long_description=README,
     classifiers=[
         "Topic :: System :: Distributed Computing",
         "Topic :: Software Development :: Libraries",
         "License :: OSI Approved :: MIT License",
-        "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 3",
         "Topic :: Database :: Front-Ends",
     ],
     keywords='etcd raft distributed log api client',
-    author='Jose Plana',
-    author_email='jplana@gmail.com',
-    url='http://github.com/jplana/python-etcd',
+    author='Mathias Urlichs',
+    author_email='matthias@urlichs.de',
+    url='http://github.com/smurfix/aioetcd',
     license='MIT',
-    packages=find_packages('src'),
-    package_dir = {'': 'src'},
+    packages=find_packages('aioetcd'),
     include_package_data=True,
-    zip_safe=False,
+    zip_safe=True,
     install_requires=install_requires,
     tests_require=test_requires,
     test_suite='nose.collector',
