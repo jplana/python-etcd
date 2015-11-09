@@ -49,7 +49,7 @@ class Lock(object):
         try:
             self.client.read(self.lock_key)
             return True
-        except etcd.EtcdKeyNotFound:
+        except aioetcd.EtcdKeyNotFound:
             _log.warn("Lock was supposedly taken, but we cannot find it")
             self.is_taken = False
             return False
@@ -84,7 +84,7 @@ class Lock(object):
         try:
             _log.debug("Releasing existing lock %s", self.lock_key)
             self.client.delete(self.lock_key)
-        except etcd.EtcdKeyNotFound:
+        except aioetcd.EtcdKeyNotFound:
             _log.info("Lock %s not found, nothing to release", self.lock_key)
             pass
         finally:
@@ -120,10 +120,10 @@ class Lock(object):
                     r = self.client.watch(watch_key, timeout=t)
                     _log.debug("Detected variation for %s: %s", r.key, r.action)
                     return self._acquired(blocking=True, timeout=timeout)
-                except etcd.EtcdKeyNotFound:
+                except aioetcd.EtcdKeyNotFound:
                     _log.debug("Key %s not present anymore, moving on", watch_key)
                     return self._acquired(blocking=True, timeout=timeout)
-                except etcd.EtcdException:
+                except aioetcd.EtcdException:
                     # TODO: log something...
                     pass
 
@@ -142,7 +142,7 @@ class Lock(object):
                 res = self.client.read(self.lock_key)
                 self._uuid = res.value
                 return True
-            except etcd.EtcdKeyNotFound:
+            except aioetcd.EtcdKeyNotFound:
                 return False
         elif self._uuid:
             try:
@@ -150,7 +150,7 @@ class Lock(object):
                     if r.value == self._uuid:
                         self._set_sequence(r.key)
                         return True
-            except etcd.EtcdKeyNotFound:
+            except aioetcd.EtcdKeyNotFound:
                 pass
         return False
 

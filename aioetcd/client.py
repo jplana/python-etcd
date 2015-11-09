@@ -1,6 +1,6 @@
 """
-.. module:: python-etcd
-   :synopsis: A python etcd client.
+.. module:: python-aioetcd
+   :synopsis: An asynchronus python etcd client.
 
 .. moduleauthor:: Jose Plana <jplana@gmail.com>
 
@@ -32,7 +32,7 @@ _log = logging.getLogger(__name__)
 class Client(object):
 
     """
-    Client for etcd, the distributed log service using raft.
+    Asynchronous client for etcd, the distributed log service using raft.
     """
 
     _MGET = 'GET'
@@ -193,17 +193,17 @@ class Client(object):
 
     @property
     def host(self):
-        """Node to connect  etcd."""
+        """Node to connect to etcd."""
         return urlparse(self._base_uri).netloc.split(':')[0]
 
     @property
     def port(self):
-        """Port to connect etcd."""
+        """Port to connect to etcd."""
         return int(urlparse(self._base_uri).netloc.split(':')[1])
 
     @property
     def protocol(self):
-        """Protocol used to connect etcd."""
+        """Protocol used to connect to etcd."""
         return self._protocol
 
     @property
@@ -346,7 +346,7 @@ class Client(object):
         try:
             self.get(key)
             return True
-        except etcd.EtcdKeyNotFound:
+        except aioetcd.EtcdKeyNotFound:
             return False
 
     def _sanitize_key(self, key):
@@ -422,13 +422,13 @@ class Client(object):
         """
         Updates the value for a key atomically. Typical usage would be:
 
-        c = etcd.Client()
-        o = c.read("/somekey")
+        c = aioetcd.Client()
+        o = yield from c.read("/somekey")
         o.value += 1
-        c.update(o)
+        yield from c.update(o)
 
         Args:
-            obj (etcd.EtcdResult):  The object that needs updating.
+            obj (aioetcd.EtcdResult):  The object that needs updating.
 
         """
         _log.debug("Updating %s to %s.", obj.key, obj.value)
@@ -495,7 +495,7 @@ class Client(object):
 
     def delete(self, key, recursive=None, dir=None, **kwdargs):
         """
-        Removed a key from aioetcd.
+        Removed a key from etcd.
 
         Args:
 
@@ -543,7 +543,7 @@ class Client(object):
 
     def pop(self, key, recursive=None, dir=None, **kwdargs):
         """
-        Remove specified key from aioetcd and return the corresponding value.
+        Remove specified key from etcd and return the corresponding value.
 
         Args:
 
@@ -611,7 +611,7 @@ class Client(object):
             client.EtcdResult
 
         Raises:
-           etcd.EtcdException: when something weird goes wrong.
+           aioetcd.EtcdException: when something weird goes wrong.
 
         """
         return self.write(key, value, ttl=ttl)
@@ -692,17 +692,17 @@ class Client(object):
             yield response
 
     def get_lock(self, *args, **kwargs):
-        raise NotImplementedError('Lock primitives were removed from aioetcd 2.0')
+        raise NotImplementedError('Lock primitives were removed from etcd 2.0')
 
     @property
     def election(self):
-        raise NotImplementedError('Election primitives were removed from aioetcd 2.0')
+        raise NotImplementedError('Election primitives were removed from etcd 2.0')
 
     def _result_from_response(self, response):
         """ Creates an EtcdResult from json dictionary """
         try:
             res = json.loads(response.data.decode('utf-8'))
-            r = etcd.EtcdResult(**res)
+            r = aioetcd.EtcdResult(**res)
             if response.status == 201:
                 r.newKey = True
             r.parse_headers(response)
@@ -828,4 +828,4 @@ class Client(object):
                 # Bad JSON, make a response locally.
                 r = {"message": "Bad response",
                      "cause": str(resp)}
-            etcd.EtcdError.handle(r)
+            aioetcd.EtcdError.handle(r)
