@@ -3,15 +3,13 @@ import time
 import shutil
 import logging
 import unittest
-import multiprocessing
 import tempfile
+import pytest
 
-import urllib3
-
+import asyncio
 import aioetcd
 from . import helpers
 from . import test_simple
-from nose.tools import nottest
 
 log = logging.getLogger()
 
@@ -54,6 +52,7 @@ class TestEncryptedAccess(test_simple.EtcdIntegrationTest):
                                   '-key-file=%s' % server_key_path
                               ])
 
+    @pytest.mark.asyncio
     def test_get_set_unauthenticated(self):
         """ INTEGRATION: set/get a new value unauthenticated (http->https) """
 
@@ -62,42 +61,60 @@ class TestEncryptedAccess(test_simple.EtcdIntegrationTest):
         # Since python 3 raises a MaxRetryError here, this gets caught in
         # different code blocks in python 2 and python 3, thus messages are
         # different. Python 3 does the right thing(TM), for the record
-        self.assertRaises(
-            aioetcd.EtcdException, client.set, '/test_set', 'test-key')
+        try:
+            yield from client.set('/test_set', 'test-key')
+            raise False
+        except aioetcd.EtcdException:
+            pass
 
-        self.assertRaises(aioetcd.EtcdException, client.get, '/test_set')
+        try:
+            yield from client.get('/test_set')
+            assert False
+        except aioetcd.EtcdException:
+            pass
 
-    @nottest
+    @pytest.mark.asyncio
     def test_get_set_unauthenticated_missing_ca(self):
         """ INTEGRATION: try unauthenticated w/out validation (https->https)"""
         # This doesn't work for now and will need further inspection
         client = aioetcd.Client(protocol='https', port=6001)
-        set_result = client.set('/test_set', 'test-key')
-        get_result = client.get('/test_set')
+        set_result = yield from client.set('/test_set', 'test-key')
+        get_result = yield from client.get('/test_set')
 
-
+    @pytest.mark.asyncio
     def test_get_set_unauthenticated_with_ca(self):
         """ INTEGRATION: try unauthenticated with validation (https->https)"""
         client = aioetcd.Client(
             protocol='https', port=6001, ca_cert=self.ca2_cert_path)
 
-        self.assertRaises(aioetcd.EtcdConnectionFailed, client.set, '/test-set', 'test-key')
-        self.assertRaises(aioetcd.EtcdConnectionFailed, client.get, '/test-set')
+        loop = asyncio.get_event_loop()
+        try:
+            yield from client.set('/test-set', 'test-key')
+            assert False
+        except aioetcd.EtcdConnectionFailed:
+            pass
+        try:
+            yield from client.get('/test-set')
+            assert False
+        except aioetcd.EtcdConnectionFailed:
+            pass
 
+    @pytest.mark.asyncio
     def test_get_set_authenticated(self):
         """ INTEGRATION: set/get a new value authenticated """
 
         client = aioetcd.Client(
             port=6001, protocol='https', ca_cert=self.ca_cert_path)
 
-        set_result = client.set('/test_set', 'test-key')
-        get_result = client.get('/test_set')
+        set_result = yield from client.set('/test_set', 'test-key')
+        get_result = yield from client.get('/test_set')
 
 
 class TestClientAuthenticatedAccess(test_simple.EtcdIntegrationTest):
 
     @classmethod
     def setUpClass(cls):
+        import pdb;pdb.set_trace()
         program = cls._get_exe()
         cls.directory = tempfile.mkdtemp(prefix='python-aioetcd')
 
@@ -146,17 +163,26 @@ class TestClientAuthenticatedAccess(test_simple.EtcdIntegrationTest):
                               ])
 
 
+    @pytest.mark.asyncio
     def test_get_set_unauthenticated(self):
         """ INTEGRATION: set/get a new value unauthenticated (http->https) """
 
         client = aioetcd.Client(port=6001)
 
         # See above for the reason of this change
-        self.assertRaises(
-            aioetcd.EtcdException, client.set, '/test_set', 'test-key')
-        self.assertRaises(aioetcd.EtcdException, client.get, '/test_set')
+        try:
+            yield from client.set('/test_set', 'test-key')
+            assert False
+        except aioetcd.EtcdException:
+            assert False
+            pass
+        try:
+            yield from client.get('/test_set')
+            assert False
+        except aioetcd.EtcdException:
+            pass
 
-    @nottest
+    @pytest.mark.asyncio
     def test_get_set_authenticated(self):
         """ INTEGRATION: connecting to server with mutual auth """
         # This gives an unexplicable ssl error, as connecting to the same
@@ -170,11 +196,12 @@ class TestClientAuthenticatedAccess(test_simple.EtcdIntegrationTest):
             ca_cert=self.ca_cert_path
         )
 
-        set_result = client.set('/test_set', 'test-key')
+        set_result = yield from client.set('/test_set', 'test-key')
         self.assertEquals(u'set', set_result.action.lower())
         self.assertEquals(u'/test_set', set_result.key)
         self.assertEquals(u'test-key', set_result.value)
-        get_result = client.get('/test_set')
+        get_result = yield from client.get('/test_set')
         self.assertEquals('get', get_result.action.lower())
         self.assertEquals('/test_set', get_result.key)
         self.assertEquals('test-key', get_result.value)
+

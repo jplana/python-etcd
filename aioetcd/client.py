@@ -54,7 +54,8 @@ class Client(object):
             allow_reconnect=False,
             use_proxies=False,
             expected_cluster_id=None,
-            per_host_pool_size=10
+            per_host_pool_size=10,
+            loop=None,
     ):
         """
         Initialize the client.
@@ -100,6 +101,7 @@ class Client(object):
         _log.debug("New etcd client created for %s:%s%s",
                   host, port, version_prefix)
         self._protocol = protocol
+        self._loop = loop if loop is not None else asyncio.get_event_loop()
 
         def uri(protocol, host, port):
             return '%s://%s:%d' % (protocol, host, port)
@@ -150,8 +152,6 @@ class Client(object):
             kw['ca_certs'] = ca_cert
             kw['cert_reqs'] = ssl.CERT_REQUIRED
 
-        self.http = urllib3.PoolManager(num_pools=10, **kw)
-
         if self._allow_reconnect:
             # we need the set of servers in the cluster in order to try
             # reconnecting upon error. The cluster members will be
@@ -166,21 +166,22 @@ class Client(object):
             # extend the list given to the client with what we get
             # from self.machines
             if not self._use_proxies:
-                self._machines_cache = list(set(self._machines_cache) |
-                                            set((yield from self.machines())))
+                self._machines_cache = list(set(self._machines_cache))
+                self._machines_available = asyncio.async(self._update_machines, loop=self._loop)
+            else:
+                self._machines_available = asyncio.Future()
+                self._machines_available.set_result(None)
+
+
             if self._base_uri in self._machines_cache:
                 self._machines_cache.remove(self._base_uri)
             _log.debug("Machines cache initialised to %s",
                        self._machines_cache)
 
-    def __del__(self):
-        """Clean up open connections"""
-        if self.http is not None:
-            try:
-                self.http.clear()
-            except ReferenceError:
-                # this may hit an already-cleared weakref
-                pass
+    @asyncio.coroutine
+    def _update_machines(self):
+        self._machines_cache = yield from self.machines()
+        self._machines_available.set_result(None)
 
     @property
     def base_uri(self):
@@ -330,7 +331,8 @@ class Client(object):
         """
         return self.version_prefix + '/keys'
 
-    def __contains__(self, key):
+    @asyncio.coroutine
+    def contains(self, key):
         """
         Check if a key is available in the cluster.
 
@@ -338,7 +340,7 @@ class Client(object):
         True
         """
         try:
-            self.get(key)
+            yield from self.get(key)
             return True
         except aioetcd.EtcdKeyNotFound:
             return False
@@ -803,7 +805,6 @@ class Client(object):
                 if id_changed:
                     # Defensive: clear the pool so that we connect afresh next
                     # time.
-                    self.http.clear()
                     raise aioetcd.EtcdClusterIdChanged(
                         'The UUID of the cluster changed from {} to '
                         '{}.'.format(old_expected_cluster_id, cluster_id))
