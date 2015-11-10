@@ -52,11 +52,11 @@ class TestEncryptedAccess(test_simple.EtcdIntegrationTest):
                                   '-key-file=%s' % server_key_path
                               ])
 
-    @pytest.mark.asyncio
-    def test_get_set_unauthenticated(self):
+    @helpers.run_async
+    def test_get_set_unauthenticated(loop, self):
         """ INTEGRATION: set/get a new value unauthenticated (http->https) """
 
-        client = aioetcd.Client(port=6001)
+        client = aioetcd.Client(port=6001, loop=loop)
 
         # Since python 3 raises a MaxRetryError here, this gets caught in
         # different code blocks in python 2 and python 3, thus messages are
@@ -73,19 +73,19 @@ class TestEncryptedAccess(test_simple.EtcdIntegrationTest):
         except aioetcd.EtcdException:
             pass
 
-    @pytest.mark.asyncio
-    def test_get_set_unauthenticated_missing_ca(self):
+    @helpers.run_async
+    def test_get_set_unauthenticated_missing_ca(loop, self):
         """ INTEGRATION: try unauthenticated w/out validation (https->https)"""
         # This doesn't work for now and will need further inspection
-        client = aioetcd.Client(protocol='https', port=6001)
+        client = aioetcd.Client(protocol='https', port=6001, loop=loop)
         set_result = yield from client.set('/test_set', 'test-key')
         get_result = yield from client.get('/test_set')
 
-    @pytest.mark.asyncio
-    def test_get_set_unauthenticated_with_ca(self):
+    @helpers.run_async
+    def test_get_set_unauthenticated_with_ca(loop, self):
         """ INTEGRATION: try unauthenticated with validation (https->https)"""
         client = aioetcd.Client(
-            protocol='https', port=6001, ca_cert=self.ca2_cert_path)
+            protocol='https', port=6001, ca_cert=self.ca2_cert_path, loop=loop)
 
         loop = asyncio.get_event_loop()
         try:
@@ -99,12 +99,12 @@ class TestEncryptedAccess(test_simple.EtcdIntegrationTest):
         except aioetcd.EtcdConnectionFailed:
             pass
 
-    @pytest.mark.asyncio
-    def test_get_set_authenticated(self):
+    @helpers.run_async
+    def test_get_set_authenticated(loop, self):
         """ INTEGRATION: set/get a new value authenticated """
 
         client = aioetcd.Client(
-            port=6001, protocol='https', ca_cert=self.ca_cert_path)
+            port=6001, protocol='https', ca_cert=self.ca_cert_path, loop=loop)
 
         set_result = yield from client.set('/test_set', 'test-key')
         get_result = yield from client.get('/test_set')
@@ -114,7 +114,6 @@ class TestClientAuthenticatedAccess(test_simple.EtcdIntegrationTest):
 
     @classmethod
     def setUpClass(cls):
-        import pdb;pdb.set_trace()
         program = cls._get_exe()
         cls.directory = tempfile.mkdtemp(prefix='python-aioetcd')
 
@@ -163,11 +162,11 @@ class TestClientAuthenticatedAccess(test_simple.EtcdIntegrationTest):
                               ])
 
 
-    @pytest.mark.asyncio
-    def test_get_set_unauthenticated(self):
+    @helpers.run_async
+    def test_get_set_unauthenticated(loop, self):
         """ INTEGRATION: set/get a new value unauthenticated (http->https) """
 
-        client = aioetcd.Client(port=6001)
+        client = aioetcd.Client(port=6001, loop=loop)
 
         # See above for the reason of this change
         try:
@@ -182,8 +181,8 @@ class TestClientAuthenticatedAccess(test_simple.EtcdIntegrationTest):
         except aioetcd.EtcdException:
             pass
 
-    @pytest.mark.asyncio
-    def test_get_set_authenticated(self):
+    @helpers.run_async
+    def test_get_set_authenticated(loop, self):
         """ INTEGRATION: connecting to server with mutual auth """
         # This gives an unexplicable ssl error, as connecting to the same
         # Etcd cluster where this fails with the exact same code this
@@ -193,8 +192,9 @@ class TestClientAuthenticatedAccess(test_simple.EtcdIntegrationTest):
             port=6001,
             protocol='https',
             cert=self.client_all_cert,
-            ca_cert=self.ca_cert_path
-        )
+            ca_cert=self.ca_cert_path,
+            loop=loop,
+            )
 
         set_result = yield from client.set('/test_set', 'test-key')
         self.assertEquals(u'set', set_result.action.lower())

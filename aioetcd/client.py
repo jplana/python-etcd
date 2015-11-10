@@ -7,7 +7,8 @@
 
 """
 import logging
-from http.client import HTTPException
+#from http.client import HTTPException
+from aiohttp.web_exceptions import HTTPException
 import socket
 import aiohttp
 import json
@@ -102,6 +103,7 @@ class Client(object):
                   host, port, version_prefix)
         self._protocol = protocol
         self._loop = loop if loop is not None else asyncio.get_event_loop()
+        self._client = aiohttp.ClientSession(loop=loop)
 
         def uri(protocol, host, port):
             return '%s://%s:%d' % (protocol, host, port)
@@ -165,23 +167,24 @@ class Client(object):
             # If we're connecting to the original cluster, we can
             # extend the list given to the client with what we get
             # from self.machines
-            if not self._use_proxies:
-                self._machines_cache = list(set(self._machines_cache))
-                self._machines_available = asyncio.async(self._update_machines, loop=self._loop)
-            else:
-                self._machines_available = asyncio.Future()
-                self._machines_available.set_result(None)
-
+            self._machines_available = self._use_proxies
+            self._machines_cache = list(set(self._machines_cache))
 
             if self._base_uri in self._machines_cache:
                 self._machines_cache.remove(self._base_uri)
             _log.debug("Machines cache initialised to %s",
                        self._machines_cache)
+        else:
+            self._machines_available = True
+
+    def __del__(self):
+        if self._client is not None:
+            self._client.close()
 
     @asyncio.coroutine
     def _update_machines(self):
         self._machines_cache = yield from self.machines()
-        self._machines_available.set_result(None)
+        self._machines_available = True
 
     @property
     def base_uri(self):
@@ -227,20 +230,20 @@ class Client(object):
         # We can't use api_execute here, or it causes a logical loop
         try:
             uri = self._base_uri + self.version_prefix + '/machines'
-            response = yield from aiohttp.request(
+            response = yield from self._client.request(
                 self._MGET,
                 uri,
-                timeout=self.read_timeout,
-                redirect=self.allow_redirect)
+                allow_redirects=self.allow_redirect,
+            )
 
+            response = yield from self._handle_server_response(response)
+            response = yield from response.read()
             machines = [
-                node.strip() for node in
-                self._handle_server_response(response).data.decode('utf-8').split(',')
+                node.strip() for node in response.decode('utf-8').split(',')
             ]
             _log.debug("Retrieved list of machines: %s", machines)
             return machines
-        except (urllib3.exceptions.HTTPError,
-                HTTPException,
+        except (HTTPException,
                 socket.error) as e:
             # We can't get the list of machines, if one server is in the
             # machines cache, try on it
@@ -266,9 +269,9 @@ class Client(object):
         # Empty the members list
         self._members = {}
         try:
-            data = yield from self.api_execute(self.version_prefix + '/members',
-                                    self._MGET).data.decode('utf-8')
-            res = json.loads(data)
+            response = yield from self.api_execute(self.version_prefix + '/members', self._MGET)
+            data = yield from response.read()
+            res = json.loads(data.decode('utf-8'))
             for member in res['members']:
                 self._members[member['id']] = member
             return self._members
@@ -285,10 +288,9 @@ class Client(object):
         {"id":"ce2a822cea30bfca","name":"default","peerURLs":["http://localhost:2380","http://localhost:7001"],"clientURLs":["http://127.0.0.1:4001"]}
         """
         try:
-
-            leader = json.loads(
-                self.api_execute(self.version_prefix + '/stats/leader',
-                                 self._MGET).data.decode('utf-8'))
+            response = yield from self.api_execute(self.version_prefix + '/stats/leader', self._MGET)
+            data = yield from response.read()
+            leader = json.loads(data.decode('utf-8'))
             return (yield from self.members())[leader['leader']]
         except Exception as e:
             raise aioetcd.EtcdException("Cannot get leader data: %s" % e)
@@ -317,8 +319,9 @@ class Client(object):
     @asyncio.coroutine
     def _stats(self, what='self'):
         """ Internal method to access the stats endpoints"""
-        data = yield from self.api_execute(self.version_prefix
-                                + '/stats/' + what, self._MGET).data.decode('utf-8')
+        data = yield from self.api_execute(self.version_prefix + '/stats/' + what, self._MGET)
+        data = yield from data.read()
+        data = data.decode('utf-8')
         try:
             return json.loads(data)
         except (TypeError,ValueError):
@@ -413,7 +416,7 @@ class Client(object):
             path = self.key_endpoint + key
 
         response = yield from self.api_execute(path, method, params=params)
-        return self._result_from_response(response)
+        return (yield from self._result_from_response(response))
 
     def update(self, obj):
         """
@@ -459,16 +462,12 @@ class Client(object):
 
             sorted (bool): Sort the output keys (alphanumerically)
 
-            timeout (int):  max seconds to wait for a read.
-
         Returns:
             client.EtcdResult (or an array of client.EtcdResult if a
             subtree is queried)
 
         Raises:
             KeyValue:  If the key doesn't exists.
-
-            urllib3.exceptions.TimeoutError: If timeout is reached.
 
         >>> print client.get('/key').value
         'value'
@@ -485,12 +484,9 @@ class Client(object):
                 elif v is not None:
                     params[k] = v
 
-        timeout = kwdargs.get('timeout', None)
-
         response = yield from self.api_execute(
-            self.key_endpoint + key, self._MGET, params=params,
-            timeout=timeout)
-        return self._result_from_response(response)
+            self.key_endpoint + key, self._MGET, params=params)
+        return (yield from self._result_from_response(response))
 
     @asyncio.coroutine
     def delete(self, key, recursive=None, dir=None, **kwdargs):
@@ -539,7 +535,7 @@ class Client(object):
 
         response = yield from self.api_execute(
             self.key_endpoint + key, self._MDELETE, params=kwds)
-        return self._result_from_response(response)
+        return (yield from self._result_from_response(response))
 
     def pop(self, key, recursive=None, dir=None, **kwdargs):
         """
@@ -652,19 +648,15 @@ class Client(object):
         Raises:
             KeyValue:  If the key doesn't exists.
 
-            urllib3.exceptions.TimeoutError: If timeout is reached.
-
         >>> print client.watch('/key').value
         'value'
 
         """
         _log.debug("About to wait on key %s, index %s", key, index)
         if index:
-            return self.read(key, wait=True, waitIndex=index, timeout=timeout,
-                             recursive=recursive)
+            return self.read(key, wait=True, waitIndex=index, recursive=recursive)
         else:
-            return self.read(key, wait=True, timeout=timeout,
-                             recursive=recursive)
+            return self.read(key, wait=True, recursive=recursive)
 
     @asyncio.coroutine
     def eternal_watch(self, key, callback, index=None, recursive=None):
@@ -701,10 +693,12 @@ class Client(object):
     def election(self):
         raise NotImplementedError('Election primitives were removed from etcd 2.0')
 
+    @asyncio.coroutine
     def _result_from_response(self, response):
         """ Creates an EtcdResult from json dictionary """
         try:
-            res = json.loads(response.data.decode('utf-8'))
+            data = yield from response.read()
+            res = json.loads(data.decode('utf-8'))
             r = aioetcd.EtcdResult(**res)
             if response.status == 201:
                 r.newKey = True
@@ -728,51 +722,31 @@ class Client(object):
             return mach
 
     @asyncio.coroutine
-    def api_execute(self, path, method, params=None, timeout=None):
+    def api_execute(self, path, method, params=None):
         """ Executes the query. """
 
         some_request_failed = False
         response = False
 
-        if timeout is None:
-            timeout = self.read_timeout
-
-        if timeout == 0:
-            timeout = None
-
         if not path.startswith('/'):
             raise ValueError('Path does not start with /')
+
+        if not self._machines_available:
+            yield from self._update_machines()
 
         while not response:
             try:
                 url = self._base_uri + path
 
-                if (method == self._MGET) or (method == self._MDELETE):
-                    response = yield from aiohttp.request(
-                        method,
-                        url,
-                        timeout=timeout,
-                        fields=params,
-                        redirect=self.allow_redirect,
-                        preload_content=False)
+                response = yield from self._client.request(
+                    method,
+                    url,
+                    params=params,
+                    allow_redirects=self.allow_redirect,
+                    )
 
-                elif (method == self._MPUT) or (method == self._MPOST):
-                    response = yield from aiohttp.request(
-                        method,
-                        url,
-                        fields=params,
-                        timeout=timeout,
-                        encode_multipart=False,
-                        redirect=self.allow_redirect,
-                        preload_content=False)
-                else:
-                    raise aioetcd.EtcdException(
-                        'HTTP method {} not supported'.format(method))
-
-            # urllib3 doesn't wrap all httplib exceptions and earlier versions
-            # don't wrap socket errors either.
-            except (urllib3.exceptions.HTTPError,
-                    HTTPException,
+            # earlier versions don't wrap socket errors
+            except (HTTPException,
                     socket.error) as e:
                 _log.error("Request to server %s failed: %r",
                            self._base_uri, e)
@@ -795,34 +769,41 @@ class Client(object):
                 # Check the cluster ID hasn't changed under us.  We use
                 # preload_content=False above so we can read the headers
                 # before we wait for the content of a long poll.
-                cluster_id = response.getheader("x-etcd-cluster-id")
-                id_changed = (self.expected_cluster_id
-                              and cluster_id is not None and
-                              cluster_id != self.expected_cluster_id)
-                # Update the ID so we only raise the exception once.
-                old_expected_cluster_id = self.expected_cluster_id
-                self.expected_cluster_id = cluster_id
-                if id_changed:
-                    # Defensive: clear the pool so that we connect afresh next
-                    # time.
-                    raise aioetcd.EtcdClusterIdChanged(
-                        'The UUID of the cluster changed from {} to '
-                        '{}.'.format(old_expected_cluster_id, cluster_id))
+                try:
+                    cluster_id = response.headers["x-etcd-cluster-id"]
+                except KeyError: # some messages don't have it
+                    pass
+                else:
+                    id_changed = (self.expected_cluster_id
+                                  and cluster_id is not None and
+                                  cluster_id != self.expected_cluster_id)
+                    # Update the ID so we only raise the exception once.
+                    old_expected_cluster_id = self.expected_cluster_id
+                    self.expected_cluster_id = cluster_id
+                    if id_changed:
+                        # Defensive: clear the pool so that we connect afresh next
+                        # time.
+                        raise aioetcd.EtcdClusterIdChanged(
+                            'The UUID of the cluster changed from {} to '
+                            '{}.'.format(old_expected_cluster_id, cluster_id))
 
         if some_request_failed:
             if not self._use_proxies:
                 # The cluster may have changed since last invocation
                 self._machines_cache = yield from self.machines()
             self._machines_cache.remove(self._base_uri)
-        return self._handle_server_response(response)
+        response = yield from self._handle_server_response(response)
+        return response
 
+    @asyncio.coroutine
     def _handle_server_response(self, response):
         """ Handles the server response """
         if response.status in [200, 201]:
             return response
 
         else:
-            resp = response.data.decode('utf-8')
+            data = yield from response.read()
+            resp = data.decode('utf-8')
 
             # throw the appropriate exception
             try:
@@ -832,3 +813,4 @@ class Client(object):
                 r = {"message": "Bad response",
                      "cause": str(resp)}
             aioetcd.EtcdError.handle(r)
+

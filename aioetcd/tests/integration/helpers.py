@@ -5,9 +5,20 @@ import logging
 import time
 import hashlib
 import uuid
+import asyncio
 
 from OpenSSL import crypto
+from functools import wraps
 
+def run_async(p):
+    @wraps(p)
+    def runner(*a,**k):
+        loop = asyncio.new_event_loop()
+        try:
+            return loop.run_until_complete(asyncio.async(asyncio.coroutine(p)(loop, *a,**k), loop=loop))
+        finally:
+            loop.close()
+    return runner
 
 class EtcdProcessHelper(object):
 
