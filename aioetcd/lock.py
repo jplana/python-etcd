@@ -29,16 +29,16 @@ class Lock(object):
         """
         return self._uuid
 
-    @uuid.setter
+    @asyncio.coroutine
     def set_uuid(self, value):
         old_uuid = self._uuid
         self._uuid = value
-        if not self._find_lock():
+        if not (yield from self._find_lock()):
             _log.warn("The hand-set uuid was not found, refusing")
             self._uuid = old_uuid
-            raise ValueError("Inexistent UUID")
+            raise ValueError("Nonexistent UUID")
 
-    @property
+    @asyncio.coroutine
     def is_acquired(self):
         """
         tells us if the lock is acquired
@@ -47,14 +47,15 @@ class Lock(object):
             _log.debug("Lock not taken")
             return False
         try:
-            self.client.read(self.lock_key)
+            yield from self.client.read(self.lock_key)
             return True
         except aioetcd.EtcdKeyNotFound:
             _log.warn("Lock was supposedly taken, but we cannot find it")
             self.is_taken = False
             return False
 
-    def acquire(self, blocking=True, lock_ttl=3600, timeout=None):
+    @asyncio.coroutine
+    def acquire(self, blocking=True, lock_ttl=3600):
         """
         Acquire the lock.
 
@@ -63,27 +64,28 @@ class Lock(object):
         :param timeout The time to wait before giving up on getting a lock
         """
         # First of all try to write, if our lock is not present.
-        if not self._find_lock():
+        if not (yield from self._find_lock()):
             _log.debug("Lock not found, writing it to %s", self.path)
-            res = self.client.write(self.path, self.uuid, ttl=lock_ttl, append=True)
+            res = yield from self.client.write(self.path, self.uuid, ttl=lock_ttl, append=True)
             self._set_sequence(res.key)
             _log.debug("Lock key %s written, sequence is %s", res.key, self._sequence)
         elif lock_ttl:
             # Renew our lock if already here!
-            self.client.write(self.lock_key, self.uuid, ttl=lock_ttl)
+            yield from self.client.write(self.lock_key, self.uuid, ttl=lock_ttl)
 
         # now get the owner of the lock, and the next lowest sequence
-        return self._acquired(blocking=blocking, timeout=timeout)
+        return self._acquired(blocking=blocking)
 
+    @asyncio.coroutine
     def release(self):
         """
         Release the lock
         """
         if not self._sequence:
-            self._find_lock()
+            yield from self._find_lock()
         try:
             _log.debug("Releasing existing lock %s", self.lock_key)
-            self.client.delete(self.lock_key)
+            yield from self.client.delete(self.lock_key)
         except aioetcd.EtcdKeyNotFound:
             _log.info("Lock %s not found, nothing to release", self.lock_key)
             pass
@@ -99,8 +101,9 @@ class Lock(object):
     def __exit__(self, type, value, traceback):
         self.release()
 
-    def _acquired(self, blocking=True, timeout=None):
-        locker, nearest = self._get_locker()
+    @asyncio.coroutine
+    def _acquired(self, blocking=True):
+        locker, nearest = yield from self._get_locker()
         self.is_taken = False
         if self.lock_key == locker:
             _log.debug("Lock acquired!")
@@ -114,15 +117,14 @@ class Lock(object):
             # Let's look for the lock
             watch_key = nearest
             _log.debug("Lock not acquired, now watching %s", watch_key)
-            t = max(0, timeout)
             while True:
                 try:
-                    r = self.client.watch(watch_key, timeout=t)
+                    r = yield from self.client.watch(watch_key)
                     _log.debug("Detected variation for %s: %s", r.key, r.action)
-                    return self._acquired(blocking=True, timeout=timeout)
+                    return (yield from self._acquired(blocking=True))
                 except aioetcd.EtcdKeyNotFound:
                     _log.debug("Key %s not present anymore, moving on", watch_key)
-                    return self._acquired(blocking=True, timeout=timeout)
+                    return (yield from self._acquired(blocking=True))
                 except aioetcd.EtcdException:
                     # TODO: log something...
                     pass
@@ -136,17 +138,18 @@ class Lock(object):
     def _set_sequence(self, key):
         self._sequence = int(key.replace(self.path, '').lstrip('/'))
 
+    @asyncio.coroutine
     def _find_lock(self):
         if self._sequence:
             try:
-                res = self.client.read(self.lock_key)
+                res = yield from self.client.read(self.lock_key)
                 self._uuid = res.value
                 return True
             except aioetcd.EtcdKeyNotFound:
                 return False
         elif self._uuid:
             try:
-                for r in self.client.read(self.path, recursive=True).leaves:
+                for r in (yield from self.client.read(self.path, recursive=True)).leaves:
                     if r.value == self._uuid:
                         self._set_sequence(r.key)
                         return True
@@ -154,11 +157,12 @@ class Lock(object):
                 pass
         return False
 
+    @asyncio.coroutine
     def _get_locker(self):
         results = [res for res in
-                   self.client.read(self.path, recursive=True).leaves]
+                   (yield from self.client.read(self.path, recursive=True)).leaves]
         if not self._sequence:
-            self._find_lock()
+            yield from self._find_lock()
         l = sorted([r.key for r in results])
         _log.debug("Lock keys found: %s", l)
         try:
@@ -169,7 +173,7 @@ class Lock(object):
             else:
                 _log.debug("Locker: %s, key to watch: %s", l[0], l[i-1])
                 return (l[0], l[i-1])
-        except ValueError:
+        except ValueError as exc:
             # Something very wrong is going on, most probably
             # our lock has expired
-            raise aioetcd.EtcdLockExpired(u"Lock not found")
+            raise aioetcd.EtcdLockExpired(u"Lock not found") from exc
