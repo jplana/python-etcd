@@ -6,15 +6,14 @@ README = open(os.path.join(here, 'README.rst')).read()
 NEWS = open(os.path.join(here, 'NEWS.txt')).read()
 
 
-version = '0.4.1'
+version = '0.4'
 
 install_requires = [
     'aiohttp',
 ]
 
 test_requires = [
-    'mock',
-    'nose',
+    'pytest',
 ]
 
 setup(name='aioetcd',
@@ -38,6 +37,6 @@ setup(name='aioetcd',
     zip_safe=False,
     install_requires=install_requires,
     tests_require=test_requires,
-    test_suite='nose.collector',
+    test_suite='pytest.collector',
 
 )
