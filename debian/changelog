@@ -1,3 +1,9 @@
+aioetcd (0.4.2-2) smurf; urgency=medium
+
+  * Dependencies
+
+ -- Matthias Urlichs <matthias@urlichs.de>  Wed, 11 Nov 2015 13:07:39 +0100
+
 aioetcd (0.4.2-1) smurf; urgency=low
 
   * source package automatically created by stdeb 0.8.2
