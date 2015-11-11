@@ -9,6 +9,7 @@
 import logging
 #from http.client import HTTPException
 from aiohttp.web_exceptions import HTTPException
+from aiohttp.errors import DisconnectedError,ClientConnectionError,ClientResponseError
 import socket
 import aiohttp
 import json
@@ -40,14 +41,13 @@ class Client(object):
     _read_options = set(('recursive', 'wait', 'waitIndex', 'sorted', 'quorum'))
     _del_conditions = set(('prevValue', 'prevIndex'))
 
-    http = None
+    _client = None
 
     def __init__(
             self,
             host='127.0.0.1',
             port=4001,
             version_prefix='/v2',
-            read_timeout=60,
             allow_redirect=True,
             protocol='http',
             cert=None,
@@ -56,6 +56,7 @@ class Client(object):
             use_proxies=False,
             expected_cluster_id=None,
             per_host_pool_size=10,
+            ssl_verify=ssl.CERT_REQUIRED,
             loop=None,
     ):
         """
@@ -69,8 +70,6 @@ class Client(object):
             port (int):  Port used to connect to etcd.
 
             version_prefix (str): Url or version prefix in etcd url (default=/v2).
-
-            read_timeout (int):  max seconds to wait for a read.
 
             allow_redirect (bool): allow the client to connect to other nodes.
 
@@ -103,7 +102,6 @@ class Client(object):
                   host, port, version_prefix)
         self._protocol = protocol
         self._loop = loop if loop is not None else asyncio.get_event_loop()
-        self._client = aiohttp.ClientSession(loop=loop)
 
         def uri(protocol, host, port):
             return '%s://%s:%d' % (protocol, host, port)
@@ -121,38 +119,31 @@ class Client(object):
         self.expected_cluster_id = expected_cluster_id
         self.version_prefix = version_prefix
 
-        self._read_timeout = read_timeout
         self._allow_redirect = allow_redirect
         self._use_proxies = use_proxies
         self._allow_reconnect = allow_reconnect
 
         # SSL Client certificate support
-
-        kw = {
-          'maxsize': per_host_pool_size
-        }
-
-        if self._read_timeout > 0:
-            kw['timeout'] = self._read_timeout
+        ssl_ctx = ssl.create_default_context()
 
         if protocol == 'https':
             # If we don't allow TLSv1, clients using older version of OpenSSL
             # (<1.0) won't be able to connect.
             _log.debug("HTTPS enabled.")
-            kw['ssl_version'] = ssl.PROTOCOL_TLSv1
+            #kw['ssl_version'] = ssl.PROTOCOL_TLSv1
+            if ssl_verify == ssl.CERT_NONE:
+                ssl_ctx.check_hostname = False
+            ssl_ctx.verify_mode = ssl_verify
 
         if cert:
             if isinstance(cert, tuple):
                 # Key and cert are separate
-                kw['cert_file'] = cert[0]
-                kw['key_file'] = cert[1]
+                ssl_ctx.load_cert_chain(*cert)
             else:
-                # combined certificate
-                kw['cert_file'] = cert
+                ssl_ctx.load_cert_chain(cert)
 
         if ca_cert:
-            kw['ca_certs'] = ca_cert
-            kw['cert_reqs'] = ssl.CERT_REQUIRED
+            ssl_ctx.load_verify_locations(ca_cert)
 
         if self._allow_reconnect:
             # we need the set of servers in the cluster in order to try
@@ -176,6 +167,12 @@ class Client(object):
                        self._machines_cache)
         else:
             self._machines_available = True
+
+        if protocol == "https":
+            conn = aiohttp.TCPConnector(ssl_context=ssl_ctx, loop=loop)
+            self._client = aiohttp.ClientSession(connector=conn, loop=loop)
+        else:
+            self._client = aiohttp.ClientSession(loop=loop)
 
     def __del__(self):
         if self._client is not None:
@@ -228,36 +225,35 @@ class Client(object):
         ['http://127.0.0.1:4001', 'http://127.0.0.1:4002']
         """
         # We can't use api_execute here, or it causes a logical loop
-        try:
-            uri = self._base_uri + self.version_prefix + '/machines'
-            response = yield from self._client.request(
-                self._MGET,
-                uri,
-                allow_redirects=self.allow_redirect,
-            )
+        retries = 0
+        while retries < 5:
+            for m in [self._base_uri]+self._machines_cache:
+                try:
+                    uri = m + self.version_prefix + '/machines'
+                    response = yield from self._client.request(
+                        self._MGET,
+                        uri,
+                        allow_redirects=self.allow_redirect,
+                    )
 
-            response = yield from self._handle_server_response(response)
-            response = yield from response.read()
-            machines = [
-                node.strip() for node in response.decode('utf-8').split(',')
-            ]
-            _log.debug("Retrieved list of machines: %s", machines)
-            return machines
-        except (HTTPException,
-                socket.error) as e:
-            # We can't get the list of machines, if one server is in the
-            # machines cache, try on it
-            _log.error("Failed to get list of machines from %s%s: %r",
-                       self._base_uri, self.version_prefix, e)
-            if self._machines_cache:
-                self._base_uri = self._machines_cache.pop(0)
-                _log.info("Retrying on %s", self._base_uri)
-                # Call myself
-                return (yield from self.machines())
-            else:
-                raise aioetcd.EtcdException("Could not get the list of servers, "
-                                         "maybe you provided the wrong "
-                                         "host(s) to connect to?")
+                    response = yield from self._handle_server_response(response)
+                    response = yield from response.read()
+                    if response != b"":
+                        machines = [
+                            node.strip() for node in response.decode('utf-8').split(',')
+                        ]
+                        _log.debug("Retrieved list of machines: %s", machines)
+                        return machines
+                except (HTTPException, socket.error, DisconnectedError, ClientConnectionError) as e:
+                    # We can't get the list of machines, if one server is in the
+                    # machines cache, try on it
+                    _log.error("Failed to get list of machines from %s%s: %r",
+                            self._base_uri, self.version_prefix, e)
+            retries += 1
+            yield from asyncio.sleep(retries/10, loop=self._loop)
+        raise aioetcd.EtcdException("Could not get the list of servers, "
+                                    "maybe you provided the wrong "
+                                    "host(s) to connect to?")
 
     @asyncio.coroutine
     def members(self):
@@ -275,8 +271,8 @@ class Client(object):
             for member in res['members']:
                 self._members[member['id']] = member
             return self._members
-        except:
-            raise aioetcd.EtcdException("Could not get the members list, maybe the cluster has gone away?")
+        except Exception as e:
+            raise aioetcd.EtcdException("Could not get the members list, maybe the cluster has gone away?") from e
 
     @asyncio.coroutine
     def leader(self):
@@ -288,12 +284,12 @@ class Client(object):
         {"id":"ce2a822cea30bfca","name":"default","peerURLs":["http://localhost:2380","http://localhost:7001"],"clientURLs":["http://127.0.0.1:4001"]}
         """
         try:
-            response = yield from self.api_execute(self.version_prefix + '/stats/leader', self._MGET)
+            response = yield from self.api_execute(self.version_prefix + '/stats/self', self._MGET)
             data = yield from response.read()
             leader = json.loads(data.decode('utf-8'))
-            return (yield from self.members())[leader['leader']]
-        except Exception as e:
-            raise aioetcd.EtcdException("Cannot get leader data: %s" % e)
+            return (yield from self.members())[leader['leaderInfo']['leader']]
+        except Exception as exc:
+            raise aioetcd.EtcdException("Cannot get leader data") from exc
 
     def stats(self):
         """
@@ -324,8 +320,8 @@ class Client(object):
         data = data.decode('utf-8')
         try:
             return json.loads(data)
-        except (TypeError,ValueError):
-            raise aioetcd.EtcdException("Cannot parse json data in the response")
+        except (TypeError,ValueError) as e:
+            raise aioetcd.EtcdException("Cannot parse json data in the response") from e
 
     @property
     def key_endpoint(self):
@@ -661,15 +657,16 @@ class Client(object):
     @asyncio.coroutine
     def eternal_watch(self, key, callback, index=None, recursive=None):
         """
-        Generator that will yield changes from a key.
-        Note that this method will block forever until an event is generated.
+        Generator that will call the callback every time a key changes.
+        Note that this method will block forever until an event is generated
+        and the callback function raises StopWatching.
 
         Args:
             key (str):  Key to subcribe to.
             index (int):  Index from where the changes will be received.
 
-        Yields:
-            client.EtcdResult
+        Returns:
+            Index to continue watching from
 
         >>> for event in client.eternal_watch('/subcription_key'):
         ...     print event.value
@@ -684,7 +681,10 @@ class Client(object):
             local_index = response.modifiedIndex + 1
             res = callback(response)
             if isinstance(res, asyncio.Future) or inspect.isgenerator(res):
-                yield from res
+                try:
+                    yield from res
+                except aioetcd.StopWatching:
+                    return local_index
 
     def get_lock(self, *args, **kwargs):
         raise NotImplementedError('Lock primitives were removed from etcd 2.0')
@@ -706,7 +706,7 @@ class Client(object):
             return r
         except Exception as e:
             raise aioetcd.EtcdException(
-                'Unable to decode server response: %s' % e)
+                'Unable to decode server response') from e
 
     def _next_server(self):
         """ Selects the next server in the list, refreshes the server list. """
@@ -714,9 +714,9 @@ class Client(object):
                    self._machines_cache)
         try:
             mach = self._machines_cache.pop()
-        except IndexError:
+        except IndexError as e:
             _log.error("Machines cache is empty, no machines to try.")
-            raise aioetcd.EtcdConnectionFailed('No more machines in the cluster')
+            raise aioetcd.EtcdConnectionFailed('No more machines in the cluster') from e
         else:
             _log.info("Selected new etcd server %s", mach)
             return mach
@@ -746,10 +746,9 @@ class Client(object):
                     )
 
             # earlier versions don't wrap socket errors
-            except (HTTPException,
-                    socket.error) as e:
-                _log.error("Request to server %s failed: %r",
-                           self._base_uri, e)
+            except (HTTPException, socket.error, DisconnectedError, ClientConnectionError,ClientResponseError) as e:
+                _log.exception("Request to server %s failed",
+                           self._base_uri)
                 if self._allow_reconnect:
                     _log.info("Reconnection allowed, looking for another "
                               "server.")
@@ -760,10 +759,7 @@ class Client(object):
                 else:
                     _log.debug("Reconnection disabled, giving up.")
                     raise aioetcd.EtcdConnectionFailed(
-                        "Connection to etcd failed due to %r" % e)
-            except:
-                _log.exception("Unexpected request failure, re-raising.")
-                raise
+                        "Connection to etcd failed") from e
 
             else:
                 # Check the cluster ID hasn't changed under us.  We use

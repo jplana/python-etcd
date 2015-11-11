@@ -6,6 +6,7 @@ import unittest
 import tempfile
 import pytest
 
+import asyncio
 import aioetcd
 from . import helpers
 
@@ -22,7 +23,7 @@ class EtcdIntegrationTest(unittest.TestCase):
             proc_name=program,
             port_range_start=6001,
             internal_port_range_start=8001)
-        cls.processHelper.run(number=3)
+        cls.processHelper.run(number=1)
 
     @classmethod
     def tearDownClass(cls):
@@ -195,7 +196,6 @@ class TestErrors(EtcdIntegrationTest):
 
 
 class TestClusterFunctions(EtcdIntegrationTest):
-
     @classmethod
     def setUpClass(cls):
         program = cls._get_exe()
@@ -296,16 +296,17 @@ class TestWatch(EtcdIntegrationTest):
 
         @asyncio.coroutine
         def watch_value(key, queue):
-            c = aioetcd.Client(port=6001)
-            yield from queue.put((yield from c.watch(key)).value)
+            c = aioetcd.Client(port=6001, loop=loop)
+            w = yield from c.watch(key)
+            yield from queue.put(w.value)
 
-        watcher = asyncio.async(watch_value('/test-key'))
-        yield from asyncio.sleep(1)
-        changer = asyncio.async(change_value('/test-key', 'new-test-value'))
+        watcher = asyncio.async(watch_value('/test-key', queue), loop=loop)
+        yield from asyncio.sleep(0.1, loop=loop)
+        changer = asyncio.async(change_value('/test-key', 'new-test-value'), loop=loop)
 
-        value = yield from asyncio.wait_for(queue.get(),timeout=2)
-        yield from asyncio.wait_for(watcher,timeout=5)
-        yield from asyncio.wait_for(changer,timeout=5)
+        value = yield from asyncio.wait_for(queue.get(),timeout=2,loop=loop)
+        yield from asyncio.wait_for(watcher,timeout=5,loop=loop)
+        yield from asyncio.wait_for(changer,timeout=5,loop=loop)
 
         assert value == 'new-test-value'
 
@@ -336,17 +337,17 @@ class TestWatch(EtcdIntegrationTest):
                 yield from queue.put((yield from c.watch(key, index=index + i)).value)
 
 
-        watcher = asyncio.async(watch_value('/test-key', original_index, queue))
-        yield from asyncio.sleep(0.5)
-        proc = asyncio.async(change_value('/test-key', 'test-value3'))
+        watcher = asyncio.async(watch_value('/test-key', original_index, queue), loop=loop)
+        yield from asyncio.sleep(0.5, loop=loop)
+        proc = asyncio.async(change_value('/test-key', 'test-value3'), loop=loop)
 
         for i in range(0, 3):
             value = yield from queue.get()
             log.debug("index: %d: %s" % (i, value))
             self.assertEquals('test-value%d' % i, value)
 
-        yield from asyncio.wait_for(watcher,timeout=5)
-        yield from asyncio.wait_for(proc,timeout=5)
+        yield from asyncio.wait_for(watcher,timeout=5,loop=loop)
+        yield from asyncio.wait_for(proc,timeout=5,loop=loop)
 
     @helpers.run_async
     def test_watch_generator(loop, self):
@@ -359,7 +360,7 @@ class TestWatch(EtcdIntegrationTest):
 
         @asyncio.coroutine
         def change_value(key):
-            yield from asyncio.sleep(0.5)
+            yield from asyncio.sleep(0.5, loop=loop)
             c = aioetcd.Client(port=6001, loop=loop)
             for i in range(0, 3):
                 yield from c.set(key, 'test-value%d' % i)
@@ -375,14 +376,14 @@ class TestWatch(EtcdIntegrationTest):
                 yield from queue.put(event.value)
                 n += 1
                 if n == 3:
-                    raise StopIteration
+                    raise aioetcd.StopWatching
                 
             yield from c.eternal_watch(key, qput)
             assert n == 3, n
 
 
-        watcher = asyncio.async(watch_value('/test-key', queue))
-        changer = asyncio.async(change_value('/test-key'))
+        watcher = asyncio.async(watch_value('/test-key', queue), loop=loop)
+        changer = asyncio.async(change_value('/test-key'), loop=loop)
 
         values = ['test-value0', 'test-value1', 'test-value2']
         for i in range(0, 3):
@@ -390,12 +391,14 @@ class TestWatch(EtcdIntegrationTest):
             log.debug("index: %d: %s" % (i, value))
             self.assertTrue(value in values)
 
-        yield from asyncio.wait_for(watcher,timeout=5)
-        yield from asyncio.wait_for(changer,timeout=5)
+        yield from asyncio.wait_for(watcher,timeout=5,loop=loop)
+        yield from asyncio.wait_for(changer,timeout=5,loop=loop)
 
     @helpers.run_async
     def test_watch_indexed_generator(loop, self):
         """ INTEGRATION: Receive a watch event from other process, ixd, (2) """
+
+        client = aioetcd.Client(port=6001, allow_reconnect=True, loop=loop)
 
         set_result = yield from client.set('/test-key', 'test-value')
         set_result = yield from client.set('/test-key', 'test-value0')
@@ -420,19 +423,19 @@ class TestWatch(EtcdIntegrationTest):
                 yield from queue.put(v.value)
                 n += 1
                 if n == 3:
-                    raise StopIteration
+                    raise aioetcd.StopWatching
             yield from c.eternal_watch(key, qput, index=index)
             assert n == 3, n
 
-        watcher = asyncio.async(watch_value('/test-key', original_index, queue))
-        time.sleep(0.5)
-        proc = asyncio.async(change_value('/test-key', 'test-value3',))
+        watcher = asyncio.async(watch_value('/test-key', original_index, queue), loop=loop)
+        yield from asyncio.sleep(0.5, loop=loop)
+        proc = asyncio.async(change_value('/test-key', 'test-value3',), loop=loop)
 
         for i in range(0, 3):
             value = yield from queue.get()
             log.debug("index: %d: %s" % (i, value))
             self.assertEquals('test-value%d' % i, value)
 
-        yield from asyncio.wait_for(watcher,timeout=5)
-        yield from asyncio.wait_for(proc,timeout=5)
+        yield from asyncio.wait_for(watcher,timeout=5,loop=loop)
+        yield from asyncio.wait_for(proc,timeout=5,loop=loop)
 

@@ -5,6 +5,9 @@ from .lock import Lock
 
 _log = logging.getLogger(__name__)
 
+class StopWatching(BaseException):
+    pass
+
 _EtcdResult = EtcdResult
 class EtcdResult(_EtcdResult):
     def parse_headers(self, response):

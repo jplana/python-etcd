@@ -5,6 +5,7 @@ import logging
 import unittest
 import tempfile
 import pytest
+import ssl
 
 import asyncio
 import aioetcd
@@ -77,7 +78,7 @@ class TestEncryptedAccess(test_simple.EtcdIntegrationTest):
     def test_get_set_unauthenticated_missing_ca(loop, self):
         """ INTEGRATION: try unauthenticated w/out validation (https->https)"""
         # This doesn't work for now and will need further inspection
-        client = aioetcd.Client(protocol='https', port=6001, loop=loop)
+        client = aioetcd.Client(protocol='https', port=6001, ssl_verify=ssl.CERT_NONE, loop=loop)
         set_result = yield from client.set('/test_set', 'test-key')
         get_result = yield from client.get('/test_set')
 
@@ -173,7 +174,6 @@ class TestClientAuthenticatedAccess(test_simple.EtcdIntegrationTest):
             yield from client.set('/test_set', 'test-key')
             assert False
         except aioetcd.EtcdException:
-            assert False
             pass
         try:
             yield from client.get('/test_set')

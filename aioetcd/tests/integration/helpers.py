@@ -9,19 +9,21 @@ import asyncio
 
 from OpenSSL import crypto
 from functools import wraps
+from socket import socket
 
 def run_async(p):
     @wraps(p)
     def runner(*a,**k):
         loop = asyncio.new_event_loop()
         try:
-            return loop.run_until_complete(asyncio.async(asyncio.coroutine(p)(loop, *a,**k), loop=loop))
+            f = asyncio.async(asyncio.coroutine(p)(loop, *a,**k), loop=loop)
+            return loop.run_until_complete(asyncio.wait_for(f, timeout=300, loop=loop))
         finally:
             loop.close()
     return runner
 
 class EtcdProcessHelper(object):
-
+    NPROCS = 1
     def __init__(
             self,
             base_directory,
@@ -42,13 +44,14 @@ class EtcdProcessHelper(object):
         if tls:
             self.schema = 'https://'
 
-    def run(self, number=1, proc_args=[]):
-        if number > 1:
-            initial_cluster = ",".join([ "test-node-{}={}127.0.0.1:{}".format(slot, 'http://', self.internal_port_range_start + slot) for slot in range(0, number)])
-            proc_args.extend([
-                '-initial-cluster', initial_cluster,
-                '-initial-cluster-state', 'new'
-            ])
+    def run(self, number=None, proc_args=[]):
+        if number is None:
+            number = self.NPROCS
+        initial_cluster = ",".join([ "test-node-{}={}127.0.0.1:{}".format(slot, 'http://', self.internal_port_range_start + slot) for slot in range(0, number)])
+        proc_args.extend([
+            '-initial-cluster', initial_cluster,
+            '-initial-cluster-state', 'new'
+        ])
         for i in range(0, number):
             self.add_one(i, proc_args)
 
@@ -83,14 +86,24 @@ class EtcdProcessHelper(object):
         daemon = subprocess.Popen(daemon_args)
         log.debug('Started %d' % daemon.pid)
         log.debug('Params: %s' % daemon_args)
-        time.sleep(2)
+        s = socket()
+        n = 0
+        while n < 30:
+            try:
+                s.connect(("127.0.0.1", self.port_range_start + slot))
+            except Exception:
+                n += 1
+                time.sleep(0.1)
+            else:
+                s.close()
+                break
         self.processes[slot] = (directory, daemon)
 
     def kill_one(self, slot):
         log = logging.getLogger()
         dir, process = self.processes.pop(slot)
         process.kill()
-        time.sleep(2)
+        time.sleep(0.2)
         log.debug('Killed aioetcd pid:%d', process.pid)
         shutil.rmtree(dir)
         log.debug('Removed directory %s' % dir)
