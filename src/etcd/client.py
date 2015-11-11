@@ -315,9 +315,9 @@ class Client(object):
         try:
 
             leader = json.loads(
-                self.api_execute(self.version_prefix + '/stats/leader',
+                self.api_execute(self.version_prefix + '/stats/self',
                                  self._MGET).data.decode('utf-8'))
-            return self.members[leader['leader']]
+            return self.members[leader['leaderInfo']['leader']]
         except Exception as e:
             raise etcd.EtcdException("Cannot get leader data: %s" % e)
 

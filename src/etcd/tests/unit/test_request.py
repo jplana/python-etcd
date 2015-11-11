@@ -159,7 +159,7 @@ class TestClientApiInterface(TestClientApiBase):
         """ Can request the leader """
         members = {"ce2a822cea30bfca": {"id": "ce2a822cea30bfca", "name": "default"}}
         mocker.return_value = members
-        self._mock_api(200, {"leader": "ce2a822cea30bfca", "followers": {}})
+        self._mock_api(200, {"leaderInfo":{"leader": "ce2a822cea30bfca", "followers": {}}})
         self.assertEquals(self.client.leader, members["ce2a822cea30bfca"])
 
     def test_set_plain(self):
