@@ -1,6 +1,6 @@
 API Documentation
 =========================
-.. automodule:: etcd
+.. automodule:: aioetcd
    :members:
 .. autoclass:: Client
    :special-members:

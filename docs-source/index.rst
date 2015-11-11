@@ -1,7 +1,7 @@
 Python-etcd documentation
 =========================
 
-A python client for Etcd https://github.com/coreos/etcd
+An asynchronous python client for Etcd https://github.com/coreos/etcd
 
 
 
@@ -31,7 +31,7 @@ Create a client object
 
 .. code-block:: python
 
-   import etcd
+   import aioetcd as etcd
 
    client = etcd.Client() # this will create a client against etcd server running on localhost on port 4001
    client = etcd.Client(port=4002)
@@ -48,28 +48,28 @@ Set a key
 
 .. code-block:: python
 
-    client.write('/nodes/n1', 1)
+    yield from client.write('/nodes/n1', 1)
     # with ttl
-    client.write('/nodes/n2', 2, ttl=4)  # sets the ttl to 4 seconds
+    yield from client.write('/nodes/n2', 2, ttl=4)  # sets the ttl to 4 seconds
     # create only
-    client.write('/nodes/n3', 'test', prevExist=False)
+    yield from client.write('/nodes/n3', 'test', prevExist=False)
     # Compare and swap values atomically
-    client.write('/nodes/n3', 'test2', prevValue='test1') #this fails to write
-    client.write('/nodes/n3', 'test2', prevIndex=10) #this fails to write
+    yield from client.write('/nodes/n3', 'test2', prevValue='test1') #this fails to write
+    yield from client.write('/nodes/n3', 'test2', prevIndex=10) #this fails to write
     # mkdir
-    client.write('/nodes/queue', dir=True)
+    yield from client.write('/nodes/queue', dir=True)
     # Append a value to a queue dir
-    client.write('/nodes/queue', 'test', append=True) #will write i.e. /nodes/queue/11
-    client.write('/nodes/queue', 'test2', append=True) #will write i.e. /nodes/queue/12
+    yield from client.write('/nodes/queue', 'test', append=True) #will write i.e. /nodes/queue/11
+    yield from client.write('/nodes/queue', 'test2', append=True) #will write i.e. /nodes/queue/12
 
 You can also atomically update a result:
 
 .. code:: python
 
-    result = client.read('/foo')
+    result = yield from client.read('/foo')
     print(result.value) # bar
     result.value += u'bar'
-    updated = client.update(result) # if any other client wrote '/foo' in the meantime this will fail
+    updated = yield from client.update(result) # if any other client wrote '/foo' in the meantime this will fail
     print(updated.value) # barbar
 
 
@@ -79,14 +79,14 @@ Get a key
 
 .. code-block:: python
 
-    client.read('/nodes/n2').value
+    (yield from client.read('/nodes/n2')).value
     #recursively read a directory
-    r = client.read('/nodes', recursive=True, sorted=True)
+    r = yield from client.read('/nodes', recursive=True, sorted=True)
     for child in r.children:
         print("%s: %s" % (child.key,child.value))
 
-    client.read('/nodes/n2', wait=True) #Waits for a change in value in the key before returning.
-    client.read('/nodes/n2', wait=True, waitIndex=10)
+    yield from client.read('/nodes/n2', wait=True) #Waits for a change in value in the key before returning.
+    yield from client.read('/nodes/n2', wait=True, waitIndex=10)
 
 
 
@@ -95,9 +95,9 @@ Delete a key
 
 .. code-block:: python
 
-    client.delete('/nodes/n1')
-    client.delete('/nodes', dir=True) #spits an error if dir is not empty
-    client.delete('/nodes', recursive=True) #this works recursively
+    yield from client.delete('/nodes/n1')
+    yield from client.delete('/nodes', dir=True) #spits an error if dir is not empty
+    yield from client.delete('/nodes', recursive=True) #this works recursively
 
 
 
@@ -109,41 +109,26 @@ Use lock primitives
 
     # Initialize the lock object:
     # NOTE: this does not acquire a lock yet
+    from aioetcd.lock import Lock
     client = etcd.Client()
-    lock = client.get_lock('/customer1', ttl=60)
+    lock = Lock(client, '/customer1')
 
     # Use the lock object:
-    lock.acquire()
-    lock.is_locked()  # True
-    lock.renew(60)
-    lock.release()
-    lock.is_locked()  # False
+    yield from lock.acquire(lock_ttl=60)
+    state = yield from lock.is_locked()  # True
+    yield from lock.renew(60)
+    yield from lock.release()
+    state = yield from lock.is_locked()  # False
 
     # The lock object may also be used as a context manager:
+    # (Python 3.5+)
     client = etcd.Client()
-    lock = client.get_lock('/customer1', ttl=60)
-    with lock as my_lock:
+    lock = Lock(client, '/customer1')
+    async with lock as my_lock:
         do_stuff()
-        lock.is_locked()  # True
-        lock.renew(60)
-    lock.is_locked()  # False
-
-Use the leader election primitives
-..................................
-
-.. code-block:: python
-
-    # Set a leader object with a name; if no name is given, the local hostname
-    # is used.
-    # Zero or no ttl means the leader object is persistent.
-    client = etcd.Client()
-    client.election.set('/mysql', name='foo.example.com', ttl=120) # returns the etcd index
-
-    # Get the name
-    print(client.election.get('/mysql')) # 'foo.example.com'
-    # Delete it!
-    print(client.election.delete('/mysql', name='foo.example.com'))
-
+        state = await lock.is_locked()  # True
+        await lock.renew(60)
+    state = yield from lock.is_locked()  # False
 
 
 Get machines in the cluster
@@ -151,7 +136,7 @@ Get machines in the cluster
 
 .. code-block:: python
 
-    client.machines
+    machines = yield from client.machines()
 
 
 Get leader of the cluster
@@ -159,9 +144,7 @@ Get leader of the cluster
 
 .. code-block:: python
 
-    client.leader
-
-
+    leader_info = yield from client.leader()
 
 
 Development setup

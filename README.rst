@@ -3,7 +3,7 @@ python-etcd documentation
 
 A python client for Etcd https://github.com/coreos/etcd
 
-Official documentation: http://python-etcd.readthedocs.org/
+Official documentation: http://python-aio-etcd.readthedocs.org/
 
 .. image:: https://travis-ci.org/jplana/python-etcd.png?branch=master
    :target: https://travis-ci.org/jplana/python-etcd
@@ -14,9 +14,11 @@ Installation
 Pre-requirements
 ~~~~~~~~~~~~~~~~
 
-Install etcd (2.0.1 or later). This version of python-etcd will only work correctly with the etcd version 2.0.x or later. If you are running an older version of etcd, please use python-etcd 0.3.3 or earlier.
+Install etcd (2.0.1 or later). This version of python-aioetcd will only work correctly with the version 2.0.x or later.
 
-This client is known to work with python 2.7 and with python 3.3 or above. It is not tested or expected to work in more outdated versions of python.
+This client is known to work with python 3.4 or above. It is not tested or expected to work in more outdated versions of python.
+
+Python 2 is not supported.
 
 From source
 ~~~~~~~~~~~
@@ -48,45 +50,45 @@ Write a key
 
 .. code:: python
 
-    client.write('/nodes/n1', 1)
+    yield from client.write('/nodes/n1', 1)
     # with ttl
-    client.write('/nodes/n2', 2, ttl=4)  # sets the ttl to 4 seconds
-    client.set('/nodes/n2', 1) # Equivalent, for compatibility reasons.
+    yield from client.write('/nodes/n2', 2, ttl=4)  # sets the ttl to 4 seconds
+    yield from client.set('/nodes/n2', 1) # Equivalent, for compatibility reasons.
 
 Read a key
 ~~~~~~~~~
 
 .. code:: python
 
-    client.read('/nodes/n2').value
-    client.read('/nodes', recursive = True) #get all the values of a directory, recursively.
-    client.get('/nodes/n2').value
+    yield from client.read('/nodes/n2').value
+    yield from client.read('/nodes', recursive = True) #get all the values of a directory, recursively.
+    yield from client.get('/nodes/n2').value
 
 Delete a key
 ~~~~~~~~~~~~
 
 .. code:: python
 
-    client.delete('/nodes/n1')
+    yield from client.delete('/nodes/n1')
 
 Atomic Compare and Swap
 ~~~~~~~~~~~~
 
 .. code:: python
 
-    client.write('/nodes/n2', 2, prevValue = 4) # will set /nodes/n2 's value to 2 only if its previous value was 4 and
-    client.write('/nodes/n2', 2, prevExist = False) # will set /nodes/n2 's value to 2 only if the key did not exist before
-    client.write('/nodes/n2', 2, prevIndex = 30) # will set /nodes/n2 's value to 2 only if the key was last modified at index 30
-    client.test_and_set('/nodes/n2', 2, 4) #equivalent to client.write('/nodes/n2', 2, prevValue = 4)
+    yield from client.write('/nodes/n2', 2, prevValue = 4) # will set /nodes/n2 's value to 2 only if its previous value was 4 and
+    yield from client.write('/nodes/n2', 2, prevExist = False) # will set /nodes/n2 's value to 2 only if the key did not exist before
+    yield from client.write('/nodes/n2', 2, prevIndex = 30) # will set /nodes/n2 's value to 2 only if the key was last modified at index 30
+    yield from client.test_and_set('/nodes/n2', 2, 4) #equivalent to client.write('/nodes/n2', 2, prevValue = 4)
 
 You can also atomically update a result:
 
 .. code:: python
 
-    result = client.read('/foo')
+    result = yield from client.read('/foo')
     print(result.value) # bar
     result.value += u'bar'
-    updated = client.update(result) # if any other client wrote '/foo' in the meantime this will fail
+    updated = yield from client.update(result) # if any other client wrote '/foo' in the meantime this will fail
     print(updated.value) # barbar
 
 Watch a key
@@ -94,11 +96,16 @@ Watch a key
 
 .. code:: python
 
-    client.read('/nodes/n1', wait = True) # will wait till the key is changed, and return once its changed
-    client.read('/nodes/n1', wait = True, timeout=30) # will wait till the key is changed, and return once its changed, or exit with an exception after 30 seconds.
-    client.read('/nodes/n1', wait = True, waitIndex = 10) # get all changes on this key starting from index 10
-    client.watch('/nodes/n1') #equivalent to client.read('/nodes/n1', wait = True)
-    client.watch('/nodes/n1', index = 10)
+    result = yield from client.read('/nodes/n1', wait = True) # will wait till the key is changed, and return once its changed
+    result = yield from client.read('/nodes/n1', wait = True, waitIndex = 10) # get all changes on this key starting from index 10
+    result = yield from client.watch('/nodes/n1') #equivalent to client.read('/nodes/n1', wait = True)
+    result = yield from client.watch('/nodes/n1', index = 10)
+
+If you want to time out the read() call, wrap it in `asyncio.wait_for`:
+
+.. code:: python
+
+    result = yield from asyncio.wait_for(client.read('/nodes/n1', wait = True), timeout=30)
 
 Locking module
 ~~~~~~~~~~~~~~
@@ -107,24 +114,25 @@ Locking module
 
     # Initialize the lock object:
     # NOTE: this does not acquire a lock yet
+    from aioetcd.lock import Lock
+
     client = etcd.Client()
-    lock = etcd.Lock(client, 'my_lock_name')
+    lock = Lock(client, 'my_lock_name')
 
     # Use the lock object:
-    lock.acquire(blocking=True, # will block until the lock is acquired
+    yield from lock.acquire(blocking=True, # will block until the lock is acquired
           lock_ttl=None) # lock will live until we release it
-    lock.is_acquired()  #
-    lock.acquire(lock_ttl=60) # renew a lock
-    lock.release() # release an existing lock
-    lock.is_acquired()  # False
+    yield from lock.is_acquired()  #
+    yield from lock.acquire(lock_ttl=60) # renew a lock
+    yield from lock.release() # release an existing lock
+    yield from lock.is_acquired()  # False
 
-    # The lock object may also be used as a context manager:
-    client = etcd.Client()
-    with etcd.Lock('customer1') as my_lock:
+    # The lock object may also be used as a context manager (Python 3.5):
+    async with Lock('customer1') as my_lock:
         do_stuff()
-        my_lock.is_acquired()  # True
-        my_lock.acquire(lock_ttl = 60)
-    my_lock.is_acquired() # False
+        await my_lock.is_acquired()  # True
+        await my_lock.acquire(lock_ttl = 60)
+    await my_lock.is_acquired() # False
 
 
 Get machines in the cluster
@@ -132,21 +140,21 @@ Get machines in the cluster
 
 .. code:: python
 
-    client.machines
+    machiens = yield from client.machines()
 
 Get leader of the cluster
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: python
 
-    client.leader
+    leaderinfo = yield from client.leader()
 
 Generate a sequential key in a directory
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: python
 
-    x = client.write("/dir/name", "value", append=True)
+    x = yield from client.write("/dir/name", "value", append=True)
     print("generated key: " + x.key)
     print("stored value: " + x.value)
 
@@ -156,10 +164,10 @@ List contents of a directory
 .. code:: python
 
     #stick a couple values in the directory
-    client.write("/dir/name", "value1", append=True)
-    client.write("/dir/name", "value2", append=True)
+    yield from client.write("/dir/name", "value1", append=True)
+    yield from client.write("/dir/name", "value2", append=True)
 
-    directory = client.get("/dir/name")
+    directory = yield from client.get("/dir/name")
 
     # loop through directory children
     for result in directory.children:

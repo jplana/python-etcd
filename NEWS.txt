@@ -1,6 +1,32 @@
 News
 ====
 
+-----------
+aio version
+-----------
+
+0.4
+-----------
+
+*Release date: 11-11-2015*
+
+* changed everything and their dog to coroutines (obviously)
+* switched to aiohttp
+* re-organized source tree due to personal preference
+  * no more src/
+  * separate tests/
+* dropped unit tests (too much work to convert to async)
+* replaced eternal_watch iterator with a callback
+
+* to be submitted to upstream:
+  * speed up test suite setup
+  * fixed failing SSL tests
+  * fixed leader lookup
+
+----------------
+Upstream version
+----------------
+
 0.4.1
 -----
 *Release date: 1-Aug-2015*
