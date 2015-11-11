@@ -92,14 +92,14 @@ class Lock(object):
         finally:
             self.is_taken = False
 
-    def __enter__(self):
+    def __aenter__(self):
         """
         You can use the lock as a contextmanager
         """
-        self.acquire(blocking=True, lock_ttl=0)
+        yield from self.acquire(blocking=True, lock_ttl=0)
 
-    def __exit__(self, type, value, traceback):
-        self.release()
+    def __aexit__(self, type, value, traceback):
+        yield from self.release()
 
     @asyncio.coroutine
     def _acquired(self, blocking=True):
