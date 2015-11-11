@@ -7,7 +7,7 @@ import hashlib
 import uuid
 
 from OpenSSL import crypto
-
+from socket import socket
 
 class EtcdProcessHelper(object):
 
@@ -72,14 +72,24 @@ class EtcdProcessHelper(object):
         daemon = subprocess.Popen(daemon_args)
         log.debug('Started %d' % daemon.pid)
         log.debug('Params: %s' % daemon_args)
-        time.sleep(2)
+        s = socket()
+        n = 0
+        while n < 30:
+            try:
+                s.connect(("127.0.0.1", self.port_range_start + slot))
+            except Exception:
+                n += 1
+                time.sleep(0.1)
+            else:
+                s.close()
+                break
         self.processes[slot] = (directory, daemon)
 
     def kill_one(self, slot):
         log = logging.getLogger()
         dir, process = self.processes.pop(slot)
         process.kill()
-        time.sleep(2)
+        time.sleep(0.2)
         log.debug('Killed etcd pid:%d', process.pid)
         shutil.rmtree(dir)
         log.debug('Removed directory %s' % dir)
