@@ -1,0 +1,5 @@
+aioetcd (0.4.2-1) smurf; urgency=low
+
+  * source package automatically created by stdeb 0.8.2
+
+ -- Matthias Urlichs <matthias@urlichs.de>  Wed, 11 Nov 2015 13:00:57 +0100
