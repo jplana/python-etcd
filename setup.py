@@ -53,7 +53,7 @@ setup(
     author_email='matthias@urlichs.de',
     url='http://github.com/smurfix/aioetcd',
     license='MIT',
-    packages=find_packages('aioetcd'),
+    packages=('aioetcd',),
     include_package_data=True,
     zip_safe=False,
     install_requires=install_requires,
