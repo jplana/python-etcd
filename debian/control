@@ -2,31 +2,16 @@ Source: aioetcd
 Maintainer: Matthias Urlichs <matthias@urlichs.de>
 Section: python
 Priority: optional
-Build-Depends: python3-setuptools, python3-all, debhelper (>= 9)
+Build-Depends: python3-setuptools, python3-all, debhelper (>= 9),
+  python3-pytest,
+  python3-aiohttp,
+  etcd (>= 2.2),
 Standards-Version: 3.9.1
 
 Package: python3-aioetcd
 Architecture: all
 Depends: ${misc:Depends}, ${python3:Depends}
-Description: An asynchronous python client for etcd
- python-etcd documentation
- =========================
- .
- A python client for Etcd https://github.com/coreos/etcd
- .
- Official documentation: http://python-aio-etcd.readthedocs.org/
- .
- .. image:: https://travis-ci.org/jplana/python-etcd.png?branch=master
-    :target: https://travis-ci.org/jplana/python-etcd
- .
- Installation
- ------------
- .
- Pre-requirements
- ~~~~~~~~~~~~~~~~
- .
- Install etcd (2.0.1 or later). This version of python-aioetcd will only work correctly with the version 2.0.x or later.
- .
- This client is known to work with python 3.4 or above. It is not tested or expected to work in more outdated versions of python.
- .
+Recommends: etcd (>= 2.2)
+Description: Asynchronous python client for etcd
+ This is an asyncio-compatible python client for Etcd (https://github.com/coreos/etcd).
 
