@@ -128,7 +128,7 @@ Locking module
     yield from lock.is_acquired()  # False
 
     # The lock object may also be used as a context manager (Python 3.5):
-    async with Lock('customer1') as my_lock:
+    async with Lock(client, 'customer1') as my_lock:
         do_stuff()
         await my_lock.is_acquired()  # True
         await my_lock.acquire(lock_ttl = 60)

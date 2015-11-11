@@ -1,6 +1,7 @@
 import logging
 import aioetcd
 import uuid
+import asyncio
 
 _log = logging.getLogger(__name__)
 
@@ -136,7 +137,7 @@ class Lock(object):
         return self.path + '/' + str(self._sequence)
 
     def _set_sequence(self, key):
-        self._sequence = int(key.replace(self.path, '').lstrip('/'))
+        self._sequence = key.replace(self.path, '').lstrip('/')
 
     @asyncio.coroutine
     def _find_lock(self):

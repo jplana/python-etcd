@@ -696,9 +696,13 @@ class Client(object):
     @asyncio.coroutine
     def _result_from_response(self, response):
         """ Creates an EtcdResult from json dictionary """
+        raw_response = yield from response.read()
         try:
-            data = yield from response.read()
-            res = json.loads(data.decode('utf-8'))
+            res = json.loads(raw_response.decode('utf-8'))
+        except (TypeError, ValueError, UnicodeError) as e:
+            raise etcd.EtcdException(
+                'Server response was not valid JSON: %r', raw_response)
+        try:
             r = aioetcd.EtcdResult(**res)
             if response.status == 201:
                 r.newKey = True
@@ -708,7 +712,7 @@ class Client(object):
             raise aioetcd.EtcdException(
                 'Unable to decode server response') from e
 
-    def _next_server(self):
+    def _next_server(self, cause=None):
         """ Selects the next server in the list, refreshes the server list. """
         _log.debug("Selection next machine in cache. Available machines: %s",
                    self._machines_cache)
@@ -716,7 +720,7 @@ class Client(object):
             mach = self._machines_cache.pop()
         except IndexError as e:
             _log.error("Machines cache is empty, no machines to try.")
-            raise aioetcd.EtcdConnectionFailed('No more machines in the cluster') from e
+            raise aioetcd.EtcdConnectionFailed('No more machines in the cluster', cause=cause) from e
         else:
             _log.info("Selected new etcd server %s", mach)
             return mach
@@ -745,6 +749,15 @@ class Client(object):
                     allow_redirects=self.allow_redirect,
                     )
 
+                # Check the cluster ID hasn't changed under us.  We use
+                # preload_content=False above so we can read the headers
+                # before we wait for the content of a watch.
+                self._check_cluster_id(response)
+                # Now force the data to be preloaded in order to trigger any
+                # IO-related errors in this method rather than when we try to
+                # access it later.
+                yield from response.read()
+
             # earlier versions don't wrap socket errors
             except (HTTPException, socket.error, DisconnectedError, ClientConnectionError,ClientResponseError) as e:
                 _log.exception("Request to server %s failed",
@@ -754,34 +767,12 @@ class Client(object):
                               "server.")
                     # _next_server() raises EtcdException if there are no
                     # machines left to try, breaking out of the loop.
-                    self._base_uri = self._next_server()
+                    self._base_uri = self._next_server(cause=e)
                     some_request_failed = True
                 else:
                     _log.debug("Reconnection disabled, giving up.")
                     raise aioetcd.EtcdConnectionFailed(
                         "Connection to etcd failed") from e
-
-            else:
-                # Check the cluster ID hasn't changed under us.  We use
-                # preload_content=False above so we can read the headers
-                # before we wait for the content of a long poll.
-                try:
-                    cluster_id = response.headers["x-etcd-cluster-id"]
-                except KeyError: # some messages don't have it
-                    pass
-                else:
-                    id_changed = (self.expected_cluster_id
-                                  and cluster_id is not None and
-                                  cluster_id != self.expected_cluster_id)
-                    # Update the ID so we only raise the exception once.
-                    old_expected_cluster_id = self.expected_cluster_id
-                    self.expected_cluster_id = cluster_id
-                    if id_changed:
-                        # Defensive: clear the pool so that we connect afresh next
-                        # time.
-                        raise aioetcd.EtcdClusterIdChanged(
-                            'The UUID of the cluster changed from {} to '
-                            '{}.'.format(old_expected_cluster_id, cluster_id))
 
         if some_request_failed:
             if not self._use_proxies:
@@ -790,6 +781,23 @@ class Client(object):
             self._machines_cache.remove(self._base_uri)
         response = yield from self._handle_server_response(response)
         return response
+
+    def _check_cluster_id(self, response):
+        cluster_id = response.headers.get("x-etcd-cluster-id", None)
+        if not cluster_id:
+            _log.warning("etcd response did not contain a cluster ID")
+            return
+        id_changed = (self.expected_cluster_id and
+                      cluster_id != self.expected_cluster_id)
+        # Update the ID so we only raise the exception once.
+        old_expected_cluster_id = self.expected_cluster_id
+        self.expected_cluster_id = cluster_id
+        if id_changed:
+            # Defensive: clear the pool so that we connect afresh next
+            # time.
+            raise etcd.EtcdClusterIdChanged(
+                'The UUID of the cluster changed from {} to '
+                '{}.'.format(old_expected_cluster_id, cluster_id))
 
     @asyncio.coroutine
     def _handle_server_response(self, response):

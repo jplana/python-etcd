@@ -6,7 +6,7 @@ README = open(os.path.join(here, 'README.rst')).read()
 NEWS = open(os.path.join(here, 'NEWS.txt')).read()
 
 
-version = '0.4'
+version = '0.4.2'
 
 install_requires = [
     'aiohttp',
@@ -16,7 +16,8 @@ test_requires = [
     'pytest',
 ]
 
-setup(name='aioetcd',
+setup(
+    name='aioetcd',
     version=version,
     description="An asynchronous python client for etcd",
     long_description=README,
@@ -38,5 +39,4 @@ setup(name='aioetcd',
     install_requires=install_requires,
     tests_require=test_requires,
     test_suite='pytest.collector',
-
 )

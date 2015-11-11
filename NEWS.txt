@@ -27,6 +27,19 @@ aio version
 Upstream version
 ----------------
 
+0.4.2
+-----
+*Release data: 8-Oct-2015*
+
+* Fixed lock documentation
+* Fixed lock sequences due to etcd 2.2 change
+* Better exception management during response processing
+* Fixed logging of cluster ID changes
+* Fixed subtree results
+* Do not check cluster ID if etcd responses don't contain the ID
+* Added a cause to EtcdConnectionFailed
+
+
 0.4.1
 -----
 *Release date: 1-Aug-2015*
