@@ -60,7 +60,9 @@ class Client(object):
             allow_reconnect=False,
             use_proxies=False,
             expected_cluster_id=None,
-            per_host_pool_size=10
+            per_host_pool_size=10,
+            user=None,
+            passwd=None
     ):
         """
         Initialize the client.
@@ -104,6 +106,10 @@ class Client(object):
             per_host_pool_size (int): specifies maximum number of connections to pool
                                       by host. By default this will use up to 10
                                       connections.
+
+            user (str):     Username to authenticate with
+
+            passwd (str):   Password for the user
         """
 
         # If a DNS record is provided, use it to get the hosts list
@@ -165,7 +171,11 @@ class Client(object):
             kw['ca_certs'] = ca_cert
             kw['cert_reqs'] = ssl.CERT_REQUIRED
 
-        self.http = urllib3.PoolManager(num_pools=10, **kw)
+        self._headers = {}
+        if user and passwd:
+            self._headers.update(urllib3.util.make_headers(basic_auth='%s:%s' % (user, passwd)))
+
+        self.http = urllib3.PoolManager(num_pools=10, headers=self._headers, **kw)
 
         _log.debug("New etcd client created for %s", self.base_uri)
 
