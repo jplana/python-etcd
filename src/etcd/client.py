@@ -60,7 +60,8 @@ class Client(object):
             allow_reconnect=False,
             use_proxies=False,
             expected_cluster_id=None,
-            per_host_pool_size=10
+            per_host_pool_size=10,
+            ssl_verify=None,
     ):
         """
         Initialize the client.
@@ -86,7 +87,7 @@ class Client(object):
                             if a tuple, the cert and key file names.
 
             ca_cert (str): The ca certificate. If pressent it will enable
-                           validation.
+                           validation unless you pass a 'ssl_verify' parameter.
 
             allow_reconnect (bool): allow the client to reconnect to another
                                     etcd server in the cluster in the case the
@@ -104,6 +105,7 @@ class Client(object):
             per_host_pool_size (int): specifies maximum number of connections to pool
                                       by host. By default this will use up to 10
                                       connections.
+            ssl_verify: specifies whether to check the SSL certificate.
         """
 
         # If a DNS record is provided, use it to get the hosts list
@@ -164,6 +166,8 @@ class Client(object):
         if ca_cert:
             kw['ca_certs'] = ca_cert
             kw['cert_reqs'] = ssl.CERT_REQUIRED
+        if ssl_verify is not None:
+            kw['cert_reqs'] = ssl_verify
 
         self.http = urllib3.PoolManager(num_pools=10, **kw)
 

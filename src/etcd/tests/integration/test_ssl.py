@@ -5,13 +5,13 @@ import logging
 import unittest
 import multiprocessing
 import tempfile
+import ssl
 
 import urllib3
 
 import etcd
 from . import helpers
 from . import test_simple
-from nose.tools import nottest
 
 log = logging.getLogger()
 
@@ -67,11 +67,10 @@ class TestEncryptedAccess(test_simple.EtcdIntegrationTest):
 
         self.assertRaises(etcd.EtcdException, client.get, '/test_set')
 
-    @nottest
     def test_get_set_unauthenticated_missing_ca(self):
         """ INTEGRATION: try unauthenticated w/out validation (https->https)"""
         # This doesn't work for now and will need further inspection
-        client = etcd.Client(protocol='https', port=6001)
+        client = etcd.Client(protocol='https', port=6001, ssl_verify=ssl.CERT_NONE)
         set_result = client.set('/test_set', 'test-key')
         get_result = client.get('/test_set')
 
@@ -156,7 +155,6 @@ class TestClientAuthenticatedAccess(test_simple.EtcdIntegrationTest):
             etcd.EtcdException, client.set, '/test_set', 'test-key')
         self.assertRaises(etcd.EtcdException, client.get, '/test_set')
 
-    @nottest
     def test_get_set_authenticated(self):
         """ INTEGRATION: connecting to server with mutual auth """
         # This gives an unexplicable ssl error, as connecting to the same
