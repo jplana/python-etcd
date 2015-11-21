@@ -256,13 +256,24 @@ class AuthClient(Client):
                     raise etcd.EtcdClusterIdChanged(
                         'The UUID of the cluster changed from {} to '
                         '{}.'.format(old_expected_cluster_id, cluster_id))
+                try:
+                    response = self._handle_server_response(response)
+                except etcd.EtcdException as e:
+                    # This may happen during etcd startup.
+                    # It's a very short-lived condition, so retry just once.
+                    if "during rolling upgrades" in e.payload['message'] \
+                            and not some_request_failed:
+                        response = False
+                        some_request_failed = True
+                        continue
+                    raise
 
         if some_request_failed:
             if not self._use_proxies:
                 # The cluster may have changed since last invocation
                 self._machines_cache = self.machines
             self._machines_cache.remove(self._base_uri)
-        return self._handle_server_response(response)
+        return response
 
 
 class EtcdUser(object):
