@@ -832,6 +832,9 @@ class Client(object):
                             "Connection to etcd failed due to %r" % e,
                             cause=e
                         )
+                except etcd.EtcdClusterIdChanged as e:
+                    _log.warning(e)
+                    raise
                 except:
                     _log.exception("Unexpected request failure, re-raising.")
                     raise
