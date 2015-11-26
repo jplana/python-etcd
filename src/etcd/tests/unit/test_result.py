@@ -142,3 +142,25 @@ class TestEtcdResult(unittest.TestCase):
         self.assertEqual(subtree[5].key, "/test/mid1/leaf2")
         self.assertEqual(subtree[6].key, "/test/mid1/leaf3")
         self.assertEqual(len(subtree), 7)
+
+    def test_get_subtree_no_levels(self):
+        """
+        Test get_subtree() for a read where node has no levels.
+        """
+        testnode = {"node": {
+            'key': "/test",
+            'dir': True,
+        }}
+        result = etcd.EtcdResult(**testnode)
+        self.assertEqual(result.key, "/test")
+        self.assertTrue(result.dir)
+
+        # Get subtree returns just no leaves for leaves only.
+        subtree = result.get_subtree(leaves_only=True)
+        with self.assertRaises(StopIteration):
+            next(subtree)
+
+        # Get subtree returns leaves and directory.
+        subtree = result.get_subtree(leaves_only=False)
+        self.assertEqual(next(subtree).key, "/test")
+
