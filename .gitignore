@@ -12,5 +12,4 @@ tmp
 build
 dist
 docs
-etcd
 .coverage
