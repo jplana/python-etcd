@@ -911,6 +911,7 @@ class Client(object):
             # throw the appropriate exception
             try:
                 r = json.loads(resp)
+                r['status'] = response.status
             except (TypeError, ValueError):
                 # Bad JSON, make a response locally.
                 r = {"message": "Bad response",

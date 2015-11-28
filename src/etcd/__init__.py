@@ -200,6 +200,13 @@ class EtcdConnectionFailed(EtcdException):
         self.cause = cause
 
 
+class EtcdInsufficientPermissions(EtcdException):
+    """
+    Request failed because of insufficient permissions.
+    """
+    pass
+
+
 class EtcdWatchTimedOut(EtcdConnectionFailed):
     """
     A watch timed out without returning a result.
@@ -253,6 +260,7 @@ class EtcdError(object):
         107: EtcdRootReadOnly,
         108: EtcdDirNotEmpty,
         # 109: Non-public: existing peer addr.
+        110: EtcdInsufficientPermissions,
 
         200: EtcdValueError,
         201: EtcdValueError,
@@ -284,6 +292,13 @@ class EtcdError(object):
         message = payload.get("message")
         cause = payload.get("cause")
         msg = '{} : {}'.format(message, cause)
+        status = payload.get("status")
+        # Some general status handling, as
+        # not all endpoints return coherent error messages
+        if status == 404:
+            error_code = 100
+        elif status == 401:
+            error_code = 110
         exc = cls.error_exceptions.get(error_code, EtcdException)
         if issubclass(exc, EtcdException):
             raise exc(msg, payload)
