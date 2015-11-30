@@ -821,6 +821,11 @@ class Client(object):
                         # machines left to try, breaking out of the loop.
                         self._base_uri = self._next_server(cause=e)
                         some_request_failed = True
+
+                        # if exception is raised on _ = response.data
+                        # the condition for while loop will be False
+                        # but we should retry
+                        response = False
                     else:
                         _log.debug("Reconnection disabled, giving up.")
                         raise etcd.EtcdConnectionFailed(
