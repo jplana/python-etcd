@@ -1,9 +1,21 @@
 News
 ====
 
+0.4.3
+-----
+*Release date: 3-Dec-2015*
+
+* Python 3.5 compatibility and general python3 cleanups
+* Added authentication and module for managing ACLs
+* Added srv record-based DNS discovery
+* Fixed (again) logging of cluster id changes
+* Fixed leader lookup
+* Properly retry request on exception
+* Client: clean up open connections when deleting
+
 0.4.2
 -----
-*Release data: 8-Oct-2015*
+*Release date: 8-Oct-2015*
 
 * Fixed lock documentation
 * Fixed lock sequences due to etcd 2.2 change
