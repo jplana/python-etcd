@@ -99,7 +99,7 @@ class Lock(object):
     def __exit__(self, type, value, traceback):
         self.release()
 
-    def _acquired(self, blocking=True, timeout=None):
+    def _acquired(self, blocking=True, timeout=0):
         locker, nearest = self._get_locker()
         self.is_taken = False
         if self.lock_key == locker:

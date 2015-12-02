@@ -116,6 +116,27 @@ class TestClientLock(TestClientApiBase):
             spec=self.locker._get_locker, side_effect=side_effect)
         self.assertTrue(self.locker._acquired())
 
+    def test_acquired_no_timeout(self):
+        self.locker._sequence = 4
+        returns = [('/_locks/test_lock/4', None), ('/_locks/test_lock/1', '/_locks/test_lock/4')]
+
+        def side_effect():
+            return returns.pop()
+
+        d = {
+            u'action': u'get',
+            u'node': {
+                u'modifiedIndex': 190,
+                u'key': u'/_locks/test_lock/4',
+                u'value': self.locker.uuid
+            }
+        }
+        self._mock_api(200, d)
+
+        self.locker._get_locker = mock.create_autospec(
+            self.locker._get_locker, side_effect=side_effect)
+        self.assertTrue(self.locker._acquired())
+
     def test_lock_key(self):
         """
         Test responses from the lock_key property
@@ -148,7 +169,6 @@ class TestClientLock(TestClientApiBase):
         self.recursive_read()
         self.assertTrue(self.locker._find_lock())
         self.assertEquals(self.locker._sequence, '34')
-
 
     def test_get_locker(self):
         self.recursive_read()
