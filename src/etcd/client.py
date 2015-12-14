@@ -804,9 +804,10 @@ class Client(object):
                     # don't wrap socket errors either.
                 except (urllib3.exceptions.HTTPError,
                         HTTPException, socket.error) as e:
-                    if (params.get("wait") == "true" and
-                            isinstance(e,
-                                       urllib3.exceptions.ReadTimeoutError)):
+                    if (isinstance(params, dict) and
+                        params.get("wait") == "true" and
+                        isinstance(e,
+                                   urllib3.exceptions.ReadTimeoutError)):
                         _log.debug("Watch timed out.")
                         raise etcd.EtcdWatchTimedOut(
                             "Watch timed out: %r" % e,
