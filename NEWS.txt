@@ -3,8 +3,9 @@ News
 
 0.4.3
 -----
-*Release date: 3-Dec-2015*
+*Release date: 14-Dec-2015*
 
+* Fix check for parameters in case of connection error
 * Python 3.5 compatibility and general python3 cleanups
 * Added authentication and module for managing ACLs
 * Added srv record-based DNS discovery
