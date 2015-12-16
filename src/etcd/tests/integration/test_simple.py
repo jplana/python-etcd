@@ -68,7 +68,8 @@ class TestSimple(EtcdIntegrationTest):
 
     def test_leader(self):
         """ INTEGRATION: retrieve leader """
-        self.assertEquals(self.client.leader['clientURLs'], ['http://127.0.0.1:6001'])
+        self.assertIn(self.client.leader['clientURLs'][0],
+            ['http://127.0.0.1:6001','http://127.0.0.1:6002','http://127.0.0.1:6003'])
 
     def test_get_set_delete(self):
         """ INTEGRATION: set a new value """
