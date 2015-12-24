@@ -844,7 +844,7 @@ class Client(object):
                     if not self._use_proxies:
                         # The cluster may have changed since last invocation
                         self._machines_cache = self.machines
-                    self._machines_cache.remove(self._base_uri)
+                        self._machines_cache.remove(self._base_uri)
             return self._handle_server_response(response)
         return wrapper
 
