@@ -837,7 +837,6 @@ class Client(object):
     def _wrap_request(payload):
         @wraps(payload)
         def wrapper(self, path, method, params=None, timeout=None):
-            some_request_failed = False
             response = False
 
             if timeout is None:
@@ -850,6 +849,7 @@ class Client(object):
                 raise ValueError('Path does not start with /')
 
             while not response:
+                some_request_failed = False
                 try:
                     response = payload(self, path, method,
                                        params=params, timeout=timeout)
