@@ -929,6 +929,6 @@ class Client(object):
 
     def _get_headers(self):
         if self.username and self.password:
-            credentials = ':'.join((self.username, self.password))
+            credentials = ':'.join((str(self.username), str(self.password)))
             return urllib3.make_headers(basic_auth=credentials)
         return {}
