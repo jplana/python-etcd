@@ -88,6 +88,12 @@ Get a key
     client.read('/nodes/n2', wait=True) #Waits for a change in value in the key before returning.
     client.read('/nodes/n2', wait=True, waitIndex=10)
 
+    # raises etcd.EtcdKeyNotFound when key not found
+    try:
+        client.read('/invalid/path')
+    except etcd.EtcdKeyNotFound:
+        # do something
+        print "error"
 
 
 Delete a key
