@@ -67,6 +67,14 @@ Read a key
     client.read('/nodes', recursive = True) #get all the values of a directory, recursively.
     client.get('/nodes/n2').value
 
+    # raises etcd.EtcdKeyNotFound when key not found
+    try:
+        client.read('/invalid/path')
+    except etcd.EtcdKeyNotFound:
+        # do something
+        print "error"
+
+
 Delete a key
 ~~~~~~~~~~~~
 
