@@ -693,7 +693,7 @@ class Client(object):
             client.EtcdResult
 
         Raises:
-            KeyValue:  If the key doesn't exists.
+            KeyValue:  If the key doesn't exist.
 
             etcd.EtcdWatchTimedOut: If timeout is reached.
 
