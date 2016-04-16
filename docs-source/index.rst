@@ -57,7 +57,7 @@ Set a key
     client.write('/nodes/n3', 'test2', prevValue='test1') #this fails to write
     client.write('/nodes/n3', 'test2', prevIndex=10) #this fails to write
     # mkdir
-    client.write('/nodes/queue', dir=True)
+    client.write('/nodes/queue', None, dir=True)
     # Append a value to a queue dir
     client.write('/nodes/queue', 'test', append=True) #will write i.e. /nodes/queue/11
     client.write('/nodes/queue', 'test2', append=True) #will write i.e. /nodes/queue/12
@@ -105,51 +105,31 @@ Delete a key
     client.delete('/nodes', dir=True) #spits an error if dir is not empty
     client.delete('/nodes', recursive=True) #this works recursively
 
+Locking module
+~~~~~~~~~~~~~~
 
-
-
-Use lock primitives
-...................
-
-.. code-block:: python
+.. code:: python
 
     # Initialize the lock object:
     # NOTE: this does not acquire a lock yet
     client = etcd.Client()
-    lock = client.get_lock('/customer1', ttl=60)
+    lock = etcd.Lock(client, 'my_lock_name')
 
     # Use the lock object:
-    lock.acquire()
-    lock.is_locked()  # True
-    lock.renew(60)
-    lock.release()
-    lock.is_locked()  # False
+    lock.acquire(blocking=True, # will block until the lock is acquired
+          lock_ttl=None) # lock will live until we release it
+    lock.is_acquired()  #
+    lock.acquire(lock_ttl=60) # renew a lock
+    lock.release() # release an existing lock
+    lock.is_acquired()  # False
 
     # The lock object may also be used as a context manager:
     client = etcd.Client()
-    lock = client.get_lock('/customer1', ttl=60)
-    with lock as my_lock:
+    with etcd.Lock(client, 'customer1') as my_lock:
         do_stuff()
-        lock.is_locked()  # True
-        lock.renew(60)
-    lock.is_locked()  # False
-
-Use the leader election primitives
-..................................
-
-.. code-block:: python
-
-    # Set a leader object with a name; if no name is given, the local hostname
-    # is used.
-    # Zero or no ttl means the leader object is persistent.
-    client = etcd.Client()
-    client.election.set('/mysql', name='foo.example.com', ttl=120) # returns the etcd index
-
-    # Get the name
-    print(client.election.get('/mysql')) # 'foo.example.com'
-    # Delete it!
-    print(client.election.delete('/mysql', name='foo.example.com'))
-
+        my_lock.is_acquired()  # True
+        my_lock.acquire(lock_ttl = 60)
+    my_lock.is_acquired() # False
 
 
 Get machines in the cluster
