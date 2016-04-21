@@ -398,7 +398,7 @@ class Client(object):
         return key
 
 
-    def write(self, key, value, ttl=None, dir=False, append=False, **kwdargs):
+    def write(self, key, value=None, ttl=None, dir=False, append=False, **kwdargs):
         """
         Writes the value for a key, possibly doing atomit Compare-and-Swap
 
