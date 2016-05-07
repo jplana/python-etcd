@@ -397,10 +397,9 @@ class Client(object):
             key = "/{}".format(key)
         return key
 
-
     def write(self, key, value, ttl=None, dir=False, append=False, **kwdargs):
         """
-        Writes the value for a key, possibly doing atomit Compare-and-Swap
+        Writes the value for a key, possibly doing atomic Compare-and-Swap
 
         Args:
             key (str):  Key.
@@ -430,7 +429,7 @@ class Client(object):
 
         """
         _log.debug("Writing %s to key %s ttl=%s dir=%s append=%s",
-                  value, key, ttl, dir, append)
+                   value, key, ttl, dir, append)
         key = self._sanitize_key(key)
         params = {}
         if value is not None:
