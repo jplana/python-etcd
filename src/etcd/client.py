@@ -208,7 +208,7 @@ class Client(object):
                        self._machines_cache)
 
     def _discover(self, domain):
-        srv_name = "_etcd._tcp.{}".format(domain)
+        srv_name = "_etcd._tcp.{0}".format(domain)
         answers = dns.resolver.query(srv_name, 'SRV')
         hosts = []
         for answer in answers:
@@ -394,7 +394,7 @@ class Client(object):
 
     def _sanitize_key(self, key):
         if not key.startswith('/'):
-            key = "/{}".format(key)
+            key = "/{0}".format(key)
         return key
 
 
@@ -875,7 +875,7 @@ class Client(object):
                 preload_content=False)
         else:
                     raise etcd.EtcdException(
-                        'HTTP method {} not supported'.format(method))
+                        'HTTP method {0} not supported'.format(method))
 
     @_wrap_request
     def api_execute_json(self, path, method, params=None, timeout=None):
@@ -906,8 +906,8 @@ class Client(object):
             # time.
             self.http.clear()
             raise etcd.EtcdClusterIdChanged(
-                'The UUID of the cluster changed from {} to '
-                '{}.'.format(old_expected_cluster_id, cluster_id))
+                'The UUID of the cluster changed from {0} to '
+                '{1}.'.format(old_expected_cluster_id, cluster_id))
 
     def _handle_server_response(self, response):
         """ Handles the server response """

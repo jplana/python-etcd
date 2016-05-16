@@ -148,7 +148,7 @@ class TestClient(unittest.TestCase):
                 method = dns.name.from_unicode
             except AttributeError:
                 method = dns.name.from_text
-            r.target = method(u'etcd{}.example.com'.format(i))
+            r.target = method(u'etcd{0}.example.com'.format(i))
             answers.append(r)
         dns.resolver.query = mock.create_autospec(dns.resolver.query, return_value=answers)
         self.machines = etcd.Client.machines

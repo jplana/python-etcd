@@ -12,13 +12,13 @@ class EtcdAuthBase(object):
     def __init__(self, client, name):
         self.client = client
         self.name = name
-        self.uri = "{}/auth/{}s/{}".format(self.client.version_prefix,
-                                           self.entity, self.name)
+        self.uri = "{0}/auth/{1}s/{2}".format(self.client.version_prefix,
+                                              self.entity, self.name)
 
     @property
     def names(self):
-        key = "{}s".format(self.entity)
-        uri = "{}/auth/{}".format(self.client.version_prefix, key)
+        key = "{0}s".format(self.entity)
+        uri = "{0}/auth/{1}".format(self.client.version_prefix, key)
         response = self.client.api_execute(uri, self.client._MGET)
         return json.loads(response.data.decode('utf-8'))[key]
 
@@ -36,7 +36,7 @@ class EtcdAuthBase(object):
                        self.entity, self.client._base_uri,
                        self.client.version_prefix, e)
             raise etcd.EtcdException(
-                "Could not fetch {} '{}'".format(self.entity, self.name))
+                "Could not fetch {0} '{1}'".format(self.entity, self.name))
 
         self._from_net(response.data)
 
@@ -60,8 +60,8 @@ class EtcdAuthBase(object):
             _log.error("Failed to write %s '%s'", self.entity, self.name)
             # TODO: fine-grained exception handling
             raise etcd.EtcdException(
-                "Could not write {} '{}': {}".format(self.entity,
-                                                     self.name, e))
+                "Could not write {0} '{1}': {2}".format(self.entity,
+                                                        self.name, e))
 
     def delete(self):
         try:
@@ -76,7 +76,7 @@ class EtcdAuthBase(object):
             _log.error("Failed to delete %s in %s%s: %r",
                        self.entity, self._base_uri, self.version_prefix, e)
             raise etcd.EtcdException(
-                "Could not delete {} '{}'".format(self.entity, self.name))
+                "Could not delete {0} '{1}'".format(self.entity, self.name))
 
     def _from_net(self, data):
         raise NotImplementedError()
@@ -241,7 +241,7 @@ class EtcdRole(EtcdAuthBase):
 class Auth(object):
     def __init__(self, client):
         self.client = client
-        self.uri = "{}/auth/enable".format(self.client.version_prefix)
+        self.uri = "{0}/auth/enable".format(self.client.version_prefix)
 
     @property
     def active(self):
