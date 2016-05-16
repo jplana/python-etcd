@@ -33,14 +33,14 @@ class EtcdProcessHelper(object):
 
     def run(self, number=1, proc_args=[]):
         if number > 1:
-            initial_cluster = ",".join([ "test-node-{}={}127.0.0.1:{}".format(slot, 'http://', self.internal_port_range_start + slot) for slot in range(0, number)])
+            initial_cluster = ",".join([ "test-node-{0}={1}127.0.0.1:{2}".format(slot, 'http://', self.internal_port_range_start + slot) for slot in range(0, number)])
             proc_args.extend([
                 '-initial-cluster', initial_cluster,
                 '-initial-cluster-state', 'new'
             ])
         else:
             proc_args.extend([
-                '-initial-cluster', 'test-node-0=http://127.0.0.1:{}'.format(self.internal_port_range_start),
+                '-initial-cluster', 'test-node-0=http://127.0.0.1:{0}'.format(self.internal_port_range_start),
                 '-initial-cluster-state', 'new'
             ])
 
