@@ -41,7 +41,7 @@ class Client(object):
     _MPUT = 'PUT'
     _MPOST = 'POST'
     _MDELETE = 'DELETE'
-    _comparison_conditions = set(('prevValue', 'prevIndex', 'prevExist'))
+    _comparison_conditions = set(('prevValue', 'prevIndex', 'prevExist', 'refresh'))
     _read_options = set(('recursive', 'wait', 'waitIndex', 'sorted', 'quorum'))
     _del_conditions = set(('prevValue', 'prevIndex'))
 
@@ -397,10 +397,9 @@ class Client(object):
             key = "/{}".format(key)
         return key
 
-
     def write(self, key, value, ttl=None, dir=False, append=False, **kwdargs):
         """
-        Writes the value for a key, possibly doing atomit Compare-and-Swap
+        Writes the value for a key, possibly doing atomic Compare-and-Swap
 
         Args:
             key (str):  Key.
@@ -422,6 +421,8 @@ class Client(object):
 
             prevExist (bool): If false, only create key; if true, only update key.
 
+            refresh (bool): since 2.3.0, If true, only update the ttl, prev key must existed(prevExist=True).
+
         Returns:
             client.EtcdResult
 
@@ -430,7 +431,7 @@ class Client(object):
 
         """
         _log.debug("Writing %s to key %s ttl=%s dir=%s append=%s",
-                  value, key, ttl, dir, append)
+                   value, key, ttl, dir, append)
         key = self._sanitize_key(key)
         params = {}
         if value is not None:
@@ -460,6 +461,28 @@ class Client(object):
 
         response = self.api_execute(path, method, params=params)
         return self._result_from_response(response)
+
+    def refresh(self, key, ttl, **kwdargs):
+        """
+        (Since 2.3.0) Refresh the ttl of a key without notifying watchers.
+
+        Keys in etcd can be refreshed without notifying watchers,
+        this can be achieved by setting the refresh to true when updating a TTL
+
+        You cannot update the value of a key when refreshing it
+
+        @see: https://github.com/coreos/etcd/blob/release-2.3/Documentation/api.md#refreshing-key-ttl
+
+        Args:
+            key (str):  Key.
+
+            ttl (int):  Time in seconds of expiration (optional).
+
+            Other parameters modifying the write method are accepted as `EtcdClient.write`.
+        """
+        # overwrite kwdargs' prevExist
+        kwdargs['prevExist'] = True
+        return self.write(key=key, value=None, ttl=ttl, refresh=True, **kwdargs)
 
     def update(self, obj):
         """
