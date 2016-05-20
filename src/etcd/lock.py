@@ -54,7 +54,7 @@ class Lock(object):
             self.is_taken = False
             return False
 
-    def acquire(self, blocking=True, lock_ttl=3600, timeout=None):
+    def acquire(self, blocking=True, lock_ttl=3600, timeout=0):
         """
         Acquire the lock.
 
