@@ -217,7 +217,22 @@ class TestClientApiInterface(TestClientApiBase):
         d['node']['newKey'] = True
         self.assertEquals(res, etcd.EtcdResult(**d))
 
+    def test_refresh(self):
+        """ Can refresh a new value """
+        d = {
+            u'action': u'update',
+            u'node': {
+                u'expiration': u'2016-05-31T08:27:54.660337Z',
+                u'modifiedIndex': 183,
+                u'key': u'/testkey',
+                u'ttl': 600,
+                u'value': u'test'
+            }
+        }
 
+        self._mock_api(200, d)
+        res = self.client.refresh('/testkey', ttl=600)
+        self.assertEquals(res, etcd.EtcdResult(**d))
 
     def test_not_found_response(self):
         """ Can handle server not found response """
