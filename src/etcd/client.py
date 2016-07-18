@@ -63,7 +63,8 @@ class Client(object):
             allow_reconnect=False,
             use_proxies=False,
             expected_cluster_id=None,
-            per_host_pool_size=10
+            per_host_pool_size=10,
+            lock_prefix="/_locks"
     ):
         """
         Initialize the client.
@@ -111,6 +112,8 @@ class Client(object):
             per_host_pool_size (int): specifies maximum number of connections to pool
                                       by host. By default this will use up to 10
                                       connections.
+            lock_prefix (str): Set the key prefix at etcd when client to lock object.
+                                      By default this will be use /_locks.
         """
 
         # If a DNS record is provided, use it to get the hosts list
@@ -143,6 +146,7 @@ class Client(object):
         self._allow_redirect = allow_redirect
         self._use_proxies = use_proxies
         self._allow_reconnect = allow_reconnect
+        self._lock_prefix = lock_prefix
 
         # SSL Client certificate support
 
@@ -257,6 +261,11 @@ class Client(object):
     def allow_redirect(self):
         """Allow the client to connect to other nodes."""
         return self._allow_redirect
+
+    @property
+    def lock_prefix(self):
+        """Get the key prefix at etcd when client to lock object."""
+        return self._lock_prefix
 
     @property
     def machines(self):
