@@ -7,7 +7,7 @@ try:
 except ImportError:
     from unittest import mock
 
-from ...commom import EtcdException, EtcdResult, EtcdKeyNotFound, EtcdNotFile
+from ...common import EtcdException, EtcdResult, EtcdKeyNotFound, EtcdNotFile
 
 
 class FakeHTTPResponse(object):

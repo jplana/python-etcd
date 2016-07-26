@@ -1,9 +1,9 @@
 import socket
 import urllib3
 
-from . import TestClientApiBase
+from ..unit.test_client import TestClientApiBase
 from ...client import Client
-from ...commom import EtcdResult, EtcdException, EtcdKeyNotFound,\
+from ...common import EtcdResult, EtcdException, EtcdKeyNotFound,\
     EtcdConnectionFailed, EtcdClusterIdChanged, EtcdWatchTimedOut
 
 

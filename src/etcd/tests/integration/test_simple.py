@@ -7,7 +7,7 @@ import time
 import unittest
 
 from ...client import Client
-from ...commom import EtcdKeyNotFound, EtcdNotFile, EtcdConnectionFailed, \
+from ...common import EtcdKeyNotFound, EtcdNotFile, EtcdConnectionFailed, \
     EtcdException, EtcdAlreadyExist
 from . import helpers
 
@@ -211,7 +211,7 @@ class TestClusterFunctions(EtcdIntegrationTest):
         self.assertEquals('test-key1', get_result.value)
 
     def test_reconnect_not_allowed(self):
-        """ INTEGRATION: fail on server kill if not allow_reconnect """
+        """ INTEGRATION: fail on server kill if not allow_reconnect etcd."""
         self.processHelper.stop()
         self.processHelper.run(number=3)
         self.client = Client(port=6001, allow_reconnect=False)

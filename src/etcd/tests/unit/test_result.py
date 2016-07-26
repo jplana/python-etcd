@@ -1,5 +1,5 @@
 import unittest
-from ...commom import EtcdResult
+from ...common import EtcdResult
 
 try:
     import mock

@@ -1,7 +1,7 @@
 from .integration.test_simple import EtcdIntegrationTest
 from ..auth import EtcdUser, Auth, EtcdRole
 from ..client import Client
-from ..commom import EtcdKeyNotFound, EtcdInsufficientPermissions, EtcdException
+from ..common import EtcdKeyNotFound, EtcdInsufficientPermissions, EtcdException
 
 
 class TestEtcdAuthBase(EtcdIntegrationTest):

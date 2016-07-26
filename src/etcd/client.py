@@ -21,7 +21,7 @@ import json
 import ssl
 import dns.resolver
 from functools import wraps
-from .commom import EtcdException, EtcdResult, EtcdConnectionFailed, \
+from .common import EtcdException, EtcdResult, EtcdConnectionFailed, \
     EtcdClusterIdChanged, EtcdError, EtcdWatchTimedOut
 
 try:
@@ -75,7 +75,7 @@ class Client(object):
                            If a string, IP to connect to.
                            If a tuple ((host, port), (host, port), ...)
 
-            port (int):  Port used to connect to 
+            port (int):  Port used to connect to etcd.
 
             srv_domain (str): Domain to search the SRV record for cluster autodiscovery.
 
@@ -85,7 +85,7 @@ class Client(object):
 
             allow_redirect (bool): allow the client to connect to other nodes.
 
-            protocol (str):  Protocol used to connect to 
+            protocol (str):  Protocol used to connect to etcd.
 
             cert (mixed):   If a string, the whole ssl client certificate;
                             if a tuple, the cert and key file names.
@@ -232,17 +232,17 @@ class Client(object):
 
     @property
     def base_uri(self):
-        """URI used by the client to connect to """
         return self._base_uri
+        """URI used by the client to connect to etcd."""
 
     @property
     def host(self):
-        """Node to connect  """
+        """Node to connect etcd."""
         return urlparse(self._base_uri).netloc.split(':')[0]
 
     @property
     def port(self):
-        """Port to connect """
+        """Port to connect etcd."""
         return int(urlparse(self._base_uri).netloc.split(':')[1])
 
     @property
@@ -309,7 +309,7 @@ class Client(object):
         """
         A more structured view of peers in the cluster.
 
-        Note that while we have an internal DS called _members, accessing the public property will call
+        Note that while we have an internal DS called _members, accessing the public property will call etcd.
         """
         # Empty the members list
         self._members = {}
@@ -563,7 +563,7 @@ class Client(object):
 
     def delete(self, key, recursive=None, dir=None, **kwdargs):
         """
-        Removed a key from 
+        Removed a key from etcd.
 
         Args:
 

@@ -1,4 +1,4 @@
-from ...commom import EtcdKeyNotFound, \
+from ...common import EtcdKeyNotFound, \
     EtcdLockExpired
 from ...lock import Lock
 
@@ -6,7 +6,7 @@ try:
     import mock
 except ImportError:
     from unittest import mock
-from ..unit import TestClientApiBase
+from ..unit.test_client import TestClientApiBase
 
 
 class TestClientLock(TestClientApiBase):

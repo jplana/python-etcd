@@ -2,7 +2,7 @@ import json
 
 import logging
 
-from .commom import EtcdInsufficientPermissions, EtcdKeyNotFound, EtcdException
+from .common import EtcdInsufficientPermissions, EtcdKeyNotFound, EtcdException
 
 _log = logging.getLogger(__name__)
 
@@ -93,7 +93,7 @@ class EtcdAuthBase(object):
 
 
 class EtcdUser(EtcdAuthBase):
-    """Class to manage in a orm-like way users"""
+    """Class to manage in a orm-like way etcd users"""
     entity = 'user'
 
     def __init__(self, client, name):

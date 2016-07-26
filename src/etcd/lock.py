@@ -1,13 +1,13 @@
 import logging
 import uuid
 
-from .commom import EtcdKeyNotFound, EtcdException, EtcdLockExpired
+from .common import EtcdKeyNotFound, EtcdException, EtcdLockExpired
 
 _log = logging.getLogger(__name__)
 
 class Lock(object):
     """
-    Locking recipe for  inspired by the kazoo recipe for zookeeper
+    Locking recipe for etcd, inspired by the kazoo recipe for zookeeper
     """
 
     def __init__(self, client, lock_name):

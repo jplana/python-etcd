@@ -1,7 +1,7 @@
 import logging
 import os
 import tempfile
-from ...commom import EtcdConnectionFailed, EtcdException
+from ...common import EtcdConnectionFailed, EtcdException
 from ...client import Client
 from nose.tools import nottest
 
