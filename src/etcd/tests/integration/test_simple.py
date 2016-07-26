@@ -211,7 +211,7 @@ class TestClusterFunctions(EtcdIntegrationTest):
         self.assertEquals('test-key1', get_result.value)
 
     def test_reconnect_not_allowed(self):
-        """ INTEGRATION: fail on server kill if not allow_reconnect etcd."""
+        """ INTEGRATION: fail on server kill if not allow_reconnect"""
         self.processHelper.stop()
         self.processHelper.run(number=3)
         self.client = Client(port=6001, allow_reconnect=False)

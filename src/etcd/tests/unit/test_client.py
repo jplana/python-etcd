@@ -18,7 +18,7 @@ except ImportError:
 class TestClientApiBase(unittest.TestCase):
 
     def setUp(self):
-        self.client = etcd.Client()
+        self.client = Client()
 
     def _prepare_response(self, s, d, cluster_id=None):
         if isinstance(d, dict):

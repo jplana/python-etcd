@@ -232,8 +232,8 @@ class Client(object):
 
     @property
     def base_uri(self):
-        return self._base_uri
         """URI used by the client to connect to etcd."""
+        return self._base_uri
 
     @property
     def host(self):
@@ -247,7 +247,7 @@ class Client(object):
 
     @property
     def protocol(self):
-        """Protocol used to connect """
+        """Protocol used to connect etcd."""
         return self._protocol
 
     @property

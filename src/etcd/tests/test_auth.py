@@ -14,7 +14,7 @@ class TestEtcdAuthBase(EtcdIntegrationTest):
         u.write()
         self.client = Client(port=6001, username='root',
                                 password='testpass')
-        self.unclient = Client(port=6001)
+        self.unauth_client = Client(port=6001)
         a = Auth(self.client)
         a.active = True
 
@@ -57,8 +57,8 @@ class EtcdUserTest(TestEtcdAuthBase):
         u = EtcdUser(self.client, 'user.does.not.exist')
         self.assertRaises(EtcdKeyNotFound, u.read)
 
-        # Reading with an unnticated client raises an exception
-        u = EtcdUser(self.unclient, 'root')
+        # Reading with an unauthenticated client raises an exception
+        u = EtcdUser(self.unauth_client, 'root')
         self.assertRaises(EtcdInsufficientPermissions, u.read)
 
         # Generic errors are caught
@@ -80,7 +80,7 @@ class EtcdUserTest(TestEtcdAuthBase):
         # Password gets wiped
         self.assertEquals(u.password, None)
         u.read()
-        # Verify we can log in as this user and access the (it has the
+        # Verify we can log in as this user and access the auth(it has the
         # root role)
         cl = Client(port=6001, username='test_user',
                          password='123456')
@@ -88,7 +88,7 @@ class EtcdUserTest(TestEtcdAuthBase):
         try:
             ul.read()
         except EtcdInsufficientPermissions:
-            self.fail("Reading with the new user is not possible")
+            self.fail("Reading auth with the new user is not possible")
 
         self.assertEquals(u.name, "test_user")
         self.assertEquals(u.roles, set(['guest', 'root']))
@@ -101,8 +101,8 @@ class EtcdUserTest(TestEtcdAuthBase):
         u.read()
         self.assertIn('test_group', u.roles)
 
-        # Unrized access is properly handled
-        ua = EtcdUser(self.unclient, 'test_user')
+        # Unauthorized access is properly handled
+        ua = EtcdUser(self.unauth_client, 'test_user')
         self.assertRaises(EtcdInsufficientPermissions, ua.write)
 
         # now let's test deletion
