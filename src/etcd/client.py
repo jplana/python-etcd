@@ -7,6 +7,7 @@
 
 """
 import logging
+
 try:
     # Python 3
     from http.client import HTTPException
@@ -20,7 +21,8 @@ import json
 import ssl
 import dns.resolver
 from functools import wraps
-import etcd
+from .commom import EtcdException, EtcdResult, EtcdConnectionFailed, \
+    EtcdClusterIdChanged, EtcdError, EtcdWatchTimedOut
 
 try:
     from urlparse import urlparse
@@ -73,7 +75,7 @@ class Client(object):
                            If a string, IP to connect to.
                            If a tuple ((host, port), (host, port), ...)
 
-            port (int):  Port used to connect to etcd.
+            port (int):  Port used to connect to 
 
             srv_domain (str): Domain to search the SRV record for cluster autodiscovery.
 
@@ -83,7 +85,7 @@ class Client(object):
 
             allow_redirect (bool): allow the client to connect to other nodes.
 
-            protocol (str):  Protocol used to connect to etcd.
+            protocol (str):  Protocol used to connect to 
 
             cert (mixed):   If a string, the whole ssl client certificate;
                             if a tuple, the cert and key file names.
@@ -132,7 +134,7 @@ class Client(object):
         else:
             if not allow_reconnect:
                 _log.error("List of hosts incompatible with allow_reconnect.")
-                raise etcd.EtcdException("A list of hosts to connect to was given, but reconnection not allowed?")
+                raise EtcdException("A list of hosts to connect to was given, but reconnection not allowed?")
             self._machines_cache = [uri(self._protocol, *conn) for conn in host]
             self._base_uri = self._machines_cache.pop(0)
 
@@ -230,22 +232,22 @@ class Client(object):
 
     @property
     def base_uri(self):
-        """URI used by the client to connect to etcd."""
+        """URI used by the client to connect to """
         return self._base_uri
 
     @property
     def host(self):
-        """Node to connect  etcd."""
+        """Node to connect  """
         return urlparse(self._base_uri).netloc.split(':')[0]
 
     @property
     def port(self):
-        """Port to connect etcd."""
+        """Port to connect """
         return int(urlparse(self._base_uri).netloc.split(':')[1])
 
     @property
     def protocol(self):
-        """Protocol used to connect etcd."""
+        """Protocol used to connect """
         return self._protocol
 
     @property
@@ -298,7 +300,7 @@ class Client(object):
                 # Call myself
                 return self.machines
             else:
-                raise etcd.EtcdException("Could not get the list of servers, "
+                raise EtcdException("Could not get the list of servers, "
                                          "maybe you provided the wrong "
                                          "host(s) to connect to?")
 
@@ -307,7 +309,7 @@ class Client(object):
         """
         A more structured view of peers in the cluster.
 
-        Note that while we have an internal DS called _members, accessing the public property will call etcd.
+        Note that while we have an internal DS called _members, accessing the public property will call
         """
         # Empty the members list
         self._members = {}
@@ -319,7 +321,7 @@ class Client(object):
                 self._members[member['id']] = member
             return self._members
         except:
-            raise etcd.EtcdException("Could not get the members list, maybe the cluster has gone away?")
+            raise EtcdException("Could not get the members list, maybe the cluster has gone away?")
 
     @property
     def leader(self):
@@ -337,7 +339,7 @@ class Client(object):
                                  self._MGET).data.decode('utf-8'))
             return self.members[leader['leaderInfo']['leader']]
         except Exception as e:
-            raise etcd.EtcdException("Cannot get leader data: %s" % e)
+            raise EtcdException("Cannot get leader data: %s" % e)
 
     @property
     def stats(self):
@@ -370,7 +372,7 @@ class Client(object):
         try:
             return json.loads(data)
         except (TypeError,ValueError):
-            raise etcd.EtcdException("Cannot parse json data in the response")
+            raise EtcdException("Cannot parse json data in the response")
 
     @property
     def key_endpoint(self):
@@ -389,7 +391,7 @@ class Client(object):
         try:
             self.get(key)
             return True
-        except etcd.EtcdKeyNotFound:
+        except EtcdKeyNotFound:
             return False
 
     def _sanitize_key(self, key):
@@ -442,7 +444,7 @@ class Client(object):
 
         if dir:
             if value:
-                raise etcd.EtcdException(
+                raise EtcdException(
                     'Cannot create a directory with a value')
             params['dir'] = "true"
 
@@ -488,13 +490,13 @@ class Client(object):
         """
         Updates the value for a key atomically. Typical usage would be:
 
-        c = etcd.Client()
+        c = Client()
         o = c.read("/somekey")
         o.value += 1
         c.update(o)
 
         Args:
-            obj (etcd.EtcdResult):  The object that needs updating.
+            obj (EtcdResult):  The object that needs updating.
 
         """
         _log.debug("Updating %s to %s.", obj.key, obj.value)
@@ -561,7 +563,7 @@ class Client(object):
 
     def delete(self, key, recursive=None, dir=None, **kwdargs):
         """
-        Removed a key from etcd.
+        Removed a key from 
 
         Args:
 
@@ -677,7 +679,7 @@ class Client(object):
             client.EtcdResult
 
         Raises:
-           etcd.EtcdException: when something weird goes wrong.
+           EtcdException: when something weird goes wrong.
 
         """
         return self.write(key, value, ttl=ttl)
@@ -770,16 +772,16 @@ class Client(object):
         try:
             res = json.loads(raw_response.decode('utf-8'))
         except (TypeError, ValueError, UnicodeError) as e:
-            raise etcd.EtcdException(
+            raise EtcdException(
                 'Server response was not valid JSON: %r' % e)
         try:
-            r = etcd.EtcdResult(**res)
+            r = EtcdResult(**res)
             if response.status == 201:
                 r.newKey = True
             r.parse_headers(response)
             return r
         except Exception as e:
-            raise etcd.EtcdException(
+            raise EtcdException(
                 'Unable to decode server response: %r' % e)
 
     def _next_server(self, cause=None):
@@ -790,7 +792,7 @@ class Client(object):
             mach = self._machines_cache.pop()
         except IndexError:
             _log.error("Machines cache is empty, no machines to try.")
-            raise etcd.EtcdConnectionFailed('No more machines in the cluster',
+            raise EtcdConnectionFailed('No more machines in the cluster',
                                             cause=cause)
         else:
             _log.info("Selected new etcd server %s", mach)
@@ -832,7 +834,7 @@ class Client(object):
                         isinstance(e,
                                    urllib3.exceptions.ReadTimeoutError)):
                         _log.debug("Watch timed out.")
-                        raise etcd.EtcdWatchTimedOut(
+                        raise EtcdWatchTimedOut(
                             "Watch timed out: %r" % e,
                             cause=e
                         )
@@ -852,11 +854,11 @@ class Client(object):
                         response = False
                     else:
                         _log.debug("Reconnection disabled, giving up.")
-                        raise etcd.EtcdConnectionFailed(
+                        raise EtcdConnectionFailed(
                             "Connection to etcd failed due to %r" % e,
                             cause=e
                         )
-                except etcd.EtcdClusterIdChanged as e:
+                except EtcdClusterIdChanged as e:
                     _log.warning(e)
                     raise
                 except:
@@ -897,7 +899,7 @@ class Client(object):
                 headers=self._get_headers(),
                 preload_content=False)
         else:
-                    raise etcd.EtcdException(
+                    raise EtcdException(
                         'HTTP method {} not supported'.format(method))
 
     @_wrap_request
@@ -928,7 +930,7 @@ class Client(object):
             # Defensive: clear the pool so that we connect afresh next
             # time.
             self.http.clear()
-            raise etcd.EtcdClusterIdChanged(
+            raise EtcdClusterIdChanged(
                 'The UUID of the cluster changed from {} to '
                 '{}.'.format(old_expected_cluster_id, cluster_id))
 
@@ -948,7 +950,7 @@ class Client(object):
                 # Bad JSON, make a response locally.
                 r = {"message": "Bad response",
                      "cause": str(resp)}
-            etcd.EtcdError.handle(r)
+            EtcdError.handle(r)
 
     def _get_headers(self):
         if self.username and self.password:

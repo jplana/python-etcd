@@ -1,12 +1,13 @@
 import logging
-import etcd
 import uuid
+
+from .commom import EtcdKeyNotFound, EtcdException, EtcdLockExpired
 
 _log = logging.getLogger(__name__)
 
 class Lock(object):
     """
-    Locking recipe for etcd, inspired by the kazoo recipe for zookeeper
+    Locking recipe for  inspired by the kazoo recipe for zookeeper
     """
 
     def __init__(self, client, lock_name):
@@ -49,7 +50,7 @@ class Lock(object):
         try:
             self.client.read(self.lock_key)
             return True
-        except etcd.EtcdKeyNotFound:
+        except EtcdKeyNotFound:
             _log.warn("Lock was supposedly taken, but we cannot find it")
             self.is_taken = False
             return False
@@ -84,7 +85,7 @@ class Lock(object):
         try:
             _log.debug("Releasing existing lock %s", self.lock_key)
             self.client.delete(self.lock_key)
-        except etcd.EtcdKeyNotFound:
+        except EtcdKeyNotFound:
             _log.info("Lock %s not found, nothing to release", self.lock_key)
             pass
         finally:
@@ -120,10 +121,10 @@ class Lock(object):
                     r = self.client.watch(watch_key, timeout=t)
                     _log.debug("Detected variation for %s: %s", r.key, r.action)
                     return self._acquired(blocking=True, timeout=timeout)
-                except etcd.EtcdKeyNotFound:
+                except EtcdKeyNotFound:
                     _log.debug("Key %s not present anymore, moving on", watch_key)
                     return self._acquired(blocking=True, timeout=timeout)
-                except etcd.EtcdException:
+                except EtcdException:
                     # TODO: log something...
                     pass
 
@@ -142,7 +143,7 @@ class Lock(object):
                 res = self.client.read(self.lock_key)
                 self._uuid = res.value
                 return True
-            except etcd.EtcdKeyNotFound:
+            except EtcdKeyNotFound:
                 return False
         elif self._uuid:
             try:
@@ -150,7 +151,7 @@ class Lock(object):
                     if r.value == self._uuid:
                         self._set_sequence(r.key)
                         return True
-            except etcd.EtcdKeyNotFound:
+            except EtcdKeyNotFound:
                 pass
         return False
 
@@ -172,4 +173,4 @@ class Lock(object):
         except ValueError:
             # Something very wrong is going on, most probably
             # our lock has expired
-            raise etcd.EtcdLockExpired(u"Lock not found")
+            raise EtcdLockExpired(u"Lock not found")
