@@ -157,12 +157,6 @@ class Client(object):
         if self._read_timeout > 0:
             kw['timeout'] = self._read_timeout
 
-        if protocol == 'https':
-            # If we don't allow TLSv1, clients using older version of OpenSSL
-            # (<1.0) won't be able to connect.
-            _log.debug("HTTPS enabled.")
-            kw['ssl_version'] = ssl.PROTOCOL_TLSv1
-
         if cert:
             if isinstance(cert, tuple):
                 # Key and cert are separate
