@@ -1,3 +1,4 @@
+#encoding=utf-8
 import os
 import time
 import shutil
@@ -135,6 +136,8 @@ class TestSimple(EtcdIntegrationTest):
         self.assertEquals(new_res.ttl, 120)
 
 
+    def test_nonascii_read(self):
+        self.assertRaises(etcd.EtcdKeyNotFound, self.client.read, '中文')
 
 class TestErrors(EtcdIntegrationTest):
 
