@@ -121,7 +121,7 @@ Locking module
     # Initialize the lock object:
     # NOTE: this does not acquire a lock yet
     client = etcd.Client()
-    # Or you can custom lock prefix, default is '/_locks/'
+    # Or you can custom lock prefix, default is '/_locks/' if you are using HEAD
     client = etcd.Client(lock_prefix='/my_etcd_root/_locks')
     lock = etcd.Lock(client, 'my_lock_name')
 
@@ -138,7 +138,7 @@ Locking module
     with etcd.Lock(client, 'customer1') as my_lock:
         do_stuff()
         my_lock.is_acquired  # True
-        my_lock.acquire(lock_ttl = 60)
+        my_lock.acquire(lock_ttl=60)
     my_lock.is_acquired  # False
 
 
