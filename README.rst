@@ -48,8 +48,9 @@ Create a client object
     client = etcd.Client(srv_domain='example.com', protocol="https")
     # create a client against https://api.example.com:443/etcd
     client = etcd.Client(host='api.example.com', protocol='https', port=443, version_prefix='/etcd')
+
 Write a key
-~~~~~~~~~
+~~~~~~~~~~~
 
 .. code:: python
 
@@ -59,7 +60,7 @@ Write a key
     client.set('/nodes/n2', 1) # Equivalent, for compatibility reasons.
 
 Read a key
-~~~~~~~~~
+~~~~~~~~~~
 
 .. code:: python
 
@@ -83,7 +84,7 @@ Delete a key
     client.delete('/nodes/n1')
 
 Atomic Compare and Swap
-~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: python
 
@@ -112,6 +113,20 @@ Watch a key
     client.read('/nodes/n1', wait = True, waitIndex = 10) # get all changes on this key starting from index 10
     client.watch('/nodes/n1') #equivalent to client.read('/nodes/n1', wait = True)
     client.watch('/nodes/n1', index = 10)
+
+Refreshing key TTL
+~~~~~~~~~~~~~~~~~~
+
+(Since etcd 2.3.0) Keys in etcd can be refreshed without notifying current watchers.
+
+This can be achieved by setting the refresh to true when updating a TTL.
+
+You cannot update the value of a key when refreshing it.
+
+.. code:: python
+
+    client.write('/nodes/n1', 'value', ttl=30)  # sets the ttl to 30 seconds
+    client.refresh('/nodes/n1', ttl=600)  # refresh ttl to 600 seconds, without notifying current watchers
 
 Locking module
 ~~~~~~~~~~~~~~
@@ -157,7 +172,7 @@ Get leader of the cluster
     client.leader
 
 Generate a sequential key in a directory
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: python
 
