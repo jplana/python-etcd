@@ -117,19 +117,19 @@ Locking module
 
     # Use the lock object:
     lock.acquire(blocking=True, # will block until the lock is acquired
-          lock_ttl=None) # lock will live until we release it
-    lock.is_acquired()  #
-    lock.acquire(lock_ttl=60) # renew a lock
-    lock.release() # release an existing lock
-    lock.is_acquired()  # False
+          lock_ttl=None)  # lock will live until we release it
+    lock.is_acquired  # True
+    lock.acquire(lock_ttl=60)  # renew a lock
+    lock.release()  # release an existing lock
+    lock.is_acquired  # False
 
     # The lock object may also be used as a context manager:
     client = etcd.Client()
     with etcd.Lock(client, 'customer1') as my_lock:
         do_stuff()
-        my_lock.is_acquired()  # True
-        my_lock.acquire(lock_ttl = 60)
-    my_lock.is_acquired() # False
+        my_lock.is_acquired  # True
+        my_lock.acquire(lock_ttl=60)
+    my_lock.is_acquired  # False
 
 
 Get machines in the cluster
