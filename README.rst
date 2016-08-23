@@ -17,7 +17,7 @@ Installation
 Pre-requirements
 ~~~~~~~~~~~~~~~~
 
-Install etcd (2.0.1 or later). This version of python-etcd will only work correctly with the etcd version 2.0.x or later. If you are running an older version of etcd, please use python-etcd 0.3.3 or earlier.
+This version of python-etcd will only work correctly with the etcd server version 2.0.x or later. If you are running an older version of etcd, please use python-etcd 0.3.3 or earlier.
 
 This client is known to work with python 2.7 and with python 3.3 or above. It is not tested or expected to work in more outdated versions of python.
 
