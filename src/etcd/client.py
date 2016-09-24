@@ -211,7 +211,7 @@ class Client(object):
         hosts = []
         for answer in answers:
             hosts.append(
-                (answer.target.to_text(omit_final_dot=True), answer.port))
+            	(answer.target.to_text(omit_final_dot=True).decode(), answer.port))
         _log.debug("Found %s", hosts)
         if not len(hosts):
             raise ValueError("The SRV record is present but no host were found")
