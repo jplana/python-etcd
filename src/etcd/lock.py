@@ -17,7 +17,7 @@ class Lock(object):
         # prevent us from getting back the full path name. We prefix our
         # lock name with a uuid and can check for its presence on retry.
         self._uuid = uuid.uuid4().hex
-        self.path = "/_locks/{}".format(lock_name)
+        self.path = "{}/{}".format(client.lock_prefix, lock_name) 
         self.is_taken = False
         self._sequence = None
         _log.debug("Initiating lock for %s with uuid %s", self.path, self._uuid)
@@ -54,7 +54,7 @@ class Lock(object):
             self.is_taken = False
             return False
 
-    def acquire(self, blocking=True, lock_ttl=3600, timeout=None):
+    def acquire(self, blocking=True, lock_ttl=3600, timeout=0):
         """
         Acquire the lock.
 
@@ -99,7 +99,7 @@ class Lock(object):
     def __exit__(self, type, value, traceback):
         self.release()
 
-    def _acquired(self, blocking=True, timeout=None):
+    def _acquired(self, blocking=True, timeout=0):
         locker, nearest = self._get_locker()
         self.is_taken = False
         if self.lock_key == locker:

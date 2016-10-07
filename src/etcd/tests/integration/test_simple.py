@@ -18,6 +18,7 @@ log = logging.getLogger()
 
 
 class EtcdIntegrationTest(unittest.TestCase):
+    cl_size = 3
 
     @classmethod
     def setUpClass(cls):
@@ -28,7 +29,7 @@ class EtcdIntegrationTest(unittest.TestCase):
             proc_name=program,
             port_range_start=6001,
             internal_port_range_start=8001)
-        cls.processHelper.run(number=3)
+        cls.processHelper.run(number=cls.cl_size)
         cls.client = etcd.Client(port=6001)
 
     @classmethod
@@ -67,7 +68,8 @@ class TestSimple(EtcdIntegrationTest):
 
     def test_leader(self):
         """ INTEGRATION: retrieve leader """
-        self.assertEquals(self.client.leader['clientURLs'], ['http://127.0.0.1:6001'])
+        self.assertIn(self.client.leader['clientURLs'][0],
+            ['http://127.0.0.1:6001','http://127.0.0.1:6002','http://127.0.0.1:6003'])
 
     def test_get_set_delete(self):
         """ INTEGRATION: set a new value """

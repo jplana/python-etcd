@@ -17,7 +17,7 @@ Installation
 Pre-requirements
 ~~~~~~~~~~~~~~~~
 
-Install etcd (2.0.1 or later). This version of python-etcd will only work correctly with the etcd version 2.0.x or later. If you are running an older version of etcd, please use python-etcd 0.3.3 or earlier.
+This version of python-etcd will only work correctly with the etcd server version 2.0.x or later. If you are running an older version of etcd, please use python-etcd 0.3.3 or earlier.
 
 This client is known to work with python 2.7 and with python 3.3 or above. It is not tested or expected to work in more outdated versions of python.
 
@@ -48,8 +48,9 @@ Create a client object
     client = etcd.Client(srv_domain='example.com', protocol="https")
     # create a client against https://api.example.com:443/etcd
     client = etcd.Client(host='api.example.com', protocol='https', port=443, version_prefix='/etcd')
+
 Write a key
-~~~~~~~~~
+~~~~~~~~~~~
 
 .. code:: python
 
@@ -59,13 +60,21 @@ Write a key
     client.set('/nodes/n2', 1) # Equivalent, for compatibility reasons.
 
 Read a key
-~~~~~~~~~
+~~~~~~~~~~
 
 .. code:: python
 
     client.read('/nodes/n2').value
     client.read('/nodes', recursive = True) #get all the values of a directory, recursively.
     client.get('/nodes/n2').value
+
+    # raises etcd.EtcdKeyNotFound when key not found
+    try:
+        client.read('/invalid/path')
+    except etcd.EtcdKeyNotFound:
+        # do something
+        print "error"
+
 
 Delete a key
 ~~~~~~~~~~~~
@@ -75,7 +84,7 @@ Delete a key
     client.delete('/nodes/n1')
 
 Atomic Compare and Swap
-~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: python
 
@@ -105,6 +114,20 @@ Watch a key
     client.watch('/nodes/n1') #equivalent to client.read('/nodes/n1', wait = True)
     client.watch('/nodes/n1', index = 10)
 
+Refreshing key TTL
+~~~~~~~~~~~~~~~~~~
+
+(Since etcd 2.3.0) Keys in etcd can be refreshed without notifying current watchers.
+
+This can be achieved by setting the refresh to true when updating a TTL.
+
+You cannot update the value of a key when refreshing it.
+
+.. code:: python
+
+    client.write('/nodes/n1', 'value', ttl=30)  # sets the ttl to 30 seconds
+    client.refresh('/nodes/n1', ttl=600)  # refresh ttl to 600 seconds, without notifying current watchers
+
 Locking module
 ~~~~~~~~~~~~~~
 
@@ -113,23 +136,25 @@ Locking module
     # Initialize the lock object:
     # NOTE: this does not acquire a lock yet
     client = etcd.Client()
+    # Or you can custom lock prefix, default is '/_locks/' if you are using HEAD
+    client = etcd.Client(lock_prefix='/my_etcd_root/_locks')
     lock = etcd.Lock(client, 'my_lock_name')
 
     # Use the lock object:
     lock.acquire(blocking=True, # will block until the lock is acquired
           lock_ttl=None) # lock will live until we release it
-    lock.is_acquired()  #
+    lock.is_acquired  # True
     lock.acquire(lock_ttl=60) # renew a lock
     lock.release() # release an existing lock
-    lock.is_acquired()  # False
+    lock.is_acquired  # False
 
     # The lock object may also be used as a context manager:
     client = etcd.Client()
     with etcd.Lock(client, 'customer1') as my_lock:
         do_stuff()
-        my_lock.is_acquired()  # True
-        my_lock.acquire(lock_ttl = 60)
-    my_lock.is_acquired() # False
+        my_lock.is_acquired  # True
+        my_lock.acquire(lock_ttl=60)
+    my_lock.is_acquired  # False
 
 
 Get machines in the cluster
@@ -147,7 +172,7 @@ Get leader of the cluster
     client.leader
 
 Generate a sequential key in a directory
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code:: python
 
