@@ -118,7 +118,10 @@ class TestClientLock(TestClientApiBase):
 
     def test_acquired_no_timeout(self):
         self.locker._sequence = 4
-        returns = [('/_locks/test_lock/4', None), ('/_locks/test_lock/1', '/_locks/test_lock/4')]
+        returns = [
+            ('/_locks/test_lock/4', None),
+            ('/_locks/test_lock/1', etcd.EtcdResult(node={"key": '/_locks/test_lock/4', "modifiedIndex": 1}))
+        ]
 
         def side_effect():
             return returns.pop()
@@ -172,7 +175,7 @@ class TestClientLock(TestClientApiBase):
 
     def test_get_locker(self):
         self.recursive_read()
-        self.assertEquals((u'/_locks/test_lock/1', u'/_locks/test_lock/1'),
+        self.assertEquals((u'/_locks/test_lock/1', etcd.EtcdResult(node={'newKey': False, '_children': [], 'createdIndex': 33, 'modifiedIndex': 33, 'value': u'2qwwwq', 'expiration': None, 'key': u'/_locks/test_lock/1', 'ttl': None, 'action': None, 'dir': False})),
                           self.locker._get_locker())
         with self.assertRaises(etcd.EtcdLockExpired):
             self.locker._sequence = '35'
