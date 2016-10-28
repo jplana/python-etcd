@@ -112,20 +112,21 @@ class Lock(object):
             if not blocking:
                 return False
             # Let's look for the lock
-            watch_key = nearest
+            watch_key = nearest.key
             _log.debug("Lock not acquired, now watching %s", watch_key)
             t = max(0, timeout)
             while True:
                 try:
-                    r = self.client.watch(watch_key, timeout=t)
+                    r = self.client.watch(watch_key, timeout=t, index=nearest.modifiedIndex + 1)
                     _log.debug("Detected variation for %s: %s", r.key, r.action)
                     return self._acquired(blocking=True, timeout=timeout)
                 except etcd.EtcdKeyNotFound:
                     _log.debug("Key %s not present anymore, moving on", watch_key)
                     return self._acquired(blocking=True, timeout=timeout)
+                except etcd.EtcdLockExpired as e:
+                    raise e
                 except etcd.EtcdException:
-                    # TODO: log something...
-                    pass
+                    _log.exception("Unexpected exception")
 
     @property
     def lock_key(self):
@@ -168,7 +169,7 @@ class Lock(object):
                 return (l[0], None)
             else:
                 _log.debug("Locker: %s, key to watch: %s", l[0], l[i-1])
-                return (l[0], l[i-1])
+                return (l[0], next(x for x in results if x.key == l[i-1]))
         except ValueError:
             # Something very wrong is going on, most probably
             # our lock has expired
