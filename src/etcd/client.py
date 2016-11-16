@@ -205,6 +205,23 @@ class Client(object):
             _log.debug("Machines cache initialised to %s",
                        self._machines_cache)
 
+        # Versions set to None. They will be set upon first usage.
+        self._version = self._cluster_version = None
+
+    def _set_version_info(self):
+        """
+        Sets the version information provided by the server.
+        """
+        # Set the version
+        version_info = json.loads(self.http.request(
+            self._MGET,
+            self._base_uri + '/version',
+            headers=self._get_headers(),
+            timeout=self.read_timeout,
+            redirect=self.allow_redirect).data.decode('utf-8'))
+        self._version = version_info['etcdserver']
+        self._cluster_version = version_info['etcdcluster']
+
     def _discover(self, domain):
         srv_name = "_etcd._tcp.{}".format(domain)
         answers = dns.resolver.query(srv_name, 'SRV')
@@ -374,6 +391,25 @@ class Client(object):
             return json.loads(data)
         except (TypeError,ValueError):
             raise etcd.EtcdException("Cannot parse json data in the response")
+
+    @property
+    def version(self):
+        """
+        Version of etcd.
+        """
+        if not self._version:
+            self._set_version_info()
+        return self._version
+
+    @property
+    def cluster_version(self):
+        """
+        Version of the etcd cluster.
+        """
+        if not self._cluster_version:
+            self._set_version_info()
+
+        return self._cluster_version
 
     @property
     def key_endpoint(self):
