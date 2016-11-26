@@ -6,6 +6,7 @@
 
 
 """
+import os
 import logging
 try:
     # Python 3
@@ -180,7 +181,19 @@ class Client(object):
         elif password:
             _log.warning('Password provided without username, both are required for authentication')
 
-        self.http = urllib3.PoolManager(num_pools=10, **kw)
+        # If a proxy environment variable is set for protocol,
+        # then respect it
+        if protocol == 'https':
+            _proxy_vars = ['https_proxy', 'HTTPS_PROXY']
+        else:
+            _proxy_vars = ['http_proxy', 'HTTP_PROXY']
+
+        for _proxy_var in _proxy_vars:
+            if _proxy_var in os.environ:
+                self.http = urllib3.ProxyManager(os.environ[_proxy_var], num_pools=10, **kw)
+                break
+        else:
+            self.http = urllib3.PoolManager(num_pools=10, **kw) # pylint: disable=R0204
 
         _log.debug("New etcd client created for %s", self.base_uri)
 
