@@ -30,7 +30,7 @@ class TestEtcdResult(unittest.TestCase):
 
         # Get subtree returns itself, whether or not leaves_only
         subtree = list(result.get_subtree(leaves_only=True))
-        self.assertListEqual([result], subtree)
+        self.assertListEqual([], subtree)
         subtree = list(result.get_subtree(leaves_only=False))
         self.assertListEqual([result], subtree)
 
