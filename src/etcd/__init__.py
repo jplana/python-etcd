@@ -72,19 +72,13 @@ class EtcdResult(object):
 
 
         """
-        if not self._children:
-            #if the current result is a leaf, return itself
+        if not leaves_only:
             yield self
-            return
-        else:
-            # node is not a leaf
-            if not leaves_only:
-                yield self
-            for n in self._children:
-                node = EtcdResult(None, n)
-                for child in node.get_subtree(leaves_only=leaves_only):
-                    yield child
-        return
+
+        for n in self._children:
+            node = EtcdResult(None, n)
+            for child in node.get_subtree(leaves_only=leaves_only):
+                yield child
 
     @property
     def leaves(self):
