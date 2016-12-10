@@ -342,6 +342,35 @@ class Client(object):
         except Exception as e:
             raise etcd.EtcdException("Cannot get leader data: %s" % e)
 
+    def addmember(self, memberuri):
+        """
+        add a member to the cluster
+
+        Args:
+            memberuri (str): new member's address as a uri
+
+        Returns:
+            dict with id and peerURLs as documented at https://coreos.com/etcd/docs/latest/v2/members_api.html#add-a-member
+
+        """
+        try:
+            return self.api_execute_json(self.version_prefix + '/members', self._MPOST, {"peerURLs":[memberuri]}).data.decode('utf-8')
+        except Exception as e:
+            raise etcd.EtcdException("Cannot add member: %s" % e)
+
+    def deletemember(self, memberid):
+        """
+        add a member to the cluster
+
+        Args:
+            memberid (str): member id to delete
+
+        """
+        try:
+            self.api_execute(self.version_prefix + '/members/%s'%memberid, self._MDELETE)
+        except Exception as e:
+            raise etcd.EtcdException("Cannot delete member: %s" % e)
+
     @property
     def stats(self):
         """
@@ -937,7 +966,7 @@ class Client(object):
 
     def _handle_server_response(self, response):
         """ Handles the server response """
-        if response.status in [200, 201]:
+        if response.status in [200, 201, 204]:
             return response
 
         else:
