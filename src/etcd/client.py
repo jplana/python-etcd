@@ -757,7 +757,8 @@ class Client(object):
         local_index = index
         while True:
             response = self.watch(key, index=local_index, timeout=0, recursive=recursive)
-            local_index = response.modifiedIndex + 1
+            if index:
+                local_index = response.modifiedIndex + 1
             yield response
 
     def get_lock(self, *args, **kwargs):
