@@ -15,7 +15,8 @@ except ImportError:
     from httplib import HTTPException
 import socket
 import urllib3
-import urllib3.util
+from urllib3.exceptions import HTTPError
+from urllib3.exceptions import ReadTimeoutError
 import json
 import ssl
 import dns.resolver
@@ -288,9 +289,7 @@ class Client(object):
             ]
             _log.debug("Retrieved list of machines: %s", machines)
             return machines
-        except (urllib3.exceptions.HTTPError,
-                HTTPException,
-                socket.error) as e:
+        except (HTTPError, HTTPException, socket.error) as e:
             # We can't get the list of machines, if one server is in the
             # machines cache, try on it
             _log.error("Failed to get list of machines from %s%s: %r",
@@ -828,12 +827,10 @@ class Client(object):
                     _ = response.data
                     # urllib3 doesn't wrap all httplib exceptions and earlier versions
                     # don't wrap socket errors either.
-                except (urllib3.exceptions.HTTPError,
-                        HTTPException, socket.error) as e:
+                except (HTTPError, HTTPException, socket.error) as e:
                     if (isinstance(params, dict) and
                         params.get("wait") == "true" and
-                        isinstance(e,
-                                   urllib3.exceptions.ReadTimeoutError)):
+                        isinstance(e, ReadTimeoutError)):
                         _log.debug("Watch timed out.")
                         raise etcd.EtcdWatchTimedOut(
                             "Watch timed out: %r" % e,
