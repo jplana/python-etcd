@@ -6,7 +6,7 @@ README = open(os.path.join(here, 'README.rst')).read()
 NEWS = open(os.path.join(here, 'NEWS.txt')).read()
 
 
-version = '0.4.3'
+version = '0.4.4'
 
 # Dnspython is two different packages depending on python version
 if sys.version_info[0] == 2:

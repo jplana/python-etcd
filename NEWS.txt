@@ -1,5 +1,16 @@
 News
 ====
+0.4.4
+-----
+*Release date: 10-Jan-2017*
+
+* Fix some tests
+* Use sys,version_info tuple, instead of named tuple
+* Improve & fix documentation
+* Fix python3 specific problem when blocking on contented lock
+* Add refresh key method
+* Add custom lock prefix support
+
 
 0.4.3
 -----
