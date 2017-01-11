@@ -1,9 +1,12 @@
-import etcd
+from ...common import EtcdKeyNotFound, \
+    EtcdLockExpired
+from ...lock import Lock
+
 try:
     import mock
 except ImportError:
     from unittest import mock
-from etcd.tests.unit import TestClientApiBase
+from ..unit.test_client import TestClientApiBase
 
 
 class TestClientLock(TestClientApiBase):
@@ -25,7 +28,7 @@ class TestClientLock(TestClientApiBase):
 
     def setUp(self):
         super(TestClientLock, self).setUp()
-        self.locker = etcd.Lock(self.client, 'test_lock')
+        self.locker = Lock(self.client, 'test_lock')
 
     def test_initialization(self):
         """
@@ -39,7 +42,7 @@ class TestClientLock(TestClientApiBase):
         """
         Acquiring a precedingly inexistent lock works.
         """
-        l = etcd.Lock(self.client, 'test_lock')
+        l = Lock(self.client, 'test_lock')
         l._find_lock = mock.MagicMock(spec=l._find_lock, return_value=False)
         l._acquired = mock.MagicMock(spec=l._acquired, return_value=True)
         # Mock the write
@@ -80,7 +83,7 @@ class TestClientLock(TestClientApiBase):
         self.locker.is_taken = False
         self.assertEquals(self.locker.is_acquired, False)
         self.locker.is_taken = True
-        self._mock_exception(etcd.EtcdKeyNotFound, self.locker.lock_key)
+        self._mock_exception(EtcdKeyNotFound, self.locker.lock_key)
         self.assertEquals(self.locker.is_acquired, False)
         self.assertEquals(self.locker.is_taken, False)
 
@@ -163,7 +166,7 @@ class TestClientLock(TestClientApiBase):
         self.locker._sequence = '1'
         self.assertTrue(self.locker._find_lock())
         # Now let's pretend the lock is not there
-        self._mock_exception(etcd.EtcdKeyNotFound, self.locker.lock_key)
+        self._mock_exception(EtcdKeyNotFound, self.locker.lock_key)
         self.assertFalse(self.locker._find_lock())
         self.locker._sequence = None
         self.recursive_read()
@@ -174,7 +177,7 @@ class TestClientLock(TestClientApiBase):
         self.recursive_read()
         self.assertEquals((u'/_locks/test_lock/1', u'/_locks/test_lock/1'),
                           self.locker._get_locker())
-        with self.assertRaises(etcd.EtcdLockExpired):
+        with self.assertRaises(EtcdLockExpired):
             self.locker._sequence = '35'
             self.locker._get_locker()
 
