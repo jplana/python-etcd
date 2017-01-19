@@ -210,8 +210,11 @@ class Client(object):
         answers = dns.resolver.query(srv_name, 'SRV')
         hosts = []
         for answer in answers:
+            host = answer.target.to_text(omit_final_dot=True)
+            if not isinstance(host, str):
+                host = host.decode()
             hosts.append(
-                (answer.target.to_text(omit_final_dot=True), answer.port))
+                (host, answer.port))
         _log.debug("Found %s", hosts)
         if not len(hosts):
             raise ValueError("The SRV record is present but no host were found")
