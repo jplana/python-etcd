@@ -191,7 +191,7 @@ class Client(object):
         for _proxy_var in _proxy_vars:
             if _proxy_var in os.environ:
                 self.http = urllib3.ProxyManager(os.environ[_proxy_var], num_pools=10, **kw)
-                msg = 'Connecting using proxy %s.' % os.getenv(_proxy_var)
+                msg = 'Connecting using proxy %s.' % os.environ[_proxy_var]
                 _log.info(msg)
                 break
             else:
