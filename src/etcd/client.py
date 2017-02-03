@@ -181,21 +181,58 @@ class Client(object):
         elif password:
             _log.warning('Password provided without username, both are required for authentication')
 
-        # If a proxy environment variable is set for protocol,
-        # then respect it
+        #############
+        ### PROXY ###
+        #############
+
+        # Flag whether or not to look for a proxy to use. This is used by
+        # no_proxy investigation to refrain from looking for a proxy for
+        # certain hosts.
+        _proxy = True
+
+        # If a proxy environment variable is set for protocol, then respect it.
         if protocol == 'https':
             _proxy_vars = ['https_proxy', 'HTTPS_PROXY']
         else:
             _proxy_vars = ['http_proxy', 'HTTP_PROXY']
 
+        # Create a list of hosts to *not* use a proxy for, eg. localhost or
+        # 127.0.0.1. Please note these are matched as strings. There is no
+        # DNS involved. This is common behaviour.
+        _no_proxy = (os.getenv('no_proxy', []) + ',' +
+                     os.getenv('NO_PROXY', [])).split(',')
+
+        # We need to parse self.host to see if any hosts there are in the
+        # _no_proxy list. If so, we shouldn't lookup a proxy. A statement will
+        # then need to be logged.
+        _hosts = []
+
+        if isinstance(self.host, str):
+            # strip of the port if host is a socket.
+            _hosts.append(self.host.split(':')[0])
+        elif isinstance(self.host, tuple):
+            for host in self.host:
+                _hosts.append(host[0])
+        else:
+            _log.warning("Failed to parse 'host' in order to set proxy.")
+
+        # Test hosts against _no_proxy:
+        for _host in _hosts:
+            if _host in _no_proxy:
+                msg = '%s found in list of hosts not to proxy. Not using proxy.' % _host
+                _proxy = False
+
+
+        # _proxy_vars MUST be set, otherwise self.http will not be defined.
         for _proxy_var in _proxy_vars:
-            if _proxy_var in os.environ:
+            if _proxy and _proxy_var in os.environ:
                 self.http = urllib3.ProxyManager(os.environ[_proxy_var], num_pools=10, **kw)
                 msg = 'Connecting using proxy %s.' % os.environ[_proxy_var]
                 _log.info(msg)
                 break
             else:
                 self.http = urllib3.PoolManager(num_pools=10, **kw) # pylint: disable=R0204
+
 
         _log.debug("New etcd client created for %s", self.base_uri)
 
