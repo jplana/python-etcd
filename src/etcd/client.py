@@ -199,8 +199,8 @@ class Client(object):
         # Create a list of hosts to *not* use a proxy for, eg. localhost or
         # 127.0.0.1. Please note these are matched as strings. There is no
         # DNS involved. This is common behaviour.
-        _no_proxy = (os.getenv('no_proxy', []) + ',' +
-                     os.getenv('NO_PROXY', [])).split(',')
+        _no_proxy = (os.getenv('no_proxy', '') + ',' +
+                     os.getenv('NO_PROXY', '')).split(',')
 
         # We need to parse self.host to see if any hosts there are in the
         # _no_proxy list. If so, we shouldn't lookup a proxy. A statement will
