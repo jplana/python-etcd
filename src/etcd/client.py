@@ -27,6 +27,10 @@ try:
 except ImportError:
     from urllib.parse import urlparse
 
+try:
+    from urllib.parse import quote
+except ImportError:
+    from urllib import quote
 
 _log = logging.getLogger(__name__)
 
@@ -396,6 +400,8 @@ class Client(object):
             return False
 
     def _sanitize_key(self, key):
+        if not all(ord(c) < 128 for c in key):
+            key = quote(key)
         if not key.startswith('/'):
             key = "/{}".format(key)
         return key
