@@ -67,7 +67,8 @@ class Client(object):
             allow_reconnect=False,
             use_proxies=False,
             expected_cluster_id=None,
-            per_host_pool_size=10
+            per_host_pool_size=10,
+            pool_kw=None
     ):
         """
         Initialize the client.
@@ -153,6 +154,9 @@ class Client(object):
         kw = {
           'maxsize': per_host_pool_size
         }
+
+        if pool_kw is not None:
+            kw.update(pool_kw)
 
         if self._read_timeout > 0:
             kw['timeout'] = self._read_timeout

@@ -159,3 +159,7 @@ class TestClient(unittest.TestCase):
         self.assertEquals(c.port, 2379)
         self.assertEquals(c._machines_cache,
                           [u'https://etcd2.example.com:2379'])
+
+    def test_set_retries(self):
+        client = etcd.Client(pool_kw=dict(retries=0))
+        assert client.http.connection_pool_kw.get('retries') == 0
