@@ -241,14 +241,16 @@ class EtcdDirNotEmpty(EtcdValueError):
     """
     pass
 
+
 class EtcdLockExpired(EtcdException):
     """
     Our lock apparently expired while we were trying to acquire it.
     """
+    pass
 
 
 class EtcdError(object):
-    # See https://github.com/coreos/etcd/blob/master/Documentation/errorcode.md
+    # See https://github.com/coreos/etcd/blob/master/Documentation/v2/errorcode.md
     error_exceptions = {
         100: EtcdKeyNotFound,
         101: EtcdCompareFailed,
@@ -262,7 +264,7 @@ class EtcdError(object):
         # 109: Non-public: existing peer addr.
         110: EtcdInsufficientPermissions,
 
-        200: EtcdValueError,
+        200: EtcdValueError,  # Not part of v2
         201: EtcdValueError,
         202: EtcdValueError,
         203: EtcdValueError,
