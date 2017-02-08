@@ -95,9 +95,11 @@ class Lock(object):
         You can use the lock as a contextmanager
         """
         self.acquire(blocking=True, lock_ttl=0)
+        return self
 
     def __exit__(self, type, value, traceback):
         self.release()
+        return False
 
     def _acquired(self, blocking=True, timeout=0):
         locker, nearest = self._get_locker()
