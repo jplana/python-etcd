@@ -94,7 +94,7 @@ class Lock(object):
         """
         You can use the lock as a contextmanager
         """
-        self.acquire(blocking=True, lock_ttl=0)
+        self.acquire(blocking=True, lock_ttl=None)
         return self
 
     def __exit__(self, type, value, traceback):
