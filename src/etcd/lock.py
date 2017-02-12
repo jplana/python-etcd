@@ -30,7 +30,7 @@ class Lock(object):
         return self._uuid
 
     @uuid.setter
-    def set_uuid(self, value):
+    def uuid(self, value):
         old_uuid = self._uuid
         self._uuid = value
         if not self._find_lock():
