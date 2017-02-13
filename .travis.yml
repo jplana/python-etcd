@@ -4,7 +4,7 @@ python:
   - "3.5"
 
 before_install:
-  - ./build_etcd.sh v2.2.0
+  - ./download_etcd.sh 2.3.7
   - pip install --upgrade setuptools
 
 # command to install dependencies
@@ -16,7 +16,7 @@ install:
 
 # command to run tests
 script:
-  PATH=$PATH:./etcd/bin coverage run --source=src/etcd --omit="src/etcd/tests/*" bin/test
+  PATH=$PATH:./bin coverage run --source=src/etcd --omit="src/etcd/tests/*" bin/test
 
 after_success: coveralls
 # Add env var to detect it during build
