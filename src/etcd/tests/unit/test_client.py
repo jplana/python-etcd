@@ -3,13 +3,15 @@ import etcd
 import dns.name
 import dns.rdtypes.IN.SRV
 import dns.resolver
+from etcd.tests.unit import TestClientApiBase
 try:
     import mock
 except ImportError:
     from unittest import mock
 
 
-class TestClient(unittest.TestCase):
+class TestClient(TestClientApiBase):
+
 
     def test_instantiate(self):
         """ client can be instantiated"""
@@ -123,55 +125,37 @@ class TestClient(unittest.TestCase):
 
     def test__set_version_info(self):
         """Verify _set_version_info makes the proper call to the server"""
-        with mock.patch('urllib3.PoolManager') as _pm:
-            _request = _pm().request
-            # Return the expected data type
-            _request.return_value = mock.MagicMock(
-                data=b'{"etcdserver": "2.2.3", "etcdcluster": "2.3.0"}')
+        data = {"etcdserver": "2.2.3", "etcdcluster": "2.3.0"}
+        self._mock_api(200, data)
+        self.client.api_execute.return_value.getheader.return_value = None
+        # Create the client and make the call.
+        self.client._set_version_info()
 
-            # Create the client and make the call.
-            client = etcd.Client()
-            client._set_version_info()
-
-            # Verify we call the proper endpoint
-            _request.assert_called_once_with(
-                client._MGET,
-                client._base_uri + '/version',
-                headers=mock.ANY,
-                redirect=mock.ANY,
-                timeout=mock.ANY)
-
-            # Verify the properties while we are here
-            self.assertEquals('2.2.3', client.version)
-            self.assertEquals('2.3.0', client.cluster_version)
+        # Verify we call the proper endpoint
+        self.client.api_execute.assert_called_once_with(
+            '/version',
+            self.client._MGET
+        )
+        # Verify the properties while we are here
+        self.assertEquals('2.2.3', self.client.version)
+        self.assertEquals('2.3.0', self.client.cluster_version)
 
     def test_version_property(self):
         """Ensure the version property is set on first access."""
-        with mock.patch('urllib3.PoolManager') as _pm:
-            _request = _pm().request
-            # Return the expected data type
-            _request.return_value = mock.MagicMock(
-                data=b'{"etcdserver": "2.2.3", "etcdcluster": "2.3.0"}')
+        data = {"etcdserver": "2.2.3", "etcdcluster": "2.3.0"}
+        self._mock_api(200, data)
+        self.client.api_execute.return_value.getheader.return_value = None
 
-            # Create the client.
-            client = etcd.Client()
-
-            # Verify the version property is set
-            self.assertEquals('2.2.3', client.version)
+        # Verify the version property is set
+        self.assertEquals('2.2.3', self.client.version)
 
     def test_cluster_version_property(self):
         """Ensure the cluster version property is set on first access."""
-        with mock.patch('urllib3.PoolManager') as _pm:
-            _request = _pm().request
-            # Return the expected data type
-            _request.return_value = mock.MagicMock(
-                data=b'{"etcdserver": "2.2.3", "etcdcluster": "2.3.0"}')
-
-            # Create the client.
-            client = etcd.Client()
-
-            # Verify the cluster_version property is set
-            self.assertEquals('2.3.0', client.cluster_version)
+        data = {"etcdserver": "2.2.3", "etcdcluster": "2.3.0"}
+        self._mock_api(200, data)
+        self.client.api_execute.return_value.getheader.return_value = None
+        # Verify the cluster_version property is set
+        self.assertEquals('2.3.0', self.client.cluster_version)
 
     def test_get_headers_without_auth(self):
         client = etcd.Client()

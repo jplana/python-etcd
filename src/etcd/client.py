@@ -214,12 +214,8 @@ class Client(object):
         Sets the version information provided by the server.
         """
         # Set the version
-        version_info = json.loads(self.http.request(
-            self._MGET,
-            self._base_uri + '/version',
-            headers=self._get_headers(),
-            timeout=self.read_timeout,
-            redirect=self.allow_redirect).data.decode('utf-8'))
+        data = self.api_execute('/version', self._MGET).data
+        version_info = json.loads(data.decode('utf-8'))
         self._version = version_info['etcdserver']
         self._cluster_version = version_info['etcdcluster']
 
@@ -856,7 +852,7 @@ class Client(object):
                     # Check the cluster ID hasn't changed under us.  We use
                     # preload_content=False above so we can read the headers
                     # before we wait for the content of a watch.
-                    self._check_cluster_id(response)
+                    self._check_cluster_id(response, path)
                     # Now force the data to be preloaded in order to trigger any
                     # IO-related errors in this method rather than when we try to
                     # access it later.
@@ -950,10 +946,11 @@ class Client(object):
                                  headers=headers,
                                  preload_content=False)
 
-    def _check_cluster_id(self, response):
+    def _check_cluster_id(self, response, path):
         cluster_id = response.getheader("x-etcd-cluster-id")
         if not cluster_id:
-            _log.warning("etcd response did not contain a cluster ID")
+            if self.version_prefix in path:
+                _log.warning("etcd response did not contain a cluster ID")
             return
         id_changed = (self.expected_cluster_id and
                       cluster_id != self.expected_cluster_id)
