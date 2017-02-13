@@ -93,6 +93,10 @@ class EtcdUserTest(TestEtcdAuthBase):
         self.assertEquals(u.roles, set(['guest', 'root']))
         # set roles as a list, it works!
         u.roles = ['guest', 'test_group']
+        # We need this or the new API will return an internal error
+        r = auth.EtcdRole(self.client, 'test_group')
+        r.acls = {'*': 'R', '/test/*': 'RW'}
+        r.write()
         try:
             u.write()
         except:

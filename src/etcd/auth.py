@@ -14,13 +14,28 @@ class EtcdAuthBase(object):
         self.name = name
         self.uri = "{}/auth/{}s/{}".format(self.client.version_prefix,
                                            self.entity, self.name)
+        # This will be lazily evaluated if not manually set
+        self._legacy_api = None
+
+    @property
+    def legacy_api(self):
+        if self._legacy_api is None:
+            # The auth API has changed between 2.2 and 2.3, true story!
+            major, minor, _ = map(int, self.client.version.split('.'))
+            self._legacy_api = (major < 3 and minor < 3)
+        return self._legacy_api
+
 
     @property
     def names(self):
         key = "{}s".format(self.entity)
         uri = "{}/auth/{}".format(self.client.version_prefix, key)
         response = self.client.api_execute(uri, self.client._MGET)
-        return json.loads(response.data.decode('utf-8'))[key]
+        if self.legacy_api:
+            return json.loads(response.data.decode('utf-8'))[key]
+        else:
+            return [obj[self.entity]
+                    for obj in json.loads(response.data.decode('utf-8'))[key]]
 
     def read(self):
         try:
@@ -102,7 +117,16 @@ class EtcdUser(EtcdAuthBase):
 
     def _from_net(self, data):
         d = json.loads(data.decode('utf-8'))
-        self.roles = d.get('roles', [])
+        roles = d.get('roles', [])
+        try:
+            self.roles = roles
+        except TypeError:
+            # with the change of API, PUT responses are different
+            # from GET reponses, which makes everything so funny.
+            # Specifically, PUT responses are the same as before...
+            if self.legacy_api:
+                raise
+            self.roles = [obj['role'] for obj in roles]
         self.name = d.get('user')
 
     def _to_net(self, prevobj=None):
