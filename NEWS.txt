@@ -1,5 +1,23 @@
 News
 ====
+0.4.5
+-----
+*Release date: 3-Mar-2017*
+
+* Remove dnspython2/3 requirement
+* Change property name setter in lock
+* Fixed acl tests
+* Added version/cluster_version properties to client
+* Fixes in lock when used as context manager
+* Fixed improper usage of urllib3 exceptions
+* Minor fixes for error classes
+* In lock return modifiedIndex to watch changes
+* In lock fix context manager exception handling
+* Improvments to the documentation
+* Remove _base_uri only after refresh from cluster
+* Avoid double update of _machines_cache
+
+
 0.4.4
 -----
 *Release date: 10-Jan-2017*
