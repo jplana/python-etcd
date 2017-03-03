@@ -1,2 +1,4 @@
+include AUTHORS
+include LICENSE.txt
 include README.rst
 include NEWS.txt
