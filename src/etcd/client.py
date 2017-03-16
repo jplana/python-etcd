@@ -597,7 +597,7 @@ class Client(object):
             timeout=timeout)
         return self._result_from_response(response)
 
-    def delete(self, key, recursive=None, dir=None, **kwdargs):
+    def delete(self, key, recursive=False, dir=None, **kwdargs):
         """
         Removed a key from etcd.
 
@@ -631,8 +631,7 @@ class Client(object):
         key = self._sanitize_key(key)
 
         kwds = {}
-        if recursive is not None:
-            kwds['recursive'] = recursive and "true" or "false"
+        kwds['recursive'] = "true" if recursive else "false"
         if dir is not None:
             kwds['dir'] = dir and "true" or "false"
 
