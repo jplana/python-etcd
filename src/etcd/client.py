@@ -59,6 +59,7 @@ class Client(object):
             protocol='http',
             cert=None,
             ca_cert=None,
+            assert_hostname=False,
             username=None,
             password=None,
             allow_reconnect=False,
@@ -92,6 +93,8 @@ class Client(object):
 
             ca_cert (str): The ca certificate. If pressent it will enable
                            validation.
+
+            assert_hostname (bool): default False, disable the ssl hostname verification.
 
             username (str): username for etcd authentication.
 
@@ -170,6 +173,7 @@ class Client(object):
         if ca_cert:
             kw['ca_certs'] = ca_cert
             kw['cert_reqs'] = ssl.CERT_REQUIRED
+            kw['assert_hostname'] = assert_hostname
 
         self.username = None
         self.password = None
