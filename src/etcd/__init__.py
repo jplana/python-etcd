@@ -293,7 +293,7 @@ class EtcdError(object):
         error_code = payload.get("errorCode")
         message = payload.get("message")
         cause = payload.get("cause")
-        msg = '{} : {}'.format(message, cause)
+        msg = '{0} : {1}'.format(message, cause)
         status = payload.get("status")
         # Some general status handling, as
         # not all endpoints return coherent error messages
