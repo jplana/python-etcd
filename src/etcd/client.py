@@ -232,7 +232,7 @@ class Client(object):
                 (answer.target.to_text(omit_final_dot=True), answer.port))
         _log.debug("Found %s", hosts)
         if not len(hosts):
-            raise ValueError("The SRV record is present but no host were found")
+            raise ValueError("The SRV record is present but no hosts were found")
         return tuple(hosts)
 
     def __del__(self):
@@ -822,7 +822,7 @@ class Client(object):
 
     def _next_server(self, cause=None):
         """ Selects the next server in the list, refreshes the server list. """
-        _log.debug("Selection next machine in cache. Available machines: %s",
+        _log.debug("Selecting next machine in cache. Available machines: %s",
                    self._machines_cache)
         try:
             mach = self._machines_cache.pop()
