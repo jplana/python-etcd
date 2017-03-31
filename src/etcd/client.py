@@ -896,7 +896,7 @@ class Client(object):
                     _log.warning(e)
                     raise
                 except:
-                    _log.exception("Unexpected request failure, re-raising.")
+                    _log.debug("Unexpected request failure, re-raising.")
                     raise
 
                 if some_request_failed:
