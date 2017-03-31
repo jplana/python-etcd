@@ -27,6 +27,13 @@ From source
 .. code:: bash
 
     $ python setup.py install
+    
+From Pypi
+~~~~~~~~~
+
+.. code:: bash
+
+   $ python3.5 -m pip install aio_etcd
 
 Usage
 -----
