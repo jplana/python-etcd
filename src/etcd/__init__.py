@@ -88,7 +88,10 @@ class EtcdResult(object):
 
     @property
     def leaves(self):
-        return self.get_subtree(leaves_only=True)
+        if self._children:
+            return self.get_subtree(leaves_only=True)
+        else:
+            return None
 
     @property
     def children(self):
