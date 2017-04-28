@@ -435,7 +435,7 @@ class Client(object):
             key = "/{}".format(key)
         return key
 
-    def write(self, key, value, ttl=None, dir=False, append=False, **kwdargs):
+    def write(self, key, value=None, ttl=None, dir=False, append=False, **kwdargs):
         """
         Writes the value for a key, possibly doing atomic Compare-and-Swap
 
