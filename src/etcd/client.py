@@ -65,7 +65,8 @@ class Client(object):
             use_proxies=False,
             expected_cluster_id=None,
             per_host_pool_size=10,
-            lock_prefix="/_locks"
+            lock_prefix="/_locks",
+            srv_use_ssl=False
     ):
         """
         Initialize the client.
@@ -115,12 +116,14 @@ class Client(object):
                                       connections.
             lock_prefix (str): Set the key prefix at etcd when client to lock object.
                                       By default this will be use /_locks.
+
+            srv_use_ssl (bool): Should we use SSL alias for cluster autodiscovery.
         """
 
         # If a DNS record is provided, use it to get the hosts list
         if srv_domain is not None:
             try:
-                host = self._discover(srv_domain)
+                host = self._discover(srv_domain, use_ssl=srv_use_ssl)
             except Exception as e:
                 _log.error("Could not discover the etcd hosts from %s: %s",
                            srv_domain, e)
@@ -219,8 +222,11 @@ class Client(object):
         self._version = version_info['etcdserver']
         self._cluster_version = version_info['etcdcluster']
 
-    def _discover(self, domain):
-        srv_name = "_etcd._tcp.{}".format(domain)
+    def _discover(self, domain, use_ssl=False):
+        if use_ssl:
+            srv_name = "_etcd-client-ssl._tcp.{}".format(domain)
+        else:
+            srv_name = "_etcd-client._tcp.{}".format(domain)
         answers = dns.resolver.query(srv_name, 'SRV')
         hosts = []
         for answer in answers:
