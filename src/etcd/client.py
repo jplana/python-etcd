@@ -17,6 +17,7 @@ import socket
 import urllib3
 from urllib3.exceptions import HTTPError
 from urllib3.exceptions import ReadTimeoutError
+from urllib3.exceptions import SSLError
 import json
 import ssl
 import dns.resolver
@@ -863,6 +864,17 @@ class Client(object):
                     _ = response.data
                     # urllib3 doesn't wrap all httplib exceptions and earlier versions
                     # don't wrap socket errors either.
+                except SSLError as e:
+                    if 'ALERT_PROTOCOL_VERSION' in repr(e):
+                        if hasattr(ssl, 'PROTOCOL_TLSv1_2'):
+                            self.http.connection_pool_kw['ssl_version'] = ssl.PROTOCOL_TLSv1_2
+                            continue
+                        else:
+                            raise etcd.EtcdConnectionFailed(
+                                "The ETCD server only supports TLS v1.2.  Upgrade your python."
+                            )
+                    else:
+                        raise
                 except (HTTPError, HTTPException, socket.error) as e:
                     if (isinstance(params, dict) and
                         params.get("wait") == "true" and
