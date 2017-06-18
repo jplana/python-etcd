@@ -13,3 +13,5 @@ build
 dist
 docs
 .coverage
+.venv
+.env
