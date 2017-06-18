@@ -122,7 +122,7 @@ class Client(object):
         # If a DNS record is provided, use it to get the hosts list
         if srv_domain is not None:
             try:
-                host = self._discover(srv_domain, use_ssl=srv_use_ssl)
+                host = self._discover(srv_domain)
             except Exception as e:
                 _log.error("Could not discover the etcd hosts from %s: %s",
                            srv_domain, e)
