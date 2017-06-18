@@ -22,6 +22,8 @@ import ssl
 import dns.resolver
 from functools import wraps
 import etcd
+from dns.resolver import NXDOMAIN
+import re
 
 try:
     from urlparse import urlparse
@@ -65,8 +67,7 @@ class Client(object):
             use_proxies=False,
             expected_cluster_id=None,
             per_host_pool_size=10,
-            lock_prefix="/_locks",
-            srv_use_ssl=False
+            lock_prefix="/_locks"
     ):
         """
         Initialize the client.
@@ -116,8 +117,6 @@ class Client(object):
                                       connections.
             lock_prefix (str): Set the key prefix at etcd when client to lock object.
                                       By default this will be use /_locks.
-
-            srv_use_ssl (bool): Should we use SSL alias for cluster autodiscovery.
         """
 
         # If a DNS record is provided, use it to get the hosts list
@@ -222,12 +221,29 @@ class Client(object):
         self._version = version_info['etcdserver']
         self._cluster_version = version_info['etcdcluster']
 
-    def _discover(self, domain, use_ssl=False):
-        if use_ssl:
-            srv_name = "_etcd-client-ssl._tcp.{}".format(domain)
-        else:
-            srv_name = "_etcd-client._tcp.{}".format(domain)
-        answers = dns.resolver.query(srv_name, 'SRV')
+    def _discover(self, domain):
+        srv_names = [
+            "_etcd-client-ssl._tcp.{}".format(domain),
+            "_etcd-client._tcp.{}".format(domain),
+            "_etcd-ssl._tcp.{}".format(domain),
+            "_etcd._tcp.{}".format(domain)
+        ]
+        found = False
+        for srv_name in srv_names:
+            try:
+                answers = dns.resolver.query(srv_name, 'SRV')
+                if len(answers):
+                    found = True
+                    break
+            except NXDOMAIN:
+                continue
+
+        if not found:
+            raise ValueError('Could not find SRV record for domain {}.'.format(domain))
+
+        if re.search('-ssl', srv_name):
+            self._protocol = 'https'
+
         hosts = []
         for answer in answers:
             hosts.append(
