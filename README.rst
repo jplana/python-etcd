@@ -33,7 +33,7 @@ From Pypi
 
 .. code:: bash
 
-   $ python3.5 -m pip install aio_etcd
+   $ python3.5 -m pip install python-etcd
 
 Usage
 -----
