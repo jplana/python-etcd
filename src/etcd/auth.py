@@ -21,7 +21,7 @@ class EtcdAuthBase(object):
     def legacy_api(self):
         if self._legacy_api is None:
             # The auth API has changed between 2.2 and 2.3, true story!
-            major, minor, _ = map(int, self.client.version.split('.'))
+            major, minor = map(int, self.client.version[:3].split('.'))
             self._legacy_api = (major < 3 and minor < 3)
         return self._legacy_api
 
