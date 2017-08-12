@@ -17,7 +17,7 @@ class Lock(object):
         # prevent us from getting back the full path name. We prefix our
         # lock name with a uuid and can check for its presence on retry.
         self._uuid = uuid.uuid4().hex
-        self.path = "{}/{}".format(client.lock_prefix, lock_name) 
+        self.path = "{}/{}".format(client.lock_prefix, lock_name)
         self.is_taken = False
         self._sequence = None
         _log.debug("Initiating lock for %s with uuid %s", self.path, self._uuid)
@@ -101,8 +101,8 @@ class Lock(object):
         self.release()
         return False
 
-    def _acquired(self, blocking=True, timeout=0):
-        locker, nearest = self._get_locker()
+    def _acquired(self, blocking=True, timeout=0, etcd_index_cleared=False):
+        locker, nearest, etcd_index = self._get_locker()
         self.is_taken = False
         if self.lock_key == locker:
             _log.debug("Lock acquired!")
@@ -117,9 +117,15 @@ class Lock(object):
             watch_key = nearest.key
             _log.debug("Lock not acquired, now watching %s", watch_key)
             t = max(0, timeout)
+
+            if etcd_index_cleared:
+                index = etcd_index + 1
+            else:
+                index = nearest.modifiedIndex + 1
+
             while True:
                 try:
-                    r = self.client.watch(watch_key, timeout=t, index=nearest.modifiedIndex + 1)
+                    r = self.client.watch(watch_key, timeout=t, index=index)
                     _log.debug("Detected variation for %s: %s", r.key, r.action)
                     return self._acquired(blocking=True, timeout=timeout)
                 except etcd.EtcdKeyNotFound:
@@ -127,6 +133,11 @@ class Lock(object):
                     return self._acquired(blocking=True, timeout=timeout)
                 except etcd.EtcdLockExpired as e:
                     raise e
+                except etcd.EtcdEventIndexCleared:
+                    _log.debug("Event index cleared so recover by reading current state.")
+                    return self._acquired(
+                        blocking=True, timeout=timeout, etcd_index_cleared=True
+                    )
                 except etcd.EtcdException:
                     _log.exception("Unexpected exception")
 
@@ -158,8 +169,9 @@ class Lock(object):
         return False
 
     def _get_locker(self):
-        results = [res for res in
-                   self.client.read(self.path, recursive=True).leaves]
+        resp = self.client.read(self.path, recursive=True)
+        results = [res for res in resp.leaves]
+
         if not self._sequence:
             self._find_lock()
         l = sorted([r.key for r in results])
@@ -168,10 +180,14 @@ class Lock(object):
             i = l.index(self.lock_key)
             if i == 0:
                 _log.debug("No key before our one, we are the locker")
-                return (l[0], None)
+                return (l[0], None, resp.etcd_index)
             else:
                 _log.debug("Locker: %s, key to watch: %s", l[0], l[i-1])
-                return (l[0], next(x for x in results if x.key == l[i-1]))
+                return (
+                    l[0],
+                    next(x for x in results if x.key == l[i - 1]),
+                    resp.etcd_index
+                )
         except ValueError:
             # Something very wrong is going on, most probably
             # our lock has expired
