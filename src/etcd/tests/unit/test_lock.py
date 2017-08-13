@@ -195,3 +195,30 @@ class TestClientLock(TestClientApiBase):
         self.locker.is_taken = True
         self.locker.release()
         self.assertFalse(self.locker.is_taken)
+
+    def test_event_index_cleared(self):
+        self.locker._sequence = 4
+        returns = [
+            ('/_locks/test_lock/4', None, 1),
+            ('/_locks/test_lock/1', etcd.EtcdResult(node={"key": '/_locks/test_lock/4', "modifiedIndex": 1}), 1)
+        ]
+
+        def side_effect():
+            return returns.pop()
+
+        d = {
+            u'action': u'get',
+            u'node': {
+                u'modifiedIndex': 190,
+                u'key': u'/_locks/test_lock/4',
+                u'value': self.locker.uuid
+            }
+        }
+        self._mock_api(200, d)
+        self.locker._get_locker = mock.create_autospec(
+            self.locker._get_locker, side_effect=side_effect)
+
+        # Raise the event index cleared exception and test that we
+        # can recover from it.
+        self._mock_exception(etcd.EtcdEventIndexCleared, self.locker.lock_key)
+        self.assertTrue(self.locker._acquired())
