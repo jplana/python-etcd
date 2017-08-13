@@ -89,12 +89,12 @@ class TestClientLock(TestClientApiBase):
         Test the acquiring primitives
         """
         self.locker._sequence = '4'
-        retval = ('/_locks/test_lock/4', None)
+        retval = ('/_locks/test_lock/4', None, 1)
         self.locker._get_locker = mock.MagicMock(
             spec=self.locker._get_locker, return_value=retval)
         self.assertTrue(self.locker._acquired())
         self.assertTrue(self.locker.is_taken)
-        retval = ('/_locks/test_lock/1', '/_locks/test_lock/4')
+        retval = ('/_locks/test_lock/1', '/_locks/test_lock/4', 1)
         self.locker._get_locker = mock.MagicMock(return_value=retval)
         self.assertFalse(self.locker._acquired(blocking=False))
         self.assertFalse(self.locker.is_taken)
@@ -107,7 +107,7 @@ class TestClientLock(TestClientApiBase):
             }
         }
         self._mock_api(200, d)
-        returns = [('/_locks/test_lock/1', '/_locks/test_lock/4'),  ('/_locks/test_lock/4', None)]
+        returns = [('/_locks/test_lock/1', '/_locks/test_lock/4', 1),  ('/_locks/test_lock/4', None, 1)]
 
         def side_effect():
             return returns.pop()
@@ -119,8 +119,8 @@ class TestClientLock(TestClientApiBase):
     def test_acquired_no_timeout(self):
         self.locker._sequence = 4
         returns = [
-            ('/_locks/test_lock/4', None),
-            ('/_locks/test_lock/1', etcd.EtcdResult(node={"key": '/_locks/test_lock/4', "modifiedIndex": 1}))
+            ('/_locks/test_lock/4', None, 1),
+            ('/_locks/test_lock/1', etcd.EtcdResult(node={"key": '/_locks/test_lock/4', "modifiedIndex": 1}), 1)
         ]
 
         def side_effect():
@@ -175,7 +175,7 @@ class TestClientLock(TestClientApiBase):
 
     def test_get_locker(self):
         self.recursive_read()
-        self.assertEquals((u'/_locks/test_lock/1', etcd.EtcdResult(node={'newKey': False, '_children': [], 'createdIndex': 33, 'modifiedIndex': 33, 'value': u'2qwwwq', 'expiration': None, 'key': u'/_locks/test_lock/1', 'ttl': None, 'action': None, 'dir': False})),
+        self.assertEquals((u'/_locks/test_lock/1', etcd.EtcdResult(node={'newKey': False, '_children': [], 'createdIndex': 33, 'modifiedIndex': 33, 'value': u'2qwwwq', 'expiration': None, 'key': u'/_locks/test_lock/1', 'ttl': None, 'action': None, 'dir': False}), 1),
                           self.locker._get_locker())
         with self.assertRaises(etcd.EtcdLockExpired):
             self.locker._sequence = '35'
