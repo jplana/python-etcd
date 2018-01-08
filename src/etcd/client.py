@@ -22,6 +22,7 @@ import ssl
 import dns.resolver
 from functools import wraps
 import etcd
+from sys import version_info as python_version
 
 try:
     from urlparse import urlparse
@@ -468,7 +469,9 @@ class Client(object):
                    value, key, ttl, dir, append)
         key = self._sanitize_key(key)
         params = {}
-        if value is not None:
+        if python_version.major == 2 and isinstance(value, unicode):
+            params['value'] = value.encode('utf-8')
+        elif value is not None:
             params['value'] = value
 
         if ttl is not None:
