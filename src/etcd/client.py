@@ -289,6 +289,7 @@ class Client(object):
         # We can't use api_execute here, or it causes a logical loop
         try:
             uri = self._base_uri + self.version_prefix + '/machines'
+            urllib3.disable_warnings()
             response = self.http.request(
                 self._MGET,
                 uri,
@@ -909,6 +910,7 @@ class Client(object):
         url = self._base_uri + path
 
         if (method == self._MGET) or (method == self._MDELETE):
+            urllib3.disable_warnings()
             return self.http.request(
                 method,
                 url,
@@ -919,6 +921,7 @@ class Client(object):
                 preload_content=False)
 
         elif (method == self._MPUT) or (method == self._MPOST):
+            urllib3.disable_warnings()
             return self.http.request_encode_body(
                 method,
                 url,
