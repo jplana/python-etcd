@@ -431,7 +431,7 @@ class Client(object):
             key = "/{}".format(key)
         return key
 
-    def write(self, key, value, ttl=None, dir=False, append=False, **kwdargs):
+    def write(self, key, value, ttl=None, dir=False, append=False, timeout=None, **kwdargs):
         """
         Writes the value for a key, possibly doing atomic Compare-and-Swap
 
@@ -445,6 +445,8 @@ class Client(object):
             dir (bool): Set to true if we are writing a directory; default is false.
 
             append (bool): If true, it will post to append the new value to the dir, creating a sequential key. Defaults to false.
+
+            timeout (int):  max seconds to wait for a read.
 
             Other parameters modifying the write method are accepted:
 
@@ -493,7 +495,7 @@ class Client(object):
         else:
             path = self.key_endpoint + key
 
-        response = self.api_execute(path, method, params=params)
+        response = self.api_execute(path, method, params=params, timeout=timeout)
         return self._result_from_response(response)
 
     def refresh(self, key, ttl, **kwdargs):
@@ -698,7 +700,7 @@ class Client(object):
         """
         return self.write(key, value, prevValue=prev_value, ttl=ttl)
 
-    def set(self, key, value, ttl=None):
+    def set(self, key, value, ttl=None, timeout=None):
         """
         Compatibility: sets the value of the key 'key' to the value 'value'
 
@@ -714,7 +716,7 @@ class Client(object):
            etcd.EtcdException: when something weird goes wrong.
 
         """
-        return self.write(key, value, ttl=ttl)
+        return self.write(key, value, ttl=ttl, timeout=None)
 
     def get(self, key):
         """

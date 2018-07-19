@@ -65,9 +65,10 @@ Write a key
     client.write('/nodes/n1', 1)
     # with ttl
     client.write('/nodes/n2', 2, ttl=4)  # sets the ttl to 4 seconds
+    client.write('/nodes/n2', 2, ttl=4, timeout=1)  # sets the ttl to 4 seconds, will exit after 1 second
     client.set('/nodes/n2', 1) # Equivalent, for compatibility reasons.
-
-Read a key
+    client.set('/nodes/n2', 1, timeout=1) # Will exit after 1 second
+    Read a key
 ~~~~~~~~~~
 
 .. code:: python
