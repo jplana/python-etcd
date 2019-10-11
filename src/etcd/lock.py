@@ -61,6 +61,11 @@ class Lock(object):
         :param blocking Block until the lock is obtained, or timeout is reached
         :param lock_ttl The duration of the lock we acquired, set to None for eternal locks
         :param timeout The time to wait before giving up on getting a lock
+
+        Raises:
+            etcd.EtcdLockExpired: If lock expired when try to acquire.
+
+            etcd.EtcdWatchTimeOut: If timeout is reached.
         """
         # First of all try to write, if our lock is not present.
         if not self._find_lock():
@@ -125,7 +130,7 @@ class Lock(object):
                 except etcd.EtcdKeyNotFound:
                     _log.debug("Key %s not present anymore, moving on", watch_key)
                     return self._acquired(blocking=True, timeout=timeout)
-                except etcd.EtcdLockExpired as e:
+                except etcd.EtcdLockExpired | etcd.EtcdWatchTimeOut as e:
                     raise e
                 except etcd.EtcdException:
                     _log.exception("Unexpected exception")
