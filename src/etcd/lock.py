@@ -130,7 +130,7 @@ class Lock(object):
                 except etcd.EtcdKeyNotFound:
                     _log.debug("Key %s not present anymore, moving on", watch_key)
                     return self._acquired(blocking=True, timeout=timeout)
-                except etcd.EtcdLockExpired | etcd.EtcdWatchTimeOut as e:
+                except (etcd.EtcdLockExpired, etcd.EtcdWatchTimeOut) as e:
                     raise e
                 except etcd.EtcdException:
                     _log.exception("Unexpected exception")
