@@ -42,7 +42,7 @@ class EtcdResult(object):
         """
         self.action = action
         for (key, default) in self._node_props.items():
-            if key in node:
+            if node and key in node:
                 setattr(self, key, node[key])
             else:
                 setattr(self, key, default)
