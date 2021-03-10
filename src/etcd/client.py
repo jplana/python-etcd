@@ -50,7 +50,7 @@ class Client(object):
 
     def __init__(
             self,
-            host='127.0.0.1',
+            host='',
             port=4001,
             srv_domain=None,
             version_prefix='/v2',
@@ -120,6 +120,7 @@ class Client(object):
         # If a DNS record is provided, use it to get the hosts list
         if srv_domain is not None:
             try:
+                _log.debug(srv_domain)
                 host = self._discover(srv_domain)
             except Exception as e:
                 _log.error("Could not discover the etcd hosts from %s: %s",
@@ -221,6 +222,7 @@ class Client(object):
 
     def _discover(self, domain):
         srv_name = " _etcd-client._tcp.{}".format(domain)
+        _log.debug(srv_name)
         answers = dns.resolver.query(srv_name, 'SRV')
         hosts = []
         for answer in answers:
