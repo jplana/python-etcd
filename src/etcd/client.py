@@ -121,7 +121,7 @@ class Client(object):
         if srv_domain is not None:
             try:
                 _log.debug(srv_domain)
-                host = self._discover(srv_domain)
+                self.host = self._discover(srv_domain)
             except Exception as e:
                 _log.error("Could not discover the etcd hosts from %s: %s",
                            srv_domain, e)
