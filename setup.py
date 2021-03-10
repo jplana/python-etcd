@@ -6,7 +6,7 @@ README = open(os.path.join(here, 'README.rst')).read()
 NEWS = open(os.path.join(here, 'NEWS.txt')).read()
 
 
-version = '0.4.8'
+version = '0.4.9'
 
 install_requires = [
     'urllib3>=1.7.1',

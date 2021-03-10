@@ -1,5 +1,12 @@
 News
 ====
+0.4.9
+-----
+*Release date: 10-Mar-2021*
+
+* Strip domain
+
+
 0.4.8
 -----
 *Release date: 10-Mar-2021*

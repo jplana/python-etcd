@@ -222,7 +222,7 @@ class Client(object):
         self._cluster_version = version_info['etcdcluster']
 
     def _discover(self, domain):
-        srv_name = " _etcd-client._tcp.{}".format(domain)
+        srv_name = "_etcd-client._tcp.{}".format(domain)
         _log.debug(srv_name)
         answers = dns.resolver.query(srv_name, 'SRV')
         hosts = []
