@@ -2,6 +2,12 @@ News
 ====
 0.4.5
 -----
+*Release date: 10-Mar-2021*
+
+* Fix string format for _discovery; It never been worked.
+====
+0.4.5
+-----
 *Release date: 3-Mar-2017*
 
 * Remove dnspython2/3 requirement
