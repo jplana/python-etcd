@@ -9,6 +9,15 @@ News
 * Remove defaul value from host
 
 
+0.4.6
+-----
+*Release date: 10-Mar-2021*
+
+* Fix string format for _discovery; It never been worked.
+* Add debug to incorrected
+* Remove defaul value from host
+
+
 0.4.5
 -----
 *Release date: 3-Mar-2017*
