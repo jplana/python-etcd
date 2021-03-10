@@ -122,6 +122,7 @@ class Client(object):
             try:
                 _log.debug(srv_domain)
                 self.host = self._discover(srv_domain)
+                host = self.host
             except Exception as e:
                 _log.error("Could not discover the etcd hosts from %s: %s",
                            srv_domain, e)
