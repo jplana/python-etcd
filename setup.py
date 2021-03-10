@@ -20,7 +20,7 @@ test_requires = [
 ]
 
 setup(
-    name='python-etcd',
+    name='python-etcd-2',
     version=version,
     description="A python client for etcd",
     long_description=README + '\n\n' + NEWS,
@@ -35,7 +35,9 @@ setup(
     keywords='etcd raft distributed log api client',
     author='Jose Plana',
     author_email='jplana@gmail.com',
-    url='http://github.com/jplana/python-etcd',
+    maintainer='zloydead',
+    maintainer_email='me@zloz.ru',
+    url='http://github.com/zloyded/python-etcd',
     license='MIT',
     packages=find_packages('src'),
     package_dir = {'': 'src'},
