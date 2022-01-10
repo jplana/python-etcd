@@ -42,7 +42,7 @@ class TestClientRequest(unittest.TestCase):
 
         result = client.set('/testkey', 'test', ttl=19)
 
-        self.assertEquals(
+        self.assertEqual(
             etcd.EtcdResult(
                 **{u'action': u'SET',
                    'node': {
@@ -67,7 +67,7 @@ class TestClientRequest(unittest.TestCase):
                                           '"ttl":49,"modifiedIndex":203}}')
         )
         result = client.test_and_set('/testkey', 'newvalue', 'test', ttl=19)
-        self.assertEquals(
+        self.assertEqual(
             etcd.EtcdResult(
                 **{u'action': u'SET',
                    u'node': {
@@ -94,7 +94,7 @@ class TestClientRequest(unittest.TestCase):
                 'test', ttl=19)
         except ValueError as e:
             #from ipdb import set_trace; set_trace()
-            self.assertEquals(
+            self.assertEqual(
                 'The given PrevValue is not equal'
                 ' to the value of the key : TestAndSet: 1!=3', str(e))
 
@@ -111,7 +111,7 @@ class TestClientRequest(unittest.TestCase):
                                           '"modifiedIndex":189}}')
         )
         result = client.delete('/testkey')
-        self.assertEquals(etcd.EtcdResult(
+        self.assertEqual(etcd.EtcdResult(
             **{u'action': u'DELETE',
                u'node': {
                    u'expiration': u'2013-09-14T01:06:35.5242587+02:00',
@@ -133,7 +133,7 @@ class TestClientRequest(unittest.TestCase):
         )
 
         result = client.get('/testkey')
-        self.assertEquals(etcd.EtcdResult(
+        self.assertEqual(etcd.EtcdResult(
             **{u'action': u'GET',
                u'node': {
                    u'modifiedIndex': 190,
@@ -154,7 +154,7 @@ class TestClientRequest(unittest.TestCase):
         client = etcd.Client()
         client.get = mock.Mock(side_effect=etcd.EtcdKeyNotFound())
         result = '/testkey' not in client
-        self.assertEquals(True, result)
+        self.assertEqual(True, result)
 
     def test_in(self):
         """ Can check if key is in client """
@@ -169,7 +169,7 @@ class TestClientRequest(unittest.TestCase):
         )
         result = '/testkey' in client
 
-        self.assertEquals(True, result)
+        self.assertEqual(True, result)
 
     def test_simple_watch(self):
         """ Can watch values """
@@ -186,7 +186,7 @@ class TestClientRequest(unittest.TestCase):
                                           '"modifiedIndex":192}}')
         )
         result = client.watch('/testkey')
-        self.assertEquals(
+        self.assertEqual(
             etcd.EtcdResult(
                 **{u'action': u'SET',
                    u'node': {
@@ -213,7 +213,7 @@ class TestClientRequest(unittest.TestCase):
                                           '"modifiedIndex":180}}')
         )
         result = client.watch('/testkey', index=180)
-        self.assertEquals(
+        self.assertEqual(
             etcd.EtcdResult(
                 **{u'action': u'SET',
                    u'node': {
@@ -267,7 +267,7 @@ class TestClientApiExecutor(unittest.TestCase):
         response = FakeHTTPResponse(status=200, data='arbitrary json data')
         client.http.request = mock.Mock(return_value=response)
         result = client.api_execute('/v1/keys/testkey', client._MGET)
-        self.assertEquals('arbitrary json data'.encode('utf-8'), result.data)
+        self.assertEqual('arbitrary json data'.encode('utf-8'), result.data)
 
     def test_delete(self):
         """ http delete request """
@@ -275,7 +275,7 @@ class TestClientApiExecutor(unittest.TestCase):
         response = FakeHTTPResponse(status=200, data='arbitrary json data')
         client.http.request = mock.Mock(return_value=response)
         result = client.api_execute('/v1/keys/testkey', client._MDELETE)
-        self.assertEquals('arbitrary json data'.encode('utf-8'), result.data)
+        self.assertEqual('arbitrary json data'.encode('utf-8'), result.data)
 
     def test_get_error(self):
         """ http get error request 101"""
@@ -289,7 +289,7 @@ class TestClientApiExecutor(unittest.TestCase):
             client.api_execute('/v2/keys/testkey', client._MGET)
             assert False
         except etcd.EtcdKeyNotFound as e:
-            self.assertEquals(str(e), 'message : cause')
+            self.assertEqual(str(e), 'message : cause')
 
     def test_put(self):
         """ http put request """
@@ -297,7 +297,7 @@ class TestClientApiExecutor(unittest.TestCase):
         response = FakeHTTPResponse(status=200, data='arbitrary json data')
         client.http.request_encode_body = mock.Mock(return_value=response)
         result = client.api_execute('/v2/keys/testkey', client._MPUT)
-        self.assertEquals('arbitrary json data'.encode('utf-8'), result.data)
+        self.assertEqual('arbitrary json data'.encode('utf-8'), result.data)
 
     def test_test_and_set_error(self):
         """ http post error request 101 """
@@ -311,7 +311,7 @@ class TestClientApiExecutor(unittest.TestCase):
             client.api_execute('/v2/keys/testkey', client._MPUT, payload)
             self.fail()
         except ValueError as e:
-            self.assertEquals('message : cause', str(e))
+            self.assertEqual('message : cause', str(e))
 
     def test_set_not_file_error(self):
         """ http post error request 102 """
@@ -325,7 +325,7 @@ class TestClientApiExecutor(unittest.TestCase):
             client.api_execute('/v2/keys/testkey', client._MPUT, payload)
             self.fail()
         except etcd.EtcdNotFile as e:
-            self.assertEquals('message : cause', str(e))
+            self.assertEqual('message : cause', str(e))
 
     def test_get_error_unknown(self):
         """ http get error request unknown """

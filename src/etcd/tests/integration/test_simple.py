@@ -64,7 +64,7 @@ class TestSimple(EtcdIntegrationTest):
 
     def test_machines(self):
         """ INTEGRATION: retrieve machines """
-        self.assertEquals(self.client.machines[0], 'http://127.0.0.1:6001')
+        self.assertEqual(self.client.machines[0], 'http://127.0.0.1:6001')
 
     def test_leader(self):
         """ INTEGRATION: retrieve leader """
@@ -82,20 +82,20 @@ class TestSimple(EtcdIntegrationTest):
         self.assertFalse('/test_set' in self.client)
 
         set_result = self.client.set('/test_set', 'test-key')
-        self.assertEquals('set', set_result.action.lower())
-        self.assertEquals('/test_set', set_result.key)
-        self.assertEquals('test-key', set_result.value)
+        self.assertEqual('set', set_result.action.lower())
+        self.assertEqual('/test_set', set_result.key)
+        self.assertEqual('test-key', set_result.value)
 
         self.assertTrue('/test_set' in self.client)
 
         get_result = self.client.get('/test_set')
-        self.assertEquals('get', get_result.action.lower())
-        self.assertEquals('/test_set', get_result.key)
-        self.assertEquals('test-key', get_result.value)
+        self.assertEqual('get', get_result.action.lower())
+        self.assertEqual('/test_set', get_result.key)
+        self.assertEqual('test-key', get_result.value)
 
         delete_result = self.client.delete('/test_set')
-        self.assertEquals('delete', delete_result.action.lower())
-        self.assertEquals('/test_set', delete_result.key)
+        self.assertEqual('delete', delete_result.action.lower())
+        self.assertEqual('/test_set', delete_result.key)
 
         self.assertFalse('/test_set' in self.client)
 
@@ -112,7 +112,7 @@ class TestSimple(EtcdIntegrationTest):
         c.value = int(c.value) + 3
         self.client.update(c)
         newres = self.client.get('/foo')
-        self.assertEquals(newres.value, u'6')
+        self.assertEqual(newres.value, u'6')
         self.assertRaises(ValueError, self.client.update, c)
 
     def test_retrieve_subkeys(self):
@@ -122,17 +122,17 @@ class TestSimple(EtcdIntegrationTest):
         set_result = self.client.write('/subtree/test_set2', 'test-key3')
         get_result = self.client.read('/subtree', recursive=True)
         result = [subkey.value for subkey in get_result.leaves]
-        self.assertEquals(['test-key1', 'test-key2', 'test-key3'].sort(), result.sort())
+        self.assertEqual(['test-key1', 'test-key2', 'test-key3'].sort(), result.sort())
 
     def test_directory_ttl_update(self):
         """ INTEGRATION: should be able to update a dir TTL """
         self.client.write('/dir', None, dir=True, ttl=30)
         res = self.client.write('/dir', None, dir=True, ttl=31, prevExist=True)
-        self.assertEquals(res.ttl, 31)
+        self.assertEqual(res.ttl, 31)
         res = self.client.get('/dir')
         res.ttl = 120
         new_res = self.client.update(res)
-        self.assertEquals(new_res.ttl, 120)
+        self.assertEqual(new_res.ttl, 120)
 
 
 
@@ -187,12 +187,12 @@ class TestClusterFunctions(EtcdIntegrationTest):
         set_result = self.client.set('/test_set', 'test-key1')
         get_result = self.client.get('/test_set')
 
-        self.assertEquals('test-key1', get_result.value)
+        self.assertEqual('test-key1', get_result.value)
 
         self.processHelper.kill_one(0)
 
         get_result = self.client.get('/test_set')
-        self.assertEquals('test-key1', get_result.value)
+        self.assertEqual('test-key1', get_result.value)
 
     def test_reconnect_with_several_hosts_passed(self):
         """ INTEGRATION: receive several hosts at connection setup. """
@@ -206,12 +206,12 @@ class TestClusterFunctions(EtcdIntegrationTest):
         set_result = self.client.set('/test_set', 'test-key1')
         get_result = self.client.get('/test_set')
 
-        self.assertEquals('test-key1', get_result.value)
+        self.assertEqual('test-key1', get_result.value)
 
         self.processHelper.kill_one(0)
 
         get_result = self.client.get('/test_set')
-        self.assertEquals('test-key1', get_result.value)
+        self.assertEqual('test-key1', get_result.value)
 
     def test_reconnect_not_allowed(self):
         """ INTEGRATION: fail on server kill if not allow_reconnect """
@@ -232,7 +232,7 @@ class TestClusterFunctions(EtcdIntegrationTest):
         set_result = self.client.set('/test_set', 'test-key1')
 
         get_result = self.client.get('/test_set')
-        self.assertEquals('test-key1', get_result.value)
+        self.assertEqual('test-key1', get_result.value)
         self.processHelper.kill_one(2)
         self.processHelper.kill_one(1)
         self.processHelper.kill_one(0)
@@ -308,7 +308,7 @@ class TestWatch(EtcdIntegrationTest):
         for i in range(0, 3):
             value = queue.get()
             log.debug("index: %d: %s" % (i, value))
-            self.assertEquals('test-value%d' % i, value)
+            self.assertEqual('test-value%d' % i, value)
 
         watcher.join(timeout=5)
         proc.join(timeout=5)
@@ -385,7 +385,7 @@ class TestWatch(EtcdIntegrationTest):
         for i in range(0, 3):
             value = queue.get()
             log.debug("index: %d: %s" % (i, value))
-            self.assertEquals('test-value%d' % i, value)
+            self.assertEqual('test-value%d' % i, value)
 
         watcher.join(timeout=5)
         proc.join(timeout=5)

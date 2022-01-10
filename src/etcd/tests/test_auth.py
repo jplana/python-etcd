@@ -35,7 +35,7 @@ class TestEtcdAuthBase(EtcdIntegrationTest):
 class EtcdUserTest(TestEtcdAuthBase):
     def test_names(self):
         u = auth.EtcdUser(self.client, 'test_user')
-        self.assertEquals(u.names, ['root'])
+        self.assertEqual(u.names, ['root'])
 
     def test_read(self):
         u = auth.EtcdUser(self.client, 'root')
@@ -46,10 +46,10 @@ class EtcdUserTest(TestEtcdAuthBase):
             self.fail("reading the root user raised an exception")
 
         # roles for said user are fetched
-        self.assertEquals(u.roles, set(['root']))
+        self.assertEqual(u.roles, set(['root']))
 
         # The user is correctly rendered out
-        self.assertEquals(u._to_net(), [{'user': 'root', 'password': None,
+        self.assertEqual(u._to_net(), [{'user': 'root', 'password': None,
                                          'roles': ['root']}])
 
         # An inexistent user raises the appropriate exception
@@ -77,7 +77,7 @@ class EtcdUserTest(TestEtcdAuthBase):
         except:
             self.fail("creating a user doesn't work")
         # Password gets wiped
-        self.assertEquals(u.password, None)
+        self.assertEqual(u.password, None)
         u.read()
         # Verify we can log in as this user and access the auth (it has the
         # root role)
@@ -89,8 +89,8 @@ class EtcdUserTest(TestEtcdAuthBase):
         except etcd.EtcdInsufficientPermissions:
             self.fail("Reading auth with the new user is not possible")
 
-        self.assertEquals(u.name, "test_user")
-        self.assertEquals(u.roles, set(['guest', 'root']))
+        self.assertEqual(u.name, "test_user")
+        self.assertEqual(u.roles, set(['guest', 'root']))
         # set roles as a list, it works!
         u.roles = ['guest', 'test_group']
         # We need this or the new API will return an internal error
@@ -135,9 +135,9 @@ class EtcdRoleTest(TestEtcdAuthBase):
         #     between etcd-2.2.2 and 2.2.5.  They're equivalent so allow
         #     for both.
         if '/*' in r.acls:
-            self.assertEquals(r.acls, {'/*': 'RW'})
+            self.assertEqual(r.acls, {'/*': 'RW'})
         else:
-            self.assertEquals(r.acls, {'*': 'RW'})
+            self.assertEqual(r.acls, {'*': 'RW'})
         # We can actually skip most other read tests as they are common
         # with EtcdUser
 
@@ -151,15 +151,15 @@ class EtcdRoleTest(TestEtcdAuthBase):
 
         r1 = auth.EtcdRole(self.client, 'test_role')
         r1.read()
-        self.assertEquals(r1.acls, r.acls)
+        self.assertEqual(r1.acls, r.acls)
         r.revoke('/test/*', 'W')
         r.write()
         r1.read()
-        self.assertEquals(r1.acls, {'*': 'R', '/test/*': 'R'})
+        self.assertEqual(r1.acls, {'*': 'R', '/test/*': 'R'})
         r.grant('/pub/*', 'RW')
         r.write()
         r1.read()
-        self.assertEquals(r1.acls['/pub/*'], 'RW')
+        self.assertEqual(r1.acls['/pub/*'], 'RW')
         # All other exceptions are tested by the user tests
         r1.name = None
         self.assertRaises(etcd.EtcdException, r1.write)
