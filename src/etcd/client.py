@@ -170,6 +170,8 @@ class Client(object):
         if ca_cert:
             kw['ca_certs'] = ca_cert
             kw['cert_reqs'] = ssl.CERT_REQUIRED
+        else:
+            kw['cert_reqs'] = ssl.CERT_NONE
 
         self.username = None
         self.password = None
