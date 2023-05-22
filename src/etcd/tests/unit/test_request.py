@@ -68,7 +68,7 @@ class TestClientApiInternals(TestClientApiBase):
         }
         self._mock_api(200, d)
         self.client.write('/newdir', None, dir=True)
-        self.assertEquals(self.client.api_execute.call_args,
+        self.assertEqual(self.client.api_execute.call_args,
                           (('/v2/keys/newdir', 'PUT'),
                            dict(params={'dir': 'true'})))
 
@@ -86,7 +86,7 @@ class TestClientApiInterface(TestClientApiBase):
                 'http://127.0.0.1:4002', 'http://127.0.0.1:4003']
         d = ','.join(data)
         mocker.return_value = self._prepare_response(200, d)
-        self.assertEquals(data, self.client.machines)
+        self.assertEqual(data, self.client.machines)
 
     @mock.patch('etcd.Client.machines', new_callable=mock.PropertyMock)
     def test_use_proxies(self, mocker):
@@ -101,8 +101,8 @@ class TestClientApiInterface(TestClientApiBase):
             use_proxies=True
         )
 
-        self.assertEquals(c._machines_cache, ['https://localproxy:4001'])
-        self.assertEquals(c._base_uri, 'https://localhost:4001')
+        self.assertEqual(c._machines_cache, ['https://localproxy:4001'])
+        self.assertEqual(c._base_uri, 'https://localhost:4001')
         self.assertNotIn(c.base_uri, c._machines_cache)
 
         c = etcd.Client(
@@ -128,7 +128,7 @@ class TestClientApiInterface(TestClientApiBase):
             ]
         }
         self._mock_api(200, data)
-        self.assertEquals(self.client.members["ce2a822cea30bfca"]["id"], "ce2a822cea30bfca")
+        self.assertEqual(self.client.members["ce2a822cea30bfca"]["id"], "ce2a822cea30bfca")
 
     def test_self_stats(self):
         """ Request for stats """
@@ -148,13 +148,13 @@ class TestClientApiInterface(TestClientApiBase):
             "state": "StateFollower"
         }
         self._mock_api(200,data)
-        self.assertEquals(self.client.stats['name'], "node3")
+        self.assertEqual(self.client.stats['name'], "node3")
 
     def test_leader_stats(self):
         """ Request for leader stats """
         data = {"leader": "924e2e83e93f2560", "followers": {}}
         self._mock_api(200,data)
-        self.assertEquals(self.client.leader_stats['leader'], "924e2e83e93f2560")
+        self.assertEqual(self.client.leader_stats['leader'], "924e2e83e93f2560")
 
 
     @mock.patch('etcd.Client.members', new_callable=mock.PropertyMock)
@@ -163,7 +163,7 @@ class TestClientApiInterface(TestClientApiBase):
         members = {"ce2a822cea30bfca": {"id": "ce2a822cea30bfca", "name": "default"}}
         mocker.return_value = members
         self._mock_api(200, {"leaderInfo":{"leader": "ce2a822cea30bfca", "followers": {}}})
-        self.assertEquals(self.client.leader, members["ce2a822cea30bfca"])
+        self.assertEqual(self.client.leader, members["ce2a822cea30bfca"])
 
     def test_set_plain(self):
         """ Can set a value """
@@ -179,7 +179,7 @@ class TestClientApiInterface(TestClientApiBase):
 
         self._mock_api(200, d)
         res = self.client.write('/testkey', 'test')
-        self.assertEquals(res, etcd.EtcdResult(**d))
+        self.assertEqual(res, etcd.EtcdResult(**d))
 
     def test_update(self):
         """Can update a result."""
@@ -198,7 +198,7 @@ class TestClientApiInterface(TestClientApiBase):
         d['node']['value'] = 'ciao'
         self._mock_api(200,d)
         newres = self.client.update(res)
-        self.assertEquals(newres.value, 'ciao')
+        self.assertEqual(newres.value, 'ciao')
 
     def test_newkey(self):
         """ Can set a new value """
@@ -215,7 +215,7 @@ class TestClientApiInterface(TestClientApiBase):
         self._mock_api(201, d)
         res = self.client.write('/testkey', 'test')
         d['node']['newKey'] = True
-        self.assertEquals(res, etcd.EtcdResult(**d))
+        self.assertEqual(res, etcd.EtcdResult(**d))
 
     def test_refresh(self):
         """ Can refresh a new value """
@@ -232,7 +232,7 @@ class TestClientApiInterface(TestClientApiBase):
 
         self._mock_api(200, d)
         res = self.client.refresh('/testkey', ttl=600)
-        self.assertEquals(res, etcd.EtcdResult(**d))
+        self.assertEqual(res, etcd.EtcdResult(**d))
 
     def test_not_found_response(self):
         """ Can handle server not found response """
@@ -253,7 +253,7 @@ class TestClientApiInterface(TestClientApiBase):
 
         self._mock_api(200, d)
         res = self.client.write('/testkey', 'test', prevValue='test_old')
-        self.assertEquals(res, etcd.EtcdResult(**d))
+        self.assertEqual(res, etcd.EtcdResult(**d))
 
     def test_compare_and_swap_failure(self):
         """ Exception will be raised if prevValue != value in test_set """
@@ -279,7 +279,7 @@ class TestClientApiInterface(TestClientApiBase):
         }
         self._mock_api(201, d)
         res = self.client.write('/testdir', 'test')
-        self.assertEquals(res.createdIndex, 190)
+        self.assertEqual(res.createdIndex, 190)
 
     def test_set_dir_with_value(self):
         """ Creating a directory with a value raises an error. """
@@ -298,7 +298,7 @@ class TestClientApiInterface(TestClientApiBase):
         }
         self._mock_api(200, d)
         res = self.client.delete('/testKey')
-        self.assertEquals(res, etcd.EtcdResult(**d))
+        self.assertEqual(res, etcd.EtcdResult(**d))
 
     def test_pop(self):
         """ Can pop a value """
@@ -316,7 +316,7 @@ class TestClientApiInterface(TestClientApiBase):
 
         self._mock_api(200, d)
         res = self.client.pop(d['node']['key'])
-        self.assertEquals({attr: getattr(res, attr) for attr in dir(res)
+        self.assertEqual({attr: getattr(res, attr) for attr in dir(res)
                            if attr in etcd.EtcdResult._node_props}, d['prevNode'])
         self.assertEqual(res.value, d['prevNode']['value'])
 
@@ -332,7 +332,7 @@ class TestClientApiInterface(TestClientApiBase):
         }
         self._mock_api(200, d)
         res = self.client.read('/testKey')
-        self.assertEquals(res, etcd.EtcdResult(**d))
+        self.assertEqual(res, etcd.EtcdResult(**d))
 
     def test_get_dir(self):
         """Can get values in dirs"""
@@ -358,7 +358,7 @@ class TestClientApiInterface(TestClientApiBase):
         }
         self._mock_api(200, d)
         res = self.client.read('/testDir', recursive=True)
-        self.assertEquals(res, etcd.EtcdResult(**d))
+        self.assertEqual(res, etcd.EtcdResult(**d))
 
     def test_not_in(self):
         """ Can check if key is not in client """
@@ -390,7 +390,7 @@ class TestClientApiInterface(TestClientApiBase):
         }
         self._mock_api(200, d)
         res = self.client.read('/testkey', wait=True)
-        self.assertEquals(res, etcd.EtcdResult(**d))
+        self.assertEqual(res, etcd.EtcdResult(**d))
 
     def test_watch_index(self):
         """ Can watch a key starting from the given Index """
@@ -404,7 +404,7 @@ class TestClientApiInterface(TestClientApiBase):
         }
         self._mock_api(200, d)
         res = self.client.read('/testkey', wait=True, waitIndex=True)
-        self.assertEquals(res, etcd.EtcdResult(**d))
+        self.assertEqual(res, etcd.EtcdResult(**d))
 
 
 class TestClientRequest(TestClientApiInterface):

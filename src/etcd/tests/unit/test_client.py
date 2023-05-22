@@ -137,8 +137,8 @@ class TestClient(TestClientApiBase):
             self.client._MGET
         )
         # Verify the properties while we are here
-        self.assertEquals('2.2.3', self.client.version)
-        self.assertEquals('2.3.0', self.client.cluster_version)
+        self.assertEqual('2.2.3', self.client.version)
+        self.assertEqual('2.3.0', self.client.cluster_version)
 
     def test_version_property(self):
         """Ensure the version property is set on first access."""
@@ -147,7 +147,7 @@ class TestClient(TestClientApiBase):
         self.client.api_execute.return_value.getheader.return_value = None
 
         # Verify the version property is set
-        self.assertEquals('2.2.3', self.client.version)
+        self.assertEqual('2.2.3', self.client.version)
 
     def test_cluster_version_property(self):
         """Ensure the cluster version property is set on first access."""
@@ -155,7 +155,7 @@ class TestClient(TestClientApiBase):
         self._mock_api(200, data)
         self.client.api_execute.return_value.getheader.return_value = None
         # Verify the cluster_version property is set
-        self.assertEquals('2.3.0', self.client.cluster_version)
+        self.assertEqual('2.3.0', self.client.cluster_version)
 
     def test_get_headers_without_auth(self):
         client = etcd.Client()
@@ -191,7 +191,7 @@ class TestClient(TestClientApiBase):
         etcd.Client.machines = mock.create_autospec(etcd.Client.machines, return_value=[u'https://etcd2.example.com:2379'])
         c = etcd.Client(srv_domain="example.com", allow_reconnect=True, protocol="https")
         etcd.Client.machines = self.machines
-        self.assertEquals(c.host, u'etcd1.example.com')
-        self.assertEquals(c.port, 2379)
-        self.assertEquals(c._machines_cache,
+        self.assertEqual(c.host, u'etcd1.example.com')
+        self.assertEqual(c.port, 2379)
+        self.assertEqual(c._machines_cache,
                           [u'https://etcd2.example.com:2379'])

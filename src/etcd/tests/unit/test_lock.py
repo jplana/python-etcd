@@ -31,9 +31,9 @@ class TestClientLock(TestClientApiBase):
         """
         Verify the lock gets initialized correctly
         """
-        self.assertEquals(self.locker.name, u'test_lock')
-        self.assertEquals(self.locker.path, u'/_locks/test_lock')
-        self.assertEquals(self.locker.is_taken, False)
+        self.assertEqual(self.locker.name, u'test_lock')
+        self.assertEqual(self.locker.path, u'/_locks/test_lock')
+        self.assertEqual(self.locker.is_taken, False)
 
     def test_acquire(self):
         """
@@ -52,8 +52,8 @@ class TestClientLock(TestClientApiBase):
             }
         }
         self._mock_api(200, d)
-        self.assertEquals(l.acquire(), True)
-        self.assertEquals(l._sequence, '1')
+        self.assertEqual(l.acquire(), True)
+        self.assertEqual(l._sequence, '1')
 
     def test_is_acquired(self):
         """
@@ -70,7 +70,7 @@ class TestClientLock(TestClientApiBase):
         }
         self._mock_api(200, d)
         self.locker.is_taken = True
-        self.assertEquals(self.locker.is_acquired, True)
+        self.assertEqual(self.locker.is_acquired, True)
 
     def test_is_not_acquired(self):
         """
@@ -78,11 +78,11 @@ class TestClientLock(TestClientApiBase):
         """
         self.locker._sequence = '2'
         self.locker.is_taken = False
-        self.assertEquals(self.locker.is_acquired, False)
+        self.assertEqual(self.locker.is_acquired, False)
         self.locker.is_taken = True
         self._mock_exception(etcd.EtcdKeyNotFound, self.locker.lock_key)
-        self.assertEquals(self.locker.is_acquired, False)
-        self.assertEquals(self.locker.is_taken, False)
+        self.assertEqual(self.locker.is_acquired, False)
+        self.assertEqual(self.locker.is_taken, False)
 
     def test_acquired(self):
         """
@@ -147,11 +147,11 @@ class TestClientLock(TestClientApiBase):
         with self.assertRaises(ValueError):
             self.locker.lock_key
         self.locker._sequence = '5'
-        self.assertEquals(u'/_locks/test_lock/5',self.locker.lock_key)
+        self.assertEqual(u'/_locks/test_lock/5',self.locker.lock_key)
 
     def test_set_sequence(self):
         self.locker._set_sequence('/_locks/test_lock/10')
-        self.assertEquals('10', self.locker._sequence)
+        self.assertEqual('10', self.locker._sequence)
 
     def test_find_lock(self):
         d = {
@@ -171,11 +171,11 @@ class TestClientLock(TestClientApiBase):
         self.locker._sequence = None
         self.recursive_read()
         self.assertTrue(self.locker._find_lock())
-        self.assertEquals(self.locker._sequence, '34')
+        self.assertEqual(self.locker._sequence, '34')
 
     def test_get_locker(self):
         self.recursive_read()
-        self.assertEquals((u'/_locks/test_lock/1', etcd.EtcdResult(node={'newKey': False, '_children': [], 'createdIndex': 33, 'modifiedIndex': 33, 'value': u'2qwwwq', 'expiration': None, 'key': u'/_locks/test_lock/1', 'ttl': None, 'action': None, 'dir': False})),
+        self.assertEqual((u'/_locks/test_lock/1', etcd.EtcdResult(node={'newKey': False, '_children': [], 'createdIndex': 33, 'modifiedIndex': 33, 'value': u'2qwwwq', 'expiration': None, 'key': u'/_locks/test_lock/1', 'ttl': None, 'action': None, 'dir': False})),
                           self.locker._get_locker())
         with self.assertRaises(etcd.EtcdLockExpired):
             self.locker._sequence = '35'
