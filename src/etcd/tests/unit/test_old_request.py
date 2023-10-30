@@ -98,18 +98,14 @@ class TestClientRequest(unittest.TestCase):
 
         client = etcd.Client()
         client.api_execute = mock.Mock(
-            side_effect=ValueError(
-                "The given PrevValue is not equal"
-                " to the value of the key : TestAndSet: 1!=3"
-            )
+            side_effect=ValueError("The given PrevValue is not equal" " to the value of the key : TestAndSet: 1!=3")
         )
         try:
             result = client.test_and_set("/testkey", "newvalue", "test", ttl=19)
         except ValueError as e:
             # from ipdb import set_trace; set_trace()
             self.assertEqual(
-                "The given PrevValue is not equal"
-                " to the value of the key : TestAndSet: 1!=3",
+                "The given PrevValue is not equal" " to the value of the key : TestAndSet: 1!=3",
                 str(e),
             )
 
@@ -149,11 +145,7 @@ class TestClientRequest(unittest.TestCase):
         client.api_execute = mock.Mock(
             return_value=FakeHTTPResponse(
                 200,
-                '{"action":"GET",'
-                '"node": {'
-                '"key":"/testkey",'
-                '"value":"test",'
-                '"modifiedIndex":190}}',
+                '{"action":"GET",' '"node": {' '"key":"/testkey",' '"value":"test",' '"modifiedIndex":190}}',
             )
         )
 
@@ -189,11 +181,7 @@ class TestClientRequest(unittest.TestCase):
         client.api_execute = mock.Mock(
             return_value=FakeHTTPResponse(
                 200,
-                '{"action":"GET",'
-                '"node": {'
-                '"key":"/testkey",'
-                '"value":"test",'
-                '"modifiedIndex":190}}',
+                '{"action":"GET",' '"node": {' '"key":"/testkey",' '"value":"test",' '"modifiedIndex":190}}',
             )
         )
         result = "/testkey" in client
@@ -306,7 +294,7 @@ class TestEventGenerator(object):
         )
         for result in range(1, 5):
             result = next(client.eternal_watch("/testkey", index=180))
-            yield self.check_watch, result
+            self.check_watch(result)
 
 
 class TestClientApiExecutor(unittest.TestCase):
@@ -408,6 +396,4 @@ class TestClientApiExecutor(unittest.TestCase):
         client = etcd.Client()
         response = FakeHTTPResponse(status=400, data="{){){)*garbage*")
         client.http.request = mock.Mock(return_value=response)
-        self.assertRaises(
-            etcd.EtcdException, client.api_execute, "/v2/keys/testkey", client._MGET
-        )
+        self.assertRaises(etcd.EtcdException, client.api_execute, "/v2/keys/testkey", client._MGET)
