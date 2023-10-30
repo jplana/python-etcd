@@ -1,6 +1,7 @@
 language: python
 python:
   - "3.7"
+  - "3.11"
 
 before_install:
   - ./download_etcd.sh 3.4.0
@@ -11,12 +12,11 @@ install:
   - pip install coveralls
   - pip install coverage
   - pip install pytest
-  - python bootstrap.py
+  - pip install tox-travis
   - bin/buildout
 
 # command to run tests
-script:
-  PATH=$PATH:./bin coverage run --source=src/etcd --omit="src/etcd/tests/*" bin/test
+script: tox
 
 after_success: coveralls
 # Add env var to detect it during build
