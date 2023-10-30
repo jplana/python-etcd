@@ -8,22 +8,24 @@ try:
 except ImportError:
     from unittest import mock
 
-class TestEtcdResult(unittest.TestCase):
 
+class TestEtcdResult(unittest.TestCase):
     def test_get_subtree_1_level(self):
         """
         Test get_subtree() for a read with tree 1 level deep.
         """
-        response = {"node": {
-            'key': "/test",
-            'value': "hello",
-            'expiration': None,
-            'ttl': None,
-            'modifiedIndex': 5,
-            'createdIndex': 1,
-            'newKey': False,
-            'dir': False,
-        }}
+        response = {
+            "node": {
+                "key": "/test",
+                "value": "hello",
+                "expiration": None,
+                "ttl": None,
+                "modifiedIndex": 5,
+                "createdIndex": 1,
+                "newKey": False,
+                "dir": False,
+            }
+        }
         result = etcd.EtcdResult(**response)
         self.assertEqual(result.key, response["node"]["key"])
         self.assertEqual(result.value, response["node"]["value"])
@@ -39,35 +41,37 @@ class TestEtcdResult(unittest.TestCase):
         Test get_subtree() for a read with tree 2 levels deep.
         """
         leaf0 = {
-            'key': "/test/leaf0",
-            'value': "hello1",
-            'expiration': None,
-            'ttl': None,
-            'modifiedIndex': 5,
-            'createdIndex': 1,
-            'newKey': False,
-            'dir': False,
+            "key": "/test/leaf0",
+            "value": "hello1",
+            "expiration": None,
+            "ttl": None,
+            "modifiedIndex": 5,
+            "createdIndex": 1,
+            "newKey": False,
+            "dir": False,
         }
         leaf1 = {
-            'key': "/test/leaf1",
-            'value': "hello2",
-            'expiration': None,
-            'ttl': None,
-            'modifiedIndex': 6,
-            'createdIndex': 2,
-            'newKey': False,
-            'dir': False,
+            "key": "/test/leaf1",
+            "value": "hello2",
+            "expiration": None,
+            "ttl": None,
+            "modifiedIndex": 6,
+            "createdIndex": 2,
+            "newKey": False,
+            "dir": False,
         }
-        testnode = {"node": {
-            'key': "/test/",
-            'expiration': None,
-            'ttl': None,
-            'modifiedIndex': 6,
-            'createdIndex': 2,
-            'newKey': False,
-            'dir': True,
-            'nodes': [leaf0, leaf1]
-        }}
+        testnode = {
+            "node": {
+                "key": "/test/",
+                "expiration": None,
+                "ttl": None,
+                "modifiedIndex": 6,
+                "createdIndex": 2,
+                "newKey": False,
+                "dir": True,
+                "nodes": [leaf0, leaf1],
+            }
+        }
         result = etcd.EtcdResult(**testnode)
         self.assertEqual(result.key, "/test/")
         self.assertTrue(result.dir)
@@ -90,36 +94,24 @@ class TestEtcdResult(unittest.TestCase):
         Test get_subtree() for a read with tree 3 levels deep.
         """
         leaf0 = {
-            'key': "/test/mid0/leaf0",
-            'value': "hello1",
+            "key": "/test/mid0/leaf0",
+            "value": "hello1",
         }
         leaf1 = {
-            'key': "/test/mid0/leaf1",
-            'value': "hello2",
+            "key": "/test/mid0/leaf1",
+            "value": "hello2",
         }
         leaf2 = {
-            'key': "/test/mid1/leaf2",
-            'value': "hello1",
+            "key": "/test/mid1/leaf2",
+            "value": "hello1",
         }
         leaf3 = {
-            'key': "/test/mid1/leaf3",
-            'value': "hello2",
+            "key": "/test/mid1/leaf3",
+            "value": "hello2",
         }
-        mid0 = {
-            'key': "/test/mid0/",
-            'dir': True,
-            'nodes': [leaf0, leaf1]
-        }
-        mid1 = {
-            'key': "/test/mid1/",
-            'dir': True,
-            'nodes': [leaf2, leaf3]
-        }
-        testnode = {"node": {
-            'key': "/test/",
-            'dir': True,
-            'nodes': [mid0, mid1]
-        }}
+        mid0 = {"key": "/test/mid0/", "dir": True, "nodes": [leaf0, leaf1]}
+        mid1 = {"key": "/test/mid1/", "dir": True, "nodes": [leaf2, leaf3]}
+        testnode = {"node": {"key": "/test/", "dir": True, "nodes": [mid0, mid1]}}
         result = etcd.EtcdResult(**testnode)
         self.assertEqual(result.key, "/test/")
         self.assertTrue(result.dir)

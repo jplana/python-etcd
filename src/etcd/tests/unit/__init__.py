@@ -2,6 +2,7 @@ import etcd
 import unittest
 import urllib3
 import json
+
 try:
     import mock
 except ImportError:
@@ -9,15 +10,14 @@ except ImportError:
 
 
 class TestClientApiBase(unittest.TestCase):
-
     def setUp(self):
         self.client = etcd.Client()
 
     def _prepare_response(self, s, d, cluster_id=None):
         if isinstance(d, dict):
-            data = json.dumps(d).encode('utf-8')
+            data = json.dumps(d).encode("utf-8")
         else:
-            data = d.encode('utf-8')
+            data = d.encode("utf-8")
 
         r = mock.create_autospec(urllib3.response.HTTPResponse)()
         r.status = s

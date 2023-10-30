@@ -7,13 +7,12 @@ _log = logging.getLogger(__name__)
 
 
 class EtcdAuthBase(object):
-    entity = 'example'
+    entity = "example"
 
     def __init__(self, client, name):
         self.client = client
         self.name = name
-        self.uri = "{}/auth/{}s/{}".format(self.client.version_prefix,
-                                           self.entity, self.name)
+        self.uri = "{}/auth/{}s/{}".format(self.client.version_prefix, self.entity, self.name)
         # This will be lazily evaluated if not manually set
         self._legacy_api = None
 
@@ -21,10 +20,9 @@ class EtcdAuthBase(object):
     def legacy_api(self):
         if self._legacy_api is None:
             # The auth API has changed between 2.2 and 2.3, true story!
-            major, minor = map(int, self.client.version[:3].split('.'))
-            self._legacy_api = (major < 3 and minor < 3)
+            major, minor = map(int, self.client.version[:3].split("."))
+            self._legacy_api = major < 3 and minor < 3
         return self._legacy_api
-
 
     @property
     def names(self):
@@ -32,10 +30,9 @@ class EtcdAuthBase(object):
         uri = "{}/auth/{}".format(self.client.version_prefix, key)
         response = self.client.api_execute(uri, self.client._MGET)
         if self.legacy_api:
-            return json.loads(response.data.decode('utf-8'))[key]
+            return json.loads(response.data.decode("utf-8"))[key]
         else:
-            return [obj[self.entity]
-                    for obj in json.loads(response.data.decode('utf-8'))[key]]
+            return [obj[self.entity] for obj in json.loads(response.data.decode("utf-8"))[key]]
 
     def read(self):
         try:
@@ -47,11 +44,14 @@ class EtcdAuthBase(object):
             _log.info("%s '%s' not found", self.entity, self.name)
             raise
         except Exception as e:
-            _log.error("Failed to fetch %s in %s%s: %r",
-                       self.entity, self.client._base_uri,
-                       self.client.version_prefix, e)
-            raise etcd.EtcdException(
-                "Could not fetch {} '{}'".format(self.entity, self.name))
+            _log.error(
+                "Failed to fetch %s in %s%s: %r",
+                self.entity,
+                self.client._base_uri,
+                self.client.version_prefix,
+                e,
+            )
+            raise etcd.EtcdException("Could not fetch {} '{}'".format(self.entity, self.name))
 
         self._from_net(response.data)
 
@@ -63,9 +63,7 @@ class EtcdAuthBase(object):
             r = None
         try:
             for payload in self._to_net(r):
-                response = self.client.api_execute_json(self.uri,
-                                                        self.client._MPUT,
-                                                        params=payload)
+                response = self.client.api_execute_json(self.uri, self.client._MPUT, params=payload)
                 # This will fail if the response is an error
                 self._from_net(response.data)
         except etcd.EtcdInsufficientPermissions as e:
@@ -75,8 +73,8 @@ class EtcdAuthBase(object):
             _log.error("Failed to write %s '%s'", self.entity, self.name)
             # TODO: fine-grained exception handling
             raise etcd.EtcdException(
-                "Could not write {} '{}': {}".format(self.entity,
-                                                     self.name, e))
+                "Could not write {} '{}': {}".format(self.entity, self.name, e)
+            )
 
     def delete(self):
         try:
@@ -88,10 +86,14 @@ class EtcdAuthBase(object):
             _log.info("%s '%s' not found", self.entity, self.name)
             raise
         except Exception as e:
-            _log.error("Failed to delete %s in %s%s: %r",
-                       self.entity, self._base_uri, self.version_prefix, e)
-            raise etcd.EtcdException(
-                "Could not delete {} '{}'".format(self.entity, self.name))
+            _log.error(
+                "Failed to delete %s in %s%s: %r",
+                self.entity,
+                self._base_uri,
+                self.version_prefix,
+                e,
+            )
+            raise etcd.EtcdException("Could not delete {} '{}'".format(self.entity, self.name))
 
     def _from_net(self, data):
         raise NotImplementedError()
@@ -108,7 +110,8 @@ class EtcdAuthBase(object):
 
 class EtcdUser(EtcdAuthBase):
     """Class to manage in a orm-like way etcd users"""
-    entity = 'user'
+
+    entity = "user"
 
     def __init__(self, client, name):
         super(EtcdUser, self).__init__(client, name)
@@ -116,8 +119,8 @@ class EtcdUser(EtcdAuthBase):
         self._password = None
 
     def _from_net(self, data):
-        d = json.loads(data.decode('utf-8'))
-        roles = d.get('roles', [])
+        d = json.loads(data.decode("utf-8"))
+        roles = d.get("roles", [])
         try:
             self.roles = roles
         except TypeError:
@@ -126,13 +129,18 @@ class EtcdUser(EtcdAuthBase):
             # Specifically, PUT responses are the same as before...
             if self.legacy_api:
                 raise
-            self.roles = [obj['role'] for obj in roles]
-        self.name = d.get('user')
+            self.roles = [obj["role"] for obj in roles]
+        self.name = d.get("user")
 
     def _to_net(self, prevobj=None):
         if prevobj is None:
-            retval = [{"user": self.name, "password": self._password,
-                       "roles": list(self.roles)}]
+            retval = [
+                {
+                    "user": self.name,
+                    "password": self._password,
+                    "roles": list(self.roles),
+                }
+            ]
         else:
             retval = []
             if self._password:
@@ -170,9 +178,8 @@ class EtcdUser(EtcdAuthBase):
         return json.dumps(self._to_net()[0])
 
 
-
 class EtcdRole(EtcdAuthBase):
-    entity = 'role'
+    entity = "role"
 
     def __init__(self, client, name):
         super(EtcdRole, self).__init__(client, name)
@@ -180,8 +187,8 @@ class EtcdRole(EtcdAuthBase):
         self._write_paths = set()
 
     def _from_net(self, data):
-        d = json.loads(data.decode('utf-8'))
-        self.name = d.get('role')
+        d = json.loads(data.decode("utf-8"))
+        self.name = d.get("role")
 
         try:
             kv = d["permissions"]["kv"]
@@ -190,50 +197,48 @@ class EtcdRole(EtcdAuthBase):
             self._write_paths = set()
             return
 
-        self._read_paths = set(kv.get('read', []))
-        self._write_paths = set(kv.get('write', []))
+        self._read_paths = set(kv.get("read", []))
+        self._write_paths = set(kv.get("write", []))
 
     def _to_net(self, prevobj=None):
         retval = []
         if prevobj is None:
-            retval.append({
-                "role": self.name,
-                "permissions":
+            retval.append(
                 {
-                    "kv":
-                    {
-                        "read": list(self._read_paths),
-                        "write": list(self._write_paths)
-                    }
+                    "role": self.name,
+                    "permissions": {
+                        "kv": {
+                            "read": list(self._read_paths),
+                            "write": list(self._write_paths),
+                        }
+                    },
                 }
-            })
+            )
         else:
             to_grant = {
-                'read': list(self._read_paths - prevobj._read_paths),
-                'write': list(self._write_paths - prevobj._write_paths)
+                "read": list(self._read_paths - prevobj._read_paths),
+                "write": list(self._write_paths - prevobj._write_paths),
             }
             to_revoke = {
-                'read': list(prevobj._read_paths - self._read_paths),
-                'write': list(prevobj._write_paths - self._write_paths)
+                "read": list(prevobj._read_paths - self._read_paths),
+                "write": list(prevobj._write_paths - self._write_paths),
             }
             if [path for sublist in to_revoke.values() for path in sublist]:
-                retval.append({'role': self.name, 'revoke': {'kv': to_revoke}})
+                retval.append({"role": self.name, "revoke": {"kv": to_revoke}})
             if [path for sublist in to_grant.values() for path in sublist]:
-                retval.append({'role': self.name, 'grant': {'kv': to_grant}})
+                retval.append({"role": self.name, "grant": {"kv": to_grant}})
         return retval
 
     def grant(self, path, permission):
-        if permission.upper().find('R') >= 0:
+        if permission.upper().find("R") >= 0:
             self._read_paths.add(path)
-        if permission.upper().find('W') >= 0:
+        if permission.upper().find("W") >= 0:
             self._write_paths.add(path)
 
     def revoke(self, path, permission):
-        if permission.upper().find('R') >= 0 and \
-           path in self._read_paths:
+        if permission.upper().find("R") >= 0 and path in self._read_paths:
             self._read_paths.remove(path)
-        if permission.upper().find('W') >= 0 and \
-           path in self._write_paths:
+        if permission.upper().find("W") >= 0 and path in self._write_paths:
             self._write_paths.remove(path)
 
     @property
@@ -241,12 +246,12 @@ class EtcdRole(EtcdAuthBase):
         perms = {}
         try:
             for path in self._read_paths:
-                perms[path] = 'R'
+                perms[path] = "R"
             for path in self._write_paths:
                 if path in perms:
-                    perms[path] += 'W'
+                    perms[path] += "W"
                 else:
-                    perms[path] = 'W'
+                    perms[path] = "W"
         except:
             pass
         return perms
@@ -259,7 +264,7 @@ class EtcdRole(EtcdAuthBase):
             self.grant(path, permission)
 
     def __str__(self):
-        return json.dumps({"role": self.name, 'acls': self.acls})
+        return json.dumps({"role": self.name, "acls": self.acls})
 
 
 class Auth(object):
@@ -270,7 +275,7 @@ class Auth(object):
     @property
     def active(self):
         resp = self.client.api_execute(self.uri, self.client._MGET)
-        return json.loads(resp.data.decode('utf-8'))['enabled']
+        return json.loads(resp.data.decode("utf-8"))["enabled"]
 
     @active.setter
     def active(self, value):
