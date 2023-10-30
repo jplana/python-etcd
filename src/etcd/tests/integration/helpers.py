@@ -33,17 +33,13 @@ class EtcdProcessHelper(object):
 
     def check_compat_args(self):
         version_re = re.compile(r"^etcd version:\s+(\d)\.(\d)", re.I)
-        version_data = subprocess.check_output(
-            [self.proc_name, "--version"]
-        ).decode("utf-8")
+        version_data = subprocess.check_output([self.proc_name, "--version"]).decode("utf-8")
         match = version_re.match(version_data)
         if match is not None:
             etcd_version = (int(match.group(1)), int(match.group(2)))
         else:
             etcd_version = (0, 0)
-        if etcd_version[0] < 3 or (
-            etcd_version[0] == 3 and etcd_version[1] < 4
-        ):
+        if etcd_version[0] < 3 or (etcd_version[0] == 3 and etcd_version[1] < 4):
             return []
         else:
             return ["--enable-v2=true"]
@@ -70,9 +66,7 @@ class EtcdProcessHelper(object):
             proc_args.extend(
                 [
                     "-initial-cluster",
-                    "test-node-0=http://127.0.0.1:{}".format(
-                        self.internal_port_range_start
-                    ),
+                    "test-node-0=http://127.0.0.1:{}".format(self.internal_port_range_start),
                     "-initial-cluster-state",
                     "new",
                 ]
@@ -88,9 +82,7 @@ class EtcdProcessHelper(object):
 
     def add_one(self, slot, proc_args=None):
         log = logging.getLogger()
-        directory = tempfile.mkdtemp(
-            dir=self.base_directory, prefix="python-etcd.%d-" % slot
-        )
+        directory = tempfile.mkdtemp(dir=self.base_directory, prefix="python-etcd.%d-" % slot)
 
         log.debug("Created directory %s" % directory)
         client = "%s127.0.0.1:%d" % (self.schema, self.port_range_start + slot)
@@ -193,16 +185,10 @@ class TestingCA(object):
         cert.sign(k, "sha1")
 
         with open(cert_path, "w") as f:
-            f.write(
-                crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode(
-                    "utf-8"
-                )
-            )
+            f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode("utf-8"))
 
         with open(key_path, "w") as f:
-            f.write(
-                crypto.dump_privatekey(crypto.FILETYPE_PEM, k).decode("utf-8")
-            )
+            f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k).decode("utf-8"))
 
         return cert, k
 
@@ -231,9 +217,7 @@ class TestingCA(object):
                 crypto.X509Extension(
                     "keyUsage".encode("ascii"),
                     False,
-                    "nonRepudiation,digitalSignature,keyEncipherment".encode(
-                        "ascii"
-                    ),
+                    "nonRepudiation,digitalSignature,keyEncipherment".encode("ascii"),
                 ),
                 crypto.X509Extension(
                     "extendedKeyUsage".encode("ascii"),
@@ -257,13 +241,7 @@ class TestingCA(object):
         cert.sign(ca_key, "sha1")
 
         with open(cert_path, "w") as f:
-            f.write(
-                crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode(
-                    "utf-8"
-                )
-            )
+            f.write(crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode("utf-8"))
 
         with open(key_path, "w") as f:
-            f.write(
-                crypto.dump_privatekey(crypto.FILETYPE_PEM, k).decode("utf-8")
-            )
+            f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k).decode("utf-8"))

@@ -386,7 +386,9 @@ class TestClientRequest(TestClientApiInterface):
         self.client.http.request = mock.MagicMock(return_value=resp)
 
     def _mock_error(self, error_code, msg, cause, method="PUT", fields=None, cluster_id=None):
-        resp = self._prepare_response(500, {"errorCode": error_code, "message": msg, "cause": cause})
+        resp = self._prepare_response(
+            500, {"errorCode": error_code, "message": msg, "cause": cause}
+        )
         resp.getheader.return_value = cluster_id or "abcdef1234"
         self.client.http.request_encode_body = mock.create_autospec(
             self.client.http.request_encode_body, return_value=resp
@@ -402,7 +404,9 @@ class TestClientRequest(TestClientApiInterface):
         """Exception will be raised if prevValue != value in test_set"""
         self.client.http.request = mock.create_autospec(
             self.client.http.request,
-            side_effect=urllib3.exceptions.ReadTimeoutError(self.client.http, "foo", "Read timed out"),
+            side_effect=urllib3.exceptions.ReadTimeoutError(
+                self.client.http, "foo", "Read timed out"
+            ),
         )
         self.assertRaises(
             etcd.EtcdWatchTimedOut,
@@ -435,7 +439,9 @@ class TestClientRequest(TestClientApiInterface):
         self.client.read("/testkey")
 
     def test_read_connection_error(self):
-        self.client.http.request = mock.create_autospec(self.client.http.request, side_effect=socket.error())
+        self.client.http.request = mock.create_autospec(
+            self.client.http.request, side_effect=socket.error()
+        )
         self.assertRaises(etcd.EtcdConnectionFailed, self.client.read, "/something")
         # Direct GET request
         self.assertRaises(etcd.EtcdConnectionFailed, self.client.api_execute, "/a", "GET")

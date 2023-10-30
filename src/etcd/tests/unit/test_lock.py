@@ -149,7 +149,9 @@ class TestClientLock(TestClientApiBase):
         }
         self._mock_api(200, d)
 
-        self.locker._get_locker = mock.create_autospec(self.locker._get_locker, side_effect=side_effect)
+        self.locker._get_locker = mock.create_autospec(
+            self.locker._get_locker, side_effect=side_effect
+        )
         self.assertTrue(self.locker._acquired())
 
     def test_lock_key(self):

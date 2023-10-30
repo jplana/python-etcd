@@ -205,7 +205,9 @@ class TestClusterFunctions(EtcdIntegrationTest):
         """INTEGRATION: receive several hosts at connection setup."""
         self.processHelper.stop()
         self.processHelper.run(number=3)
-        self.client = etcd.Client(host=(("127.0.0.1", 6004), ("127.0.0.1", 6001)), allow_reconnect=True)
+        self.client = etcd.Client(
+            host=(("127.0.0.1", 6004), ("127.0.0.1", 6001)), allow_reconnect=True
+        )
         set_result = self.client.set("/test_set", "test-key1")
         get_result = self.client.get("/test_set")
 
@@ -307,7 +309,9 @@ class TestWatch(EtcdIntegrationTest):
             ),
         )
 
-        watcher = multiprocessing.Process(target=watch_value, args=("/test-key", original_index, queue))
+        watcher = multiprocessing.Process(
+            target=watch_value, args=("/test-key", original_index, queue)
+        )
 
         watcher.start()
         time.sleep(0.5)
@@ -387,7 +391,9 @@ class TestWatch(EtcdIntegrationTest):
             ),
         )
 
-        watcher = multiprocessing.Process(target=watch_value, args=("/test-key", original_index, queue))
+        watcher = multiprocessing.Process(
+            target=watch_value, args=("/test-key", original_index, queue)
+        )
 
         watcher.start()
         time.sleep(0.5)

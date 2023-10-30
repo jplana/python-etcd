@@ -67,9 +67,7 @@ class TestEncryptedAccess(test_simple.EtcdIntegrationTest):
         # Since python 3 raises a MaxRetryError here, this gets caught in
         # different code blocks in python 2 and python 3, thus messages are
         # different. Python 3 does the right thing(TM), for the record
-        self.assertRaises(
-            etcd.EtcdException, client.set, "/test_set", "test-key"
-        )
+        self.assertRaises(etcd.EtcdException, client.set, "/test_set", "test-key")
 
         self.assertRaises(etcd.EtcdException, client.get, "/test_set")
 
@@ -82,13 +80,9 @@ class TestEncryptedAccess(test_simple.EtcdIntegrationTest):
 
     def test_get_set_unauthenticated_with_ca(self):
         """INTEGRATION: try unauthenticated with validation (https->https)"""
-        client = etcd.Client(
-            protocol="https", port=6001, ca_cert=self.ca2_cert_path
-        )
+        client = etcd.Client(protocol="https", port=6001, ca_cert=self.ca2_cert_path)
 
-        self.assertRaises(
-            etcd.EtcdConnectionFailed, client.set, "/test-set", "test-key"
-        )
+        self.assertRaises(etcd.EtcdConnectionFailed, client.set, "/test-set", "test-key")
         self.assertRaises(etcd.EtcdConnectionFailed, client.get, "/test-set")
 
     def test_get_set_authenticated(self):
@@ -117,9 +111,7 @@ class TestClientAuthenticatedAccess(test_simple.EtcdIntegrationTest):
 
         cls.client_all_cert = os.path.join(cls.directory, "client-all.crt")
 
-        ca, ca_key = helpers.TestingCA.create_test_ca_certificate(
-            cls.ca_cert_path, ca_key_path
-        )
+        ca, ca_key = helpers.TestingCA.create_test_ca_certificate(cls.ca_cert_path, ca_key_path)
 
         helpers.TestingCA.create_test_certificate(
             ca, ca_key, server_cert_path, server_key_path, "127.0.0.1"
@@ -159,9 +151,7 @@ class TestClientAuthenticatedAccess(test_simple.EtcdIntegrationTest):
         client = etcd.Client(port=6001)
 
         # See above for the reason of this change
-        self.assertRaises(
-            etcd.EtcdException, client.set, "/test_set", "test-key"
-        )
+        self.assertRaises(etcd.EtcdException, client.set, "/test_set", "test-key")
         self.assertRaises(etcd.EtcdException, client.get, "/test_set")
 
     @pytest.mark.skip(reason="We need non SHA1-signed certs and I won't implement it now.")
