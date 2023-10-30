@@ -68,8 +68,7 @@ class TestClientApiInterface(TestClientApiBase):
     If a test should be run only in this class, please override the method there.
     """
 
-    @mock.patch("urllib3.request.RequestMethods.request")
-    def test_machines(self, mocker):
+    def test_machines(self):
         """Can request machines"""
         data = [
             "http://127.0.0.1:4001",
@@ -77,7 +76,7 @@ class TestClientApiInterface(TestClientApiBase):
             "http://127.0.0.1:4003",
         ]
         d = ",".join(data)
-        mocker.return_value = self._prepare_response(200, d)
+        self.client.http.request = mock.MagicMock(return_value=self._prepare_response(200, d))
         self.assertEqual(data, self.client.machines)
 
     @mock.patch("etcd.Client.machines", new_callable=mock.PropertyMock)
@@ -121,9 +120,7 @@ class TestClientApiInterface(TestClientApiBase):
             ]
         }
         self._mock_api(200, data)
-        self.assertEqual(
-            self.client.members["ce2a822cea30bfca"]["id"], "ce2a822cea30bfca"
-        )
+        self.assertEqual(self.client.members["ce2a822cea30bfca"]["id"], "ce2a822cea30bfca")
 
     def test_self_stats(self):
         """Request for stats"""
@@ -156,9 +153,7 @@ class TestClientApiInterface(TestClientApiBase):
         """Can request the leader"""
         members = {"ce2a822cea30bfca": {"id": "ce2a822cea30bfca", "name": "default"}}
         mocker.return_value = members
-        self._mock_api(
-            200, {"leaderInfo": {"leader": "ce2a822cea30bfca", "followers": {}}}
-        )
+        self._mock_api(200, {"leaderInfo": {"leader": "ce2a822cea30bfca", "followers": {}}})
         self.assertEqual(self.client.leader, members["ce2a822cea30bfca"])
 
     def test_set_plain(self):
@@ -257,9 +252,7 @@ class TestClientApiInterface(TestClientApiBase):
     def test_compare_and_swap_failure(self):
         """Exception will be raised if prevValue != value in test_set"""
         self._mock_exception(ValueError, "Test Failed : [ 1!=3 ]")
-        self.assertRaises(
-            ValueError, self.client.write, "/testKey", "test", prevValue="oldbog"
-        )
+        self.assertRaises(ValueError, self.client.write, "/testKey", "test", prevValue="oldbog")
 
     def test_set_append(self):
         """Can append a new key"""
@@ -278,9 +271,7 @@ class TestClientApiInterface(TestClientApiBase):
 
     def test_set_dir_with_value(self):
         """Creating a directory with a value raises an error."""
-        self.assertRaises(
-            etcd.EtcdException, self.client.write, "/bar", "testvalye", dir=True
-        )
+        self.assertRaises(etcd.EtcdException, self.client.write, "/bar", "testvalye", dir=True)
 
     def test_delete(self):
         """Can delete a value"""
@@ -312,11 +303,7 @@ class TestClientApiInterface(TestClientApiBase):
         self._mock_api(200, d)
         res = self.client.pop(d["node"]["key"])
         self.assertEqual(
-            {
-                attr: getattr(res, attr)
-                for attr in dir(res)
-                if attr in etcd.EtcdResult._node_props
-            },
+            {attr: getattr(res, attr) for attr in dir(res) if attr in etcd.EtcdResult._node_props},
             d["prevNode"],
         )
         self.assertEqual(res.value, d["prevNode"]["value"])
@@ -398,34 +385,24 @@ class TestClientRequest(TestClientApiInterface):
         self.client.http.request_encode_body = mock.MagicMock(return_value=resp)
         self.client.http.request = mock.MagicMock(return_value=resp)
 
-    def _mock_error(
-        self, error_code, msg, cause, method="PUT", fields=None, cluster_id=None
-    ):
-        resp = self._prepare_response(
-            500, {"errorCode": error_code, "message": msg, "cause": cause}
-        )
+    def _mock_error(self, error_code, msg, cause, method="PUT", fields=None, cluster_id=None):
+        resp = self._prepare_response(500, {"errorCode": error_code, "message": msg, "cause": cause})
         resp.getheader.return_value = cluster_id or "abcdef1234"
         self.client.http.request_encode_body = mock.create_autospec(
             self.client.http.request_encode_body, return_value=resp
         )
-        self.client.http.request = mock.create_autospec(
-            self.client.http.request, return_value=resp
-        )
+        self.client.http.request = mock.create_autospec(self.client.http.request, return_value=resp)
 
     def test_compare_and_swap_failure(self):
         """Exception will be raised if prevValue != value in test_set"""
         self._mock_error(200, "Test Failed", "[ 1!=3 ]", fields={"prevValue": "oldbog"})
-        self.assertRaises(
-            ValueError, self.client.write, "/testKey", "test", prevValue="oldbog"
-        )
+        self.assertRaises(ValueError, self.client.write, "/testKey", "test", prevValue="oldbog")
 
     def test_watch_timeout(self):
         """Exception will be raised if prevValue != value in test_set"""
         self.client.http.request = mock.create_autospec(
             self.client.http.request,
-            side_effect=urllib3.exceptions.ReadTimeoutError(
-                self.client.http, "foo", "Read timed out"
-            ),
+            side_effect=urllib3.exceptions.ReadTimeoutError(self.client.http, "foo", "Read timed out"),
         )
         self.assertRaises(
             etcd.EtcdWatchTimedOut,
@@ -435,15 +412,11 @@ class TestClientRequest(TestClientApiInterface):
 
     def test_path_without_trailing_slash(self):
         """Exception will be raised if a path without a trailing slash is used"""
-        self.assertRaises(
-            ValueError, self.client.api_execute, "testpath/bar", self.client._MPUT
-        )
+        self.assertRaises(ValueError, self.client.api_execute, "testpath/bar", self.client._MPUT)
 
     def test_api_method_not_supported(self):
         """Exception will be raised if an unsupported HTTP method is used"""
-        self.assertRaises(
-            etcd.EtcdException, self.client.api_execute, "/testpath/bar", "TRACE"
-        )
+        self.assertRaises(etcd.EtcdException, self.client.api_execute, "/testpath/bar", "TRACE")
 
     def test_read_cluster_id_changed(self):
         """Read timeout set to the default"""
@@ -462,14 +435,10 @@ class TestClientRequest(TestClientApiInterface):
         self.client.read("/testkey")
 
     def test_read_connection_error(self):
-        self.client.http.request = mock.create_autospec(
-            self.client.http.request, side_effect=socket.error()
-        )
+        self.client.http.request = mock.create_autospec(self.client.http.request, side_effect=socket.error())
         self.assertRaises(etcd.EtcdConnectionFailed, self.client.read, "/something")
         # Direct GET request
-        self.assertRaises(
-            etcd.EtcdConnectionFailed, self.client.api_execute, "/a", "GET"
-        )
+        self.assertRaises(etcd.EtcdConnectionFailed, self.client.api_execute, "/a", "GET")
 
     def test_not_in(self):
         pass
