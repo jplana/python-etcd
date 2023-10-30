@@ -10,7 +10,7 @@ version = "0.5.0"
 
 install_requires = ["urllib3>=1.7.1", "dnspython>=1.13.0"]
 
-test_requires = ["mock", "nose", "pyOpenSSL>=0.14"]
+test_requires = ["mock", "pytest", "pyOpenSSL>=0.14"]
 
 setup(
     name="python-etcd",

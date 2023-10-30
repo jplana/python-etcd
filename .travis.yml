@@ -1,16 +1,16 @@
 language: python
 python:
-  - "2.7"
-  - "3.5"
+  - "3.7"
 
 before_install:
-  - ./download_etcd.sh 2.3.7
+  - ./download_etcd.sh 3.4.0
   - pip install --upgrade setuptools
 
 # command to install dependencies
 install:
   - pip install coveralls
   - pip install coverage
+  - pip install pytest
   - python bootstrap.py
   - bin/buildout
 

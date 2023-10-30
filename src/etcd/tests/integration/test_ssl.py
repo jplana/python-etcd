@@ -6,12 +6,12 @@ import unittest
 import multiprocessing
 import tempfile
 
+import pytest
 import urllib3
 
 import etcd
 from . import helpers
 from . import test_simple
-from nose.tools import nottest
 
 log = logging.getLogger()
 
@@ -67,11 +67,12 @@ class TestEncryptedAccess(test_simple.EtcdIntegrationTest):
         # Since python 3 raises a MaxRetryError here, this gets caught in
         # different code blocks in python 2 and python 3, thus messages are
         # different. Python 3 does the right thing(TM), for the record
-        self.assertRaises(etcd.EtcdException, client.set, "/test_set", "test-key")
+        self.assertRaises(
+            etcd.EtcdException, client.set, "/test_set", "test-key"
+        )
 
         self.assertRaises(etcd.EtcdException, client.get, "/test_set")
 
-    @nottest
     def test_get_set_unauthenticated_missing_ca(self):
         """INTEGRATION: try unauthenticated w/out validation (https->https)"""
         # This doesn't work for now and will need further inspection
@@ -81,7 +82,9 @@ class TestEncryptedAccess(test_simple.EtcdIntegrationTest):
 
     def test_get_set_unauthenticated_with_ca(self):
         """INTEGRATION: try unauthenticated with validation (https->https)"""
-        client = etcd.Client(protocol="https", port=6001, ca_cert=self.ca2_cert_path)
+        client = etcd.Client(
+            protocol="https", port=6001, ca_cert=self.ca2_cert_path
+        )
 
         self.assertRaises(
             etcd.EtcdConnectionFailed, client.set, "/test-set", "test-key"
@@ -91,7 +94,7 @@ class TestEncryptedAccess(test_simple.EtcdIntegrationTest):
     def test_get_set_authenticated(self):
         """INTEGRATION: set/get a new value authenticated"""
 
-        client = etcd.Client(port=6001, protocol="https", ca_cert=self.ca_cert_path)
+        client = etcd.Client(port=6001, protocol="https")
 
         set_result = client.set("/test_set", "test-key")
         get_result = client.get("/test_set")
@@ -145,7 +148,8 @@ class TestClientAuthenticatedAccess(test_simple.EtcdIntegrationTest):
             proc_args=[
                 "-cert-file=%s" % server_cert_path,
                 "-key-file=%s" % server_key_path,
-                "-ca-file=%s" % cls.ca_cert_path,
+                "-trusted-ca-file",
+                cls.ca_cert_path,
             ],
         )
 
@@ -155,21 +159,19 @@ class TestClientAuthenticatedAccess(test_simple.EtcdIntegrationTest):
         client = etcd.Client(port=6001)
 
         # See above for the reason of this change
-        self.assertRaises(etcd.EtcdException, client.set, "/test_set", "test-key")
+        self.assertRaises(
+            etcd.EtcdException, client.set, "/test_set", "test-key"
+        )
         self.assertRaises(etcd.EtcdException, client.get, "/test_set")
 
-    @nottest
+    @pytest.mark.skip(reason="We need non SHA1-signed certs and I won't implement it now.")
     def test_get_set_authenticated(self):
         """INTEGRATION: connecting to server with mutual auth"""
-        # This gives an unexplicable ssl error, as connecting to the same
-        # Etcd cluster where this fails with the exact same code this
-        # doesn't fail
 
         client = etcd.Client(
             port=6001,
             protocol="https",
             cert=self.client_all_cert,
-            ca_cert=self.ca_cert_path,
         )
 
         set_result = client.set("/test_set", "test-key")
