@@ -92,7 +92,7 @@ class Client(object):
             cert (mixed):   If a string, the whole ssl client certificate;
                             if a tuple, the cert and key file names.
 
-            ca_cert (str): The ca certificate. If pressent it will enable
+            ca_cert (str): The ca certificate. If present it will enable
                            validation.
 
             username (str): username for etcd authentication.
