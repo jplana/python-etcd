@@ -115,9 +115,7 @@ class TestClient(TestClientApiBase):
 
     def test_get_headers_with_auth(self):
         client = etcd.Client(username="username", password="password")
-        assert client._get_headers() == {
-            "authorization": "Basic dXNlcm5hbWU6cGFzc3dvcmQ="
-        }
+        assert client._get_headers() == {"authorization": "Basic dXNlcm5hbWU6cGFzc3dvcmQ="}
 
     def test__set_version_info(self):
         """Verify _set_version_info makes the proper call to the server"""
@@ -179,16 +177,12 @@ class TestClient(TestClientApiBase):
                 method = dns.name.from_text
             r.target = method("etcd{}.example.com".format(i))
             answers.append(r)
-        dns.resolver.query = mock.create_autospec(
-            dns.resolver.query, return_value=answers
-        )
+        dns.resolver.query = mock.create_autospec(dns.resolver.query, return_value=answers)
         self.machines = etcd.Client.machines
         etcd.Client.machines = mock.create_autospec(
             etcd.Client.machines, return_value=["https://etcd2.example.com:2379"]
         )
-        c = etcd.Client(
-            srv_domain="example.com", allow_reconnect=True, protocol="https"
-        )
+        c = etcd.Client(srv_domain="example.com", allow_reconnect=True, protocol="https")
         etcd.Client.machines = self.machines
         self.assertEqual(c.host, "etcd1.example.com")
         self.assertEqual(c.port, 2379)

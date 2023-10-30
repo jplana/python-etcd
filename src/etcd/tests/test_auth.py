@@ -48,9 +48,7 @@ class EtcdUserTest(TestEtcdAuthBase):
         self.assertEquals(u.roles, set(["root"]))
 
         # The user is correctly rendered out
-        self.assertEquals(
-            u._to_net(), [{"user": "root", "password": None, "roles": ["root"]}]
-        )
+        self.assertEquals(u._to_net(), [{"user": "root", "password": None, "roles": ["root"]}])
 
         # An inexistent user raises the appropriate exception
         u = auth.EtcdUser(self.client, "user.does.not.exist")

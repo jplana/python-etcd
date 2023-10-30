@@ -98,7 +98,9 @@ class TestClientRequest(unittest.TestCase):
 
         client = etcd.Client()
         client.api_execute = mock.Mock(
-            side_effect=ValueError("The given PrevValue is not equal" " to the value of the key : TestAndSet: 1!=3")
+            side_effect=ValueError(
+                "The given PrevValue is not equal" " to the value of the key : TestAndSet: 1!=3"
+            )
         )
         try:
             result = client.test_and_set("/testkey", "newvalue", "test", ttl=19)
@@ -145,7 +147,11 @@ class TestClientRequest(unittest.TestCase):
         client.api_execute = mock.Mock(
             return_value=FakeHTTPResponse(
                 200,
-                '{"action":"GET",' '"node": {' '"key":"/testkey",' '"value":"test",' '"modifiedIndex":190}}',
+                '{"action":"GET",'
+                '"node": {'
+                '"key":"/testkey",'
+                '"value":"test",'
+                '"modifiedIndex":190}}',
             )
         )
 
@@ -181,7 +187,11 @@ class TestClientRequest(unittest.TestCase):
         client.api_execute = mock.Mock(
             return_value=FakeHTTPResponse(
                 200,
-                '{"action":"GET",' '"node": {' '"key":"/testkey",' '"value":"test",' '"modifiedIndex":190}}',
+                '{"action":"GET",'
+                '"node": {'
+                '"key":"/testkey",'
+                '"value":"test",'
+                '"modifiedIndex":190}}',
             )
         )
         result = "/testkey" in client
