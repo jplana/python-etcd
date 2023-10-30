@@ -13,19 +13,21 @@ except ImportError:
     class NullHandler(logging.Handler):
         def emit(self, record):
             pass
+
+
 _log.addHandler(NullHandler())
 
 
 class EtcdResult(object):
     _node_props = {
-        'key': None,
-        'value': None,
-        'expiration': None,
-        'ttl': None,
-        'modifiedIndex': None,
-        'createdIndex': None,
-        'newKey': False,
-        'dir': False,
+        "key": None,
+        "value": None,
+        "expiration": None,
+        "ttl": None,
+        "modifiedIndex": None,
+        "createdIndex": None,
+        "newKey": False,
+        "dir": False,
     }
 
     def __init__(self, action=None, node=None, prevNode=None, **kwdargs):
@@ -41,16 +43,16 @@ class EtcdResult(object):
 
         """
         self.action = action
-        for (key, default) in self._node_props.items():
+        for key, default in self._node_props.items():
             if key in node:
                 setattr(self, key, node[key])
             else:
                 setattr(self, key, default)
 
         self._children = []
-        if self.dir and 'nodes' in node:
+        if self.dir and "nodes" in node:
             # We keep the data in raw format, converting them only when needed
-            self._children = node['nodes']
+            self._children = node["nodes"]
 
         if prevNode:
             self._prev_node = EtcdResult(None, node=prevNode)
@@ -60,8 +62,8 @@ class EtcdResult(object):
 
     def parse_headers(self, response):
         headers = response.getheaders()
-        self.etcd_index = int(headers.get('x-etcd-index', 1))
-        self.raft_index = int(headers.get('x-raft-index', 1))
+        self.etcd_index = int(headers.get("x-etcd-index", 1))
+        self.raft_index = int(headers.get("x-raft-index", 1))
 
     def get_subtree(self, leaves_only=False):
         """
@@ -73,7 +75,7 @@ class EtcdResult(object):
 
         """
         if not self._children:
-            #if the current result is a leaf, return itself
+            # if the current result is a leaf, return itself
             yield self
             return
         else:
@@ -92,7 +94,7 @@ class EtcdResult(object):
 
     @property
     def children(self):
-        """ Deprecated, use EtcdResult.leaves instead """
+        """Deprecated, use EtcdResult.leaves instead"""
         return self.leaves
 
     def __eq__(self, other):
@@ -120,6 +122,7 @@ class EtcdException(Exception):
     """
     Generic Etcd Exception.
     """
+
     def __init__(self, message=None, payload=None):
         super(EtcdException, self).__init__(message)
         self.payload = payload
@@ -129,6 +132,7 @@ class EtcdValueError(EtcdException, ValueError):
     """
     Base class for Etcd value-related errors.
     """
+
     pass
 
 
@@ -136,6 +140,7 @@ class EtcdCompareFailed(EtcdValueError):
     """
     Compare-and-swap failure
     """
+
     pass
 
 
@@ -145,6 +150,7 @@ class EtcdClusterIdChanged(EtcdException):
     with a backup.  Raised to prevent waiting on an etcd_index that was only
     valid on the old cluster.
     """
+
     pass
 
 
@@ -152,6 +158,7 @@ class EtcdKeyError(EtcdException):
     """
     Etcd Generic KeyError Exception
     """
+
     pass
 
 
@@ -159,6 +166,7 @@ class EtcdKeyNotFound(EtcdKeyError):
     """
     Etcd key not found exception (100)
     """
+
     pass
 
 
@@ -166,6 +174,7 @@ class EtcdNotFile(EtcdKeyError):
     """
     Etcd not a file exception (102)
     """
+
     pass
 
 
@@ -173,6 +182,7 @@ class EtcdNotDir(EtcdKeyError):
     """
     Etcd not a directory exception (104)
     """
+
     pass
 
 
@@ -180,6 +190,7 @@ class EtcdAlreadyExist(EtcdKeyError):
     """
     Etcd already exist exception (105)
     """
+
     pass
 
 
@@ -187,6 +198,7 @@ class EtcdEventIndexCleared(EtcdException):
     """
     Etcd event index is outdated and cleared exception (401)
     """
+
     pass
 
 
@@ -194,9 +206,9 @@ class EtcdConnectionFailed(EtcdException):
     """
     Connection to etcd failed.
     """
+
     def __init__(self, message=None, payload=None, cause=None):
-        super(EtcdConnectionFailed, self).__init__(message=message,
-                                                   payload=payload)
+        super(EtcdConnectionFailed, self).__init__(message=message, payload=payload)
         self.cause = cause
 
 
@@ -204,6 +216,7 @@ class EtcdInsufficientPermissions(EtcdException):
     """
     Request failed because of insufficient permissions.
     """
+
     pass
 
 
@@ -211,6 +224,7 @@ class EtcdWatchTimedOut(EtcdConnectionFailed):
     """
     A watch timed out without returning a result.
     """
+
     pass
 
 
@@ -218,6 +232,7 @@ class EtcdWatcherCleared(EtcdException):
     """
     Watcher is cleared due to etcd recovery.
     """
+
     pass
 
 
@@ -225,6 +240,7 @@ class EtcdLeaderElectionInProgress(EtcdException):
     """
     Request failed due to in-progress leader election.
     """
+
     pass
 
 
@@ -232,6 +248,7 @@ class EtcdRootReadOnly(EtcdKeyError):
     """
     Operation is not valid on the root, which is read only.
     """
+
     pass
 
 
@@ -239,6 +256,7 @@ class EtcdDirNotEmpty(EtcdValueError):
     """
     Directory not empty.
     """
+
     pass
 
 
@@ -246,6 +264,7 @@ class EtcdLockExpired(EtcdException):
     """
     Our lock apparently expired while we were trying to acquire it.
     """
+
     pass
 
 
@@ -263,7 +282,6 @@ class EtcdError(object):
         108: EtcdDirNotEmpty,
         # 109: Non-public: existing peer addr.
         110: EtcdInsufficientPermissions,
-
         200: EtcdValueError,  # Not part of v2
         201: EtcdValueError,
         202: EtcdValueError,
@@ -275,10 +293,8 @@ class EtcdError(object):
         208: EtcdValueError,
         209: EtcdValueError,
         210: EtcdValueError,
-
         # 300: Non-public: Raft internal error.
         301: EtcdLeaderElectionInProgress,
-
         400: EtcdWatcherCleared,
         401: EtcdEventIndexCleared,
     }
@@ -293,7 +309,7 @@ class EtcdError(object):
         error_code = payload.get("errorCode")
         message = payload.get("message")
         cause = payload.get("cause")
-        msg = '{} : {}'.format(message, cause)
+        msg = "{} : {}".format(message, cause)
         status = payload.get("status")
         # Some general status handling, as
         # not all endpoints return coherent error messages
@@ -312,6 +328,7 @@ class EtcdError(object):
 # Blatantly copied from requests.
 try:
     from urllib3.contrib import pyopenssl
+
     pyopenssl.inject_into_urllib3()
 except ImportError:
     pass

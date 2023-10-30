@@ -4,6 +4,7 @@ import uuid
 
 _log = logging.getLogger(__name__)
 
+
 class Lock(object):
     """
     Locking recipe for etcd, inspired by the kazoo recipe for zookeeper
@@ -17,7 +18,7 @@ class Lock(object):
         # prevent us from getting back the full path name. We prefix our
         # lock name with a uuid and can check for its presence on retry.
         self._uuid = uuid.uuid4().hex
-        self.path = "{}/{}".format(client.lock_prefix, lock_name) 
+        self.path = "{}/{}".format(client.lock_prefix, lock_name)
         self.is_taken = False
         self._sequence = None
         _log.debug("Initiating lock for %s with uuid %s", self.path, self._uuid)
@@ -139,10 +140,10 @@ class Lock(object):
     def lock_key(self):
         if not self._sequence:
             raise ValueError("No sequence present.")
-        return self.path + '/' + str(self._sequence)
+        return self.path + "/" + str(self._sequence)
 
     def _set_sequence(self, key):
-        self._sequence = key.replace(self.path, '').lstrip('/')
+        self._sequence = key.replace(self.path, "").lstrip("/")
 
     def _find_lock(self):
         if self._sequence:
@@ -163,8 +164,7 @@ class Lock(object):
         return False
 
     def _get_locker(self):
-        results = [res for res in
-                   self.client.read(self.path, recursive=True).leaves]
+        results = [res for res in self.client.read(self.path, recursive=True).leaves]
         if not self._sequence:
             self._find_lock()
         l = sorted([r.key for r in results])
@@ -175,9 +175,9 @@ class Lock(object):
                 _log.debug("No key before our one, we are the locker")
                 return (l[0], None)
             else:
-                _log.debug("Locker: %s, key to watch: %s", l[0], l[i-1])
-                return (l[0], next(x for x in results if x.key == l[i-1]))
+                _log.debug("Locker: %s, key to watch: %s", l[0], l[i - 1])
+                return (l[0], next(x for x in results if x.key == l[i - 1]))
         except ValueError:
             # Something very wrong is going on, most probably
             # our lock has expired
-            raise etcd.EtcdLockExpired(u"Lock not found")
+            raise etcd.EtcdLockExpired("Lock not found")
