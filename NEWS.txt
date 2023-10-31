@@ -1,5 +1,18 @@
 News
 ====
+0.5.0
+-----
+*Release date: 31-Oct-2023
+
+* Drop python 2.x compatibility (should still work)
+* Move to use pytest
+* Support urllib3 v2, including support of self-signed certs
+* Fix version check to avoid crashes with non-official releases
+* Correctly handle watch timeouts in lock
+* Allow trying more than one domain when looking up SRV records
+* Support auth API both <= 2.2.5 and >= 2.3.0
+* Use github actions instead than travis
+
 0.4.5
 -----
 *Release date: 3-Mar-2017*
