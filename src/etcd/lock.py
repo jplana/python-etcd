@@ -35,7 +35,7 @@ class Lock(object):
         old_uuid = self._uuid
         self._uuid = value
         if not self._find_lock():
-            _log.warn("The hand-set uuid was not found, refusing")
+            _log.warning("The hand-set uuid was not found, refusing")
             self._uuid = old_uuid
             raise ValueError("Inexistent UUID")
 
@@ -51,7 +51,7 @@ class Lock(object):
             self.client.read(self.lock_key)
             return True
         except etcd.EtcdKeyNotFound:
-            _log.warn("Lock was supposedly taken, but we cannot find it")
+            _log.warning("Lock was supposedly taken, but we cannot find it")
             self.is_taken = False
             return False
 
