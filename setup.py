@@ -29,7 +29,7 @@ setup(
     author_email="jplana@gmail.com",
     url="http://github.com/jplana/python-etcd",
     license="MIT",
-    packages=find_packages("src"),
+    packages=find_packages("src", exclude=["*.tests", "*.tests.*"]),
     package_dir={"": "src"},
     include_package_data=True,
     zip_safe=False,
