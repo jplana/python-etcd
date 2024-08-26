@@ -326,9 +326,34 @@ class EtcdError(object):
 
 # Attempt to enable urllib3's SNI support, if possible
 # Blatantly copied from requests.
-try:
-    from urllib3.contrib import pyopenssl
+def _check_cryptography(cryptography_version):
+    import warnings
 
-    pyopenssl.inject_into_urllib3()
+    # cryptography < 1.3.4
+    try:
+        cryptography_version = list(map(int, cryptography_version.split(".")))
+    except ValueError:
+        return
+
+    if cryptography_version < [1, 3, 4]:
+        warning = "Old version of cryptography ({}) may cause slowdown.".format(
+            cryptography_version
+        )
+        warnings.warn(warning, RequestsDependencyWarning)
+
+try:
+    try:
+        import ssl
+    except ImportError:
+        ssl = None
+
+    if not getattr(ssl, "HAS_SNI", False):
+        from urllib3.contrib import pyopenssl
+
+        pyopenssl.inject_into_urllib3()
+
+        from cryptography import __version__ as cryptography_version
+
+        _check_cryptography(cryptography_version)
 except ImportError:
     pass
