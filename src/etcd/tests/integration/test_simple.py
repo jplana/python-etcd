@@ -244,6 +244,16 @@ class TestClusterFunctions(EtcdIntegrationTest):
 
 
 class TestWatch(EtcdIntegrationTest):
+    # On macOS and newly non-macOS POSIX systems (since Python 3.14),
+    # the default method has been changed to forkserver.
+    # The code in this test does not work with it,
+    # hence the explicit change to 'fork'
+    # See https://github.com/python/cpython/issues/125714
+    if multiprocessing.get_start_method() == "forkserver":
+        _mp_context = multiprocessing.get_context(method="fork")
+    else:
+        _mp_context = multiprocessing.get_context()
+
     def test_watch(self):
         """INTEGRATION: Receive a watch event from other process"""
 
@@ -259,7 +269,7 @@ class TestWatch(EtcdIntegrationTest):
             c = etcd.Client(port=6001)
             queue.put(c.watch(key).value)
 
-        changer = multiprocessing.Process(
+        changer = self._mp_context.Process(
             target=change_value,
             args=(
                 "/test-key",
@@ -267,7 +277,7 @@ class TestWatch(EtcdIntegrationTest):
             ),
         )
 
-        watcher = multiprocessing.Process(target=watch_value, args=("/test-key", queue))
+        watcher = self._mp_context.Process(target=watch_value, args=("/test-key", queue))
 
         watcher.start()
         time.sleep(1)
@@ -301,7 +311,7 @@ class TestWatch(EtcdIntegrationTest):
             for i in range(0, 3):
                 queue.put(c.watch(key, index=index + i).value)
 
-        proc = multiprocessing.Process(
+        proc = self._mp_context.Process(
             target=change_value,
             args=(
                 "/test-key",
@@ -309,7 +319,7 @@ class TestWatch(EtcdIntegrationTest):
             ),
         )
 
-        watcher = multiprocessing.Process(
+        watcher = self._mp_context.Process(
             target=watch_value, args=("/test-key", original_index, queue)
         )
 
@@ -346,9 +356,9 @@ class TestWatch(EtcdIntegrationTest):
                 event = next(c.eternal_watch(key)).value
                 queue.put(event)
 
-        changer = multiprocessing.Process(target=change_value, args=("/test-key",))
+        changer = self._mp_context.Process(target=change_value, args=("/test-key",))
 
-        watcher = multiprocessing.Process(target=watch_value, args=("/test-key", queue))
+        watcher = self._mp_context.Process(target=watch_value, args=("/test-key", queue))
 
         watcher.start()
         changer.start()
@@ -383,7 +393,7 @@ class TestWatch(EtcdIntegrationTest):
             for i in range(0, 3):
                 queue.put(next(iterevents).value)
 
-        proc = multiprocessing.Process(
+        proc = self._mp_context.Process(
             target=change_value,
             args=(
                 "/test-key",
@@ -391,7 +401,7 @@ class TestWatch(EtcdIntegrationTest):
             ),
         )
 
-        watcher = multiprocessing.Process(
+        watcher = self._mp_context.Process(
             target=watch_value, args=("/test-key", original_index, queue)
         )
 
